@@ -297,9 +297,13 @@ English and R5-D output are unchanged. All six divergence injections remove the 
 and keep their fresh suffix; time additions outside the exact snapshot prefix are zero.
 The 61-word degraded-replacement control remains visible. Added source-to-publication
 mean work is 0.34/0.70/0.19 ms, respectively; pending peaks are 35/28 for the long streams.
-Numeric-only `engine_diagnostics.preview` exposes per-lane raw/shown/solid units, text
+Numeric-only `engine_diagnostics.preview` exposes per-lane raw/shown units, text
 and additional time removal, maximum grey units, source clock, confirmed point and
-publication totals; history maxima/overflows are separate numeric fields.
+publication totals; history maxima/overflows are separate numeric fields. Diagnostics
+count only current preview text; saved-text unit totals are omitted without a cache.
+A fixed two-hour synthetic solid transcript (1440 rows, 720 per lane) measures 0.635 ms
+mean added runtime work per publication, including snapshot scans and diagnostics;
+the removed whole-solid count made the same population cost 97.642 ms.
 
 Combined later-solid-proxy residue reaches 4 Mandarin / 5 English units on non-rewrite
 publications, present for 45/41 cumulative publication seconds; rewrite publications

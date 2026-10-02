@@ -692,7 +692,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     time_cuts = snapshots.cuts(update.segments, update.origins)
                     segments = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
                     snapshots.finish(update.finished_turns)
-                    _preview_diagnostics(state, update, solid, text_rows, segments, clocks_before)
+                    _preview_diagnostics(state, update, text_rows, segments, clocks_before)
                     transcript = _unlabelled_transcript(segments, start)
                     spans = tuple(span for lane in dict.fromkeys(
                         row.source_lane or "system" for row in segments)
@@ -1541,7 +1541,7 @@ _PREVIEW_NUMBERS = {word: str(index) for index, word in enumerate(
 _CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
 
 
-def _preview_diagnostics(state, update, solid, text_rows, shown_rows, clocks_before):
+def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before):
     def counts(rows):
         out = {}
         for row in rows:
@@ -1549,7 +1549,7 @@ def _preview_diagnostics(state, update, solid, text_rows, shown_rows, clocks_bef
             out[lane] = out.get(lane, 0) + len(_preview_units(row.text))
         return out
 
-    raw, text, shown, confirmed = map(counts, (update.segments, text_rows, shown_rows, solid))
+    raw, text, shown = map(counts, (update.segments, text_rows, shown_rows))
     lanes = set(raw) | set(shown) | {lane or "system" for lane, _ in update.lane_end_samples}
     clocks = {lane or "system": end for lane, end in update.lane_end_samples}
     for lane in lanes:
@@ -1568,7 +1568,7 @@ def _preview_diagnostics(state, update, solid, text_rows, shown_rows, clocks_bef
         totals["time_hidden_units"] += time_hidden
         totals["shown_units_max"] = max(totals["shown_units_max"], shown.get(lane, 0))
         totals.update(raw_units_last=raw.get(lane, 0), shown_units_last=shown.get(lane, 0),
-                      solid_units_last=confirmed.get(lane, 0), text_hidden_last=text_hidden,
+                      text_hidden_last=text_hidden,
                       time_hidden_last=time_hidden, lane_end_sample=clocks.get(lane, 0),
                       confirmed_sample=state.preview_snapshots.frontiers.get(source, 0))
 

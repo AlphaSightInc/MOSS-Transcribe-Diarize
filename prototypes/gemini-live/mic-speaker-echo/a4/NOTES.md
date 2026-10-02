@@ -256,7 +256,7 @@ covered. Final retained checks/full backend result recorded below.
 Diagnostics contract for lead: `engine_diagnostics.preview[lane]` contains numeric
 `lane_publications`, `units_published` (rendered raw units on own-clock advances), cumulative
 `text_hidden_units`/additional `time_hidden_units` (every composed publication),
-`shown_units_max`, and latest `raw_units_last`, `shown_units_last`, `solid_units_last`,
+`shown_units_max`, and latest `raw_units_last`, `shown_units_last`,
 `text_hidden_last`, `time_hidden_last`, `lane_end_sample`, `confirmed_sample`.
 Latest R = shown + text-hidden + time-hidden. Stale lane republications do not advance
 its source publication totals; latest/cumulative rendered counts still describe the
@@ -326,3 +326,51 @@ Provider0/$0; no frontend/assets, private audio, ports, hosts, push/merge/PR.
 | `test_already_confirmed_final_clears_history_without_republishing` | failed before covered-final transport | passes |
 | `test_already_confirmed_final_reports_end_without_text_publication` | failed before covered-final transport | passes |
 | `test_retreating_solid_frontier_discards_snapshot_ahead_of_it` | preservation control passes on base | passes |
+
+## Lead L1: two-hour publication cost (registered before measuring)
+
+Structural question: can numeric preview diagnostics stay cheap as saved text grows?
+Minimum primitives: bounded current-preview units for removal accounting; existing
+visible-solid attribute scans for the lane confirmed point. Saved-text unit totals
+are unnecessary for either primitive, so remove `solid_units_last` entirely; no cache.
+Invariants: cuts/text unchanged; diagnostics retain their numeric accounting identity;
+no new per-publication traversal of saved text. Existing attribute scans remain.
+Unknown: two-hour cost was unmeasured by the earlier 3–5 minute stream gate. Lead measured
+31.9ms diagnostics on 1440 solid rows; that disproves length-independent unit counting.
+Falsifier: any retained `solid_units_last` key, or mean added runtime work >1ms on the
+fixed two-hour population below, rejects the fix.
+Tool decision: red/green key regression catches API residue; a production-primitive
+bench isolates newly added work (including visible-solid scans) from unchanged text
+trim. Targeted/full backend tests detect unintended runtime behavior changes.
+
+Frozen cost population: 1440 five-second solid rows, alternating system/microphone
+(720 each), ending at 7200s, 30 words/row. Two current preview rows, 24 words each.
+Ten warm-ups, 200 measured publications with advancing own-lane clocks; production
+snapshot advance/publication/cuts, time-cut composition, finish and diagnostics under
+a lock. Preview history stays bounded at 64. No text-trim/prototype scorer in timing.
+The benchmark only adapts its diagnostics argument list to measure the reviewed
+signature before removal and the new signature afterward; no product compatibility
+layer. Same population/command/gate before and after; receipts retained even on failure.
+
+One command (from worktree root):
+`PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-r5-f1.venv/bin/python prototypes/gemini-live/mic-speaker-echo/a4/cost_long_meeting.py --receipt <own-evidence-json>`.
+
+L1 verdict: PASS after removal; reviewed product FAIL before. Same fixed two-hour
+population: added mean97.641681 → 0.635399ms/publication (gate<=1ms); diagnostics
+97.346739 → 0.347799ms. Post-fix added p950.768583ms, max pending64. This gate measures
+all newly added runtime preview primitives, including existing solid attribute scans;
+it excludes unchanged text trim/session publication and source-side work. The earlier
+source-to-publication stream measurements remain separate receipts. No claim of
+length-independent total runtime: the existing attribute scans remain O(rows).
+
+`test_preview_diagnostics_omit_whole_solid_unit_count[system|microphone]`: both FAIL
+before and PASS after. Latest diagnostics contain no `solid_units_last`. The production
+helper no longer receives solid rows; no replacement cache or saved-text count exists.
+All other counters and preview cuts unchanged. Targeted snapshot/duplication/lane/hybrid/
+runtime tests223 passed in6.43s. RED/GREEN logs and cost JSON under own evidence:
+`l1-key-before.log`, `l1-cost-before.log`, `l1/cost-before.json`,
+`l1-cost-after.log`, `l1/cost-after.json`, `l1-targeted.log`.
+Full backend:2876 passed,9 skipped,2 xfailed,37 subtests passed,27 warnings
+in427.63s. Command: `MOSS_TEST_REAL_SQLITE=1 PYTHONDONTWRITEBYTECODE=1
+../MOSS-Transcribe-Diarize-wt-r5-f1.venv/bin/python -m pytest -q -p no:cacheprovider tests`.
+Receipt: `l1-full-backend.log`. No provider calls ($0); no other product change.

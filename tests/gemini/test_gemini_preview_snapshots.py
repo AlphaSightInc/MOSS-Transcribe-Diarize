@@ -186,6 +186,15 @@ def test_preview_diagnostics_numbers_show_only_additional_time_cut(tmp_path):
     assert all(isinstance(v,(int,float)) for v in values.values())
 
 
+@pytest.mark.parametrize('lane',['system','microphone'])
+def test_preview_diagnostics_omit_whole_solid_unit_count(tmp_path,lane):
+    runtime=_runtime(tmp_path,lanes=True)
+    establish(runtime,lane=lane)
+    preview(runtime,COMMITTED+' '+FRESH,20,lane=lane)
+    values=runtime.engine_diagnostics('one')['preview'][lane]
+    assert 'solid_units_last' not in values
+
+
 def test_ambiguous_original_turn_key_abstains(tmp_path):
     runtime=_runtime(tmp_path)
     establish(runtime,solid='entirely unrelated solid words')
