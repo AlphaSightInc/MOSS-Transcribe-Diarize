@@ -12,7 +12,7 @@ import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionM
 import { sessionStartedAt, sessionStopRequested } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
-import { resetUiState, selectedSummaryMeeting } from "../state/ui";
+import { historyPanelCollapsed, historyView, resetUiState, selectedSummaryMeeting } from "../state/ui";
 import { defaultAppSettings, saveAppSettings } from "../lib/settings";
 
 // These fixtures script history requests; model discovery is covered in FinalSummary.test.tsx.
@@ -78,8 +78,9 @@ describe("MeetingHistory", () => {
     expect(root.querySelector("dialog")).toBeNull();
     act(() => root.querySelector<HTMLButtonElement>('[data-delete-cancel]')!.click());
     expect(root.querySelector('[data-delete-confirm]')).toBeNull();
+    await vi.waitFor(() => expect(document.activeElement).toBe(trash()));
     act(() => trash().click());
-    act(() => root.querySelector('[data-delete-confirm]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+    act(() => { root.querySelector('[data-delete-confirm]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
     expect(root.querySelector('[data-delete-confirm]')).toBeNull();
     await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-a"]')!.click());
     await vi.waitFor(() => expect(transcript.value).toHaveLength(1));
@@ -119,6 +120,10 @@ describe("MeetingHistory", () => {
     const button = root.querySelector<HTMLButtonElement>('[data-meeting-card="running"] [aria-label="Delete session"]')!;
     expect(button.disabled).toBe(true);
     expect(button.title).toBe("Stop recording first.");
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-all]')!.click());
+    expect(root.textContent).toContain("Delete all 2 sessions?");
+    expect(root.textContent).not.toContain("including sessions hidden");
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-cancel]')!.click());
     const search = root.querySelector<HTMLInputElement>('[aria-label="Search meetings"]')!;
     act(() => { search.value = "Running"; search.dispatchEvent(new Event("input", { bubbles: true })); });
     act(() => root.querySelector<HTMLButtonElement>('[data-delete-all]')!.click());
@@ -138,6 +143,23 @@ describe("MeetingHistory", () => {
     await act(async () => render(<MeetingHistory />, root));
     await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('[data-delete-all]')?.disabled).toBe(true));
     expect(root.textContent).not.toContain("Refresh");
+    act(() => { historyPanelCollapsed.value = true; });
+    act(() => { historyPanelCollapsed.value = false; });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    act(() => { historyView.value = "voiceprints"; });
+    act(() => { historyView.value = "sessions"; });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(3));
+  });
+
+  it.each([
+    { mode: "live" as const, status: "active" as const, refinement_state: "none" as const },
+    { mode: "file" as const, status: "active" as const, refinement_state: "none" as const },
+    { mode: "live" as const, status: "completed" as const, refinement_state: "running" as const }
+  ])("disables deletion while work is running: $mode $refinement_state", async running => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ meetings: [meeting(running)] })));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[aria-label="Delete session"]')).not.toBeNull());
+    expect(root.querySelector<HTMLButtonElement>('[aria-label="Delete session"]')!.disabled).toBe(true);
   });
 
   it.each([

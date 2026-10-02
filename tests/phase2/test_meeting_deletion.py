@@ -118,3 +118,37 @@ def test_audio_cleanup_failure_retains_rows_and_reports_reason(tmp_path: Path, m
         assert result.status_code == 503
         assert 'audio' in result.json()['detail'].lower()
         assert client.get(f'/api/meetings/{mid}').status_code == 200
+
+
+def test_delete_keeps_post_stop_refinement_until_writer_finishes(tmp_path: Path, monkeypatch):
+    database = tmp_path / 'moss.sqlite3'
+    tokens = asyncio.run(provision(database))
+    app = make_app(database)
+    with TestClient(app, base_url='https://moss.test') as client:
+        _, mid = seed(client, tokens['a'], mode='live')
+        session(client, tokens['a'])
+        monkeypatch.setattr(app.state.phase2_live, 'refinement_running', lambda meeting_id: meeting_id == mid)
+        result = client.delete(f'/api/meetings/{mid}')
+        assert result.status_code == 409
+        assert result.json()['detail'] == 'Wait for transcript clean-up to finish.'
+        assert client.delete('/api/meetings').json() == {
+            'deleted': 0, 'kept': [{'meeting_id': mid, 'reason': 'Wait for transcript clean-up to finish.'}]
+        }
+        monkeypatch.setattr(app.state.phase2_live, 'refinement_running', lambda meeting_id: False)
+        assert client.delete(f'/api/meetings/{mid}').status_code == 204
+
+
+def test_delete_removes_retained_file_and_url_staging(tmp_path: Path):
+    database = tmp_path / 'moss.sqlite3'
+    tokens = asyncio.run(provision(database))
+    app = create_phase2_app(database_path=database, file_runner=object(),
+                           file_work_root=tmp_path / 'file-work', meeting_audio_root=tmp_path / 'audio')
+    with TestClient(app, base_url='https://moss.test') as client:
+        account, mid = seed(client, tokens['a'], status='interrupted')
+        directory = app.state.phase2_file_tasks.retained_root / account / mid
+        directory.mkdir(parents=True)
+        (directory / 'input.wav').write_bytes(b'synthetic input')
+        (directory / 'mix.wav').write_bytes(b'synthetic mix')
+        session(client, tokens['a'])
+        assert client.delete(f'/api/meetings/{mid}').status_code == 204
+        assert not directory.exists()

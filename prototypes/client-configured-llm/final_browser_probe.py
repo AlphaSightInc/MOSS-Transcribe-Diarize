@@ -97,7 +97,7 @@ async def run(root, chrome_binary=None, timeout_evidence=None):
                         await handle.commit_transcript({"segments": [{"start": 0, "end": 4, "speaker": "Alex", "text": f"ONLY-OWNER-{index}-TRANSCRIPT"}]}, terminal=True)
                         ids.append(handle.meeting_id)
                         await page.locator('[data-history-boot="ready"]').wait_for()
-                        await page.get_by_role("button", name="Refresh", exact=True).click()
+                        await page.evaluate("document.dispatchEvent(new Event('moss:refresh-meeting-history'))")
                         await page.locator(f'[data-open-meeting="{handle.meeting_id}"]').click()
                         await page.locator(f'[data-open-meeting="{handle.meeting_id}"][aria-pressed="true"]').wait_for()
                         await page.get_by_role("tab", name="Summary", exact=True).click()

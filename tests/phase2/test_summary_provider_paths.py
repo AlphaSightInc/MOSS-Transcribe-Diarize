@@ -23,7 +23,7 @@ async def open_selected_summary(page, context, app):
     handle = await app.state.phase2_store.workspace(account).create_meeting("file")
     await handle.commit_transcript({"segments": [{"start": 0, "end": 1,
         "speaker": "S01", "text": "Local summary fixture"}]}, terminal=True)
-    await page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
+    await page.evaluate("document.dispatchEvent(new Event('moss:refresh-meeting-history'))")
     await page.locator(f'[data-open-meeting="{handle.meeting_id}"]').click()
     await page.locator(f'[data-open-meeting="{handle.meeting_id}"][aria-pressed="true"]').wait_for()
     await page.get_by_role("tab", name="Summary", exact=True).click()

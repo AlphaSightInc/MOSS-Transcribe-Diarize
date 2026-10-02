@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import {
   deleteMeeting,
   deleteAllMeetings,
@@ -53,7 +53,7 @@ export function MeetingHistory() {
   const [notice, setNotice] = useState<string | null>(null);
   const deletionPending = useRef(false);
   const deleteCancelRef = useRef<HTMLButtonElement | null>(null);
-  const deleteFocusRef = useRef<HTMLElement | null>(null);
+  const deleteFocusTarget = useRef<string | null>(null);
   const selectedRef = useRef<Meeting | null>(null);
   const refreshGenerationRef = useRef(0);
   const summaryRegenerated = useRef(new Set<string>());
@@ -118,18 +118,26 @@ export function MeetingHistory() {
     if (!historyPanelCollapsed.value && historyView.value === "sessions") void refresh();
   }, [historyPanelCollapsed.value, historyView.value]);
 
-  useEffect(() => {
-    if (deleteTarget) deleteCancelRef.current?.focus();
+  useLayoutEffect(() => {
+    if (deleteTarget) {
+      deleteCancelRef.current?.focus();
+    } else if (deleteFocusTarget.current) {
+      const card = [...document.querySelectorAll<HTMLElement>("[data-meeting-card]")]
+        .find(node => node.dataset.meetingCard === deleteFocusTarget.current);
+      const button = card?.querySelector<HTMLButtonElement>('[aria-label="Delete session"]')
+        ?? document.querySelector<HTMLButtonElement>("[data-delete-all]");
+      button?.focus();
+      deleteFocusTarget.current = null;
+    }
   }, [deleteTarget]);
 
   const cancelDelete = () => {
     if (deleting) return;
     setDeleteTarget(null);
-    deleteFocusRef.current?.focus();
   };
 
-  const confirmDelete = (target: string, button: HTMLButtonElement) => {
-    deleteFocusRef.current = button;
+  const confirmDelete = (target: string) => {
+    deleteFocusTarget.current = target;
     setDeleteTarget(target);
     setNotice(null);
   };
@@ -183,7 +191,6 @@ export function MeetingHistory() {
       }
       setError(errorMessage(cause));
       setDeleteTarget(null);
-      deleteFocusRef.current?.focus();
     } finally {
       refreshGenerationRef.current += 1;
       deletionPending.current = false;
@@ -377,7 +384,7 @@ export function MeetingHistory() {
             className="history-toolbar-btn is-danger"
             data-delete-all
             disabled={loading || deleting || meetings.length === 0}
-            onClick={event => confirmDelete("all", event.currentTarget)}
+            onClick={() => confirmDelete("all")}
           >
             Delete All
           </button>
@@ -427,7 +434,7 @@ export function MeetingHistory() {
                     </button>
                     <button type="button" className="history-action-btn history-delete-icon is-danger"
                       aria-label="Delete session" title={runningSession(meeting) ? (meeting.refinement_state === "running" ? "Wait for transcript clean-up to finish." : "Stop recording first.") : "Delete session"}
-                      disabled={runningSession(meeting) || deleting} onClick={event => confirmDelete(meeting.id, event.currentTarget)}>
+                      disabled={runningSession(meeting) || deleting} onClick={() => confirmDelete(meeting.id)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
                       </svg>

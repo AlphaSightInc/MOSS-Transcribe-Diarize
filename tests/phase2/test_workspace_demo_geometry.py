@@ -80,7 +80,7 @@ def test_voiceprint_tab_does_not_disturb_desktop_workspace(viewport):
             page.goto('http://demo.test')
             page.locator('[data-history-boot="ready"]').wait_for()
             history = page.get_by_role('region', name='Meeting history', exact=True)
-            page.get_by_role('button', name='URL', exact=True).click()
+            page.get_by_role('button', name='YouTube', exact=True).click()
             sessions = page.evaluate("""() => {
                 const box = selector => {
                     const rect = document.querySelector(selector).getBoundingClientRect();
@@ -112,9 +112,9 @@ def test_voiceprint_tab_does_not_disturb_desktop_workspace(viewport):
                 };
             }""")
             history.get_by_role('tab', name='Sessions', exact=True).click()
-            refresh = history.get_by_role('button', name='Refresh', exact=True)
+            expect(history.get_by_role('button', name='Delete All', exact=True)).to_be_disabled()
             with page.expect_response(lambda response: urlsplit(response.url).path == '/api/meetings'):
-                refresh.click()
+                page.evaluate("document.dispatchEvent(new Event('moss:refresh-meeting-history'))")
             history.get_by_role('tab', name='Voiceprints', exact=True).click()
             expect(page.locator('.voiceprint-list li')).to_have_count(10)
         finally:
