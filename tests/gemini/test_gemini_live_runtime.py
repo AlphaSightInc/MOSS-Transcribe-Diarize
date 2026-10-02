@@ -577,7 +577,7 @@ def test_refused_stale_f13_relabel_during_stop_still_finalizes(tmp_path):
     rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
         engine_factory=lambda _id, publish, _usage, _settings: TailEngine(publish,
             batches=[(GeminiBase(16000, ()), GeminiRolling(0, 16000, (first, second)),
-                      GeminiTurnBridge(0, 4000, 6000))], terminal=()))
+                      GeminiTurnBridge(0, 4000, 6000))], terminal=(first, second)))
     rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
     rt.accept_frame("one", frame(0))
     async def finish():

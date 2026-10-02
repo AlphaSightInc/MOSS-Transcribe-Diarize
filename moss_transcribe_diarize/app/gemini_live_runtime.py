@@ -1445,6 +1445,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         for row in before.effective_transcript
                         if row.source_lane == lane and row.end_sample > start
                         and row.start_sample < end)
+                if not any(row.text.strip() for row in rows) and any(
+                        row.text.strip() for row in before.effective_transcript):
+                    # A clean-up that hears nothing fails: the live words stay.
+                    raise ValueError("terminal returned no words")
                 # Same order the transcript store enforces (start, lane, end); system before microphone.
                 rows = tuple(sorted(rows, key=lambda row: (
                     row.start_sample, row.source_lane == "microphone", row.end_sample)))

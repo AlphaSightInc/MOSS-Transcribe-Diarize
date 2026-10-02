@@ -548,7 +548,7 @@ def test_gemini_live_settings_validate_at_http_boundary_and_moss_ignores_them(tm
         assert client.post("/api/live/sessions", json={"engine_settings": {"other": 1}}).status_code == 201
 
 
-@pytest.mark.parametrize("terminal_outcome", ["done", "failed", "restart"])
+@pytest.mark.parametrize("terminal_outcome", ["done", "failed", "empty", "restart"])
 def test_gemini_cleanup_stop_saves_completed_live_version_while_improvement_runs(
     tmp_path, terminal_outcome,
 ):
@@ -574,6 +574,8 @@ def test_gemini_cleanup_stop_saves_completed_live_version_while_improvement_runs
             await release.wait()
             if terminal_outcome == "failed":
                 raise RuntimeError("terminal decode refused")
+            if terminal_outcome == "empty":
+                return ()       # a clean-up that hears nothing must not erase the live words
             return (GeminiSegment(0, self.end_sample, "improved", "terminal-a", "system"),)
 
     descriptor = LiveServiceDescriptor(
@@ -643,12 +645,13 @@ def test_gemini_cleanup_stop_saves_completed_live_version_while_improvement_runs
                 if detail["refinement_state"] in {"done", "failed"}:
                     break
                 time.sleep(.01)
-            assert detail["refinement_state"] == terminal_outcome, detail
+            assert detail["refinement_state"] == (
+                "done" if terminal_outcome == "done" else "failed"), detail
             assert detail["transcript_version"] == named_version + (terminal_outcome == "done")
             assert [row["text"] for row in detail["transcript"]["segments"]] == [
-                "live" if terminal_outcome == "failed" else "improved"]
+                "improved" if terminal_outcome == "done" else "live"]
             assert [row["speaker"] for row in detail["transcript"]["segments"]] == ["Alex"]
-            if terminal_outcome == "failed":
+            if terminal_outcome != "done":
                 assert detail["notice"] == "Improvement unavailable — the live transcript was kept."
             assert not stage_path.exists()
     if terminal_outcome == "restart":
