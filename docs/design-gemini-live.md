@@ -704,3 +704,39 @@ or provider call. If live identity was wrong, nearest kept final evidence can fo
 clean-up split locally; a completely omitted voice with a wrong live ID remains wrong.
 See `prototypes/gemini-live/mic-speaker-echo/c2/NOTES.md` and R5B-C2 evidence for complete
 prototype/product gates, ambiguity controls, row-level stress audit and stated limits.
+
+## P74-R: browser resume — measured proposal, not shipped (2026-10-02)
+
+An originating browser page can resume an active meeting within the existing 120 s
+lease using an explicit origin-sign-in-authorized handshake. Keep the meeting,
+engine, speaker ledger and audio stage; replace only the capture page. The handshake
+must return authoritative lane sequence/epoch/end and mixed/capture clock state,
+and fence frames, heartbeat, Stop and Abort from the previous page. Heartbeat-only
+takeover is rejected: an awakened original still admits audio (200) and causes
+new-page overlap refusals. Expired, closing, accepted-Stop and server-restarted
+meetings remain non-resumable.
+
+Throwaway code composes real Phase2 routes, the scripted Gemini engine, production
+mixer and MP3 archive. With 4 s prefix + gap +4 s continuation, gaps of 5/30/90/119 s
+accept 16/16 frames and save one 13/38/98/127 s MP3 with elapsed-time silence and
+correct resumed transcript timestamps. Manual speaker name survives. A 125 s gap
+refuses with 409 and retains the original 4 s partial archive. The 90 s falsifier
+passes. At 119 s gap +45 s continuation, peak lane retention is 29.5/60 s; existing
+mixer pacing delays the first resumed live transcript row by 30 s. Real Chrome
+reload with fake media, actual CaptureClient/worklet and a throwaway adoption seam
+completes one meeting; microphone mute/echo choices, sequences and new epochs survive.
+Chrome share track labels change on reacquisition and cannot identify the old tab.
+
+Proposal: one **Resume recording** button, same origin Sign-in session and stored
+meeting-specific capture settings; ask the user to select the previous shared tab;
+preserve missing time as silence plus a separate interruption notice. Keep 120 s;
+view reads do not extend the lease, explicit valid takeover renews normally. Another
+Sign-in session stays read-only; same-cookie concurrent tabs give one winner.
+Original automatic-summary ownership must follow adoption without duplicate workers.
+
+Physical Bluetooth/device continuity, real browser crash, human picker, exact live
+network-clock accuracy, provider recognition/latency and product acceptance remain
+unmeasured. No production change or accepted ADR amendment is made here. Full
+contract, negative S1 evidence, options O1–O4, required ADR/test amendments, size
+estimate and one-command bench: `prototypes/gemini-live/long-meeting/resume/NOTES.md`.
+Receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/P74/resume/SUMMARY.json`.
