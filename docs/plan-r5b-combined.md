@@ -243,3 +243,16 @@ say which rule acted; fix and repeat.
 ## 11. Spend so far in this phase
 
 Diagnosis $0.26, prototypes $0.06 + $0.24 + $0.17 = **$0.73 of the $1.00 phase cap**. Stage 3: $0 of $0.30.
+
+## 13. Decisions and scope added after launch (2026-10-01 evening)
+
+- **D15 = O1 (user): grey text is cut by the clock.** Grey shows only what arrived after the lane's confirmed point;
+  older grey words disappear at confirmation even when the solid text lacks them (they are never saved either way).
+  Fresh speech may never be hidden. Built as R5B-A4 (`briefs/R5B-A4.md`); the text-only attempts A2/A3 are recorded in
+  `prototypes/gemini-live/mic-speaker-echo/{a2,a3}/NOTES.md`.
+- Added during the round: Reassign-passage dialog as one dropdown (user request); restored runs keep their live
+  speaker and microphone restore evidence is grouped by source partition (reviews 3–5); a phrase clean-up already has
+  beside a hole is not restored (stress audit); remembered preview cut dropped when its solid support is replaced.
+- **Standing instruction (user):** when the lead can confirm the build is ready, host ONLY the fixed build on one port
+  (pilot :18600; candidate :18620 stopped) and update `ga0-rog-laptop` to the same build.
+- Accepted boundary: an empty clean-up answer for a lane keeps the live rows as committed (pre-existing fallback).
