@@ -379,3 +379,117 @@ def test_units_are_todays_tokens_without_cjk():
         tokens = [(_PREVIEW_NUMBERS.get(m.group(), m.group()), m.start(), m.end())
                   for m in re.finditer(r"[^\W_\d]+|\d+", text.casefold())]
         assert _preview_units(text) == tokens
+
+
+# R5B-A2: the stress streams insert >8 preview units / >16 solid units inside
+# one continuous turn. Keep a cut already witnessed before that divergence.
+A2_GAP = ("two different people are talking over one another and their overlapped words "
+          "are returned only in the rolling transcript during this long window")
+
+
+def _a2_append_commit(rt, text, through_s):
+    start = rt.snapshot("one").session.committed_samples
+    rt.publish_update("one", GeminiBase(through_s * R, ()))
+    rt.publish_update("one", GeminiRolling(start, through_s * R, (
+        GeminiSegment(start, through_s * R, text, "speaker-0001", "system"),),
+        revision_lanes=("system",)))
+
+
+def test_preview_remembers_proven_cut_after_a_long_solid_omission(tmp_path):
+    rt = _runtime(tmp_path)
+    _commit(rt, COMMITTED, through_s=40)
+    raw = COMMITTED + " " + FRESH
+    assert _preview(rt, raw, now_s=55) == FRESH
+    _a2_append_commit(rt, A2_GAP, through_s=50)
+    assert _preview(rt, raw, now_s=60) == FRESH
+
+
+def test_preview_remembers_proven_cut_after_a_long_preview_insertion(tmp_path):
+    rt = _runtime(tmp_path)
+    _commit(rt, COMMITTED, through_s=40)
+    assert _preview(rt, COMMITTED + " " + FRESH, now_s=55) == FRESH
+    # A growing turn keeps the same removed prefix, but its later words diverge.
+    _a2_append_commit(rt, A2_GAP + " entirely different rolling ending", through_s=50)
+    fresh = "Sit me down say it straight another story on the way. " + FRESH
+    assert _preview(rt, COMMITTED + " " + fresh, now_s=60) == fresh
+
+
+def test_proven_preview_cut_does_not_flicker_across_many_frontiers(tmp_path):
+    rt = _runtime(tmp_path)
+    _commit(rt, COMMITTED, through_s=40)
+    assert _preview(rt, COMMITTED + " " + FRESH, now_s=55) == FRESH
+    for through in range(50, 500, 15):
+        _advance_audio(rt, through + 16)
+        _a2_append_commit(rt, A2_GAP, through_s=through)
+        fresh = FRESH + " " + "new speech " * (through // 15)
+        assert _preview(rt, COMMITTED + " " + fresh, now_s=through + 16) == fresh
+
+
+def test_degraded_growing_paragraph_commits_only_its_new_suffix(tmp_path):
+    rt = _runtime(tmp_path)
+    _commit(rt, "earlier settled words", through_s=15)
+    paragraph = COMMITTED
+    _preview(rt, paragraph, now_s=55)
+    for i in range(4):
+        raw = paragraph + " " + "fresh extension " * i
+        start = (20 + i * 5) * R
+        rt.publish_update("one", GeminiBase(start, (
+            GeminiSegment((15 + i * 5) * R, start, raw, source_lane="system"),), degraded=True))
+    rows = rt.snapshot("one").session.effective_transcript
+    assert " ".join(r.text for r in rows).count("single biggest misconception") == 1
+    assert " ".join(r.text for r in rows).count("fresh extension") == 3
+
+
+def test_degraded_single_word_is_committed_once_with_witnessed_extent(tmp_path):
+    rt = _runtime(tmp_path, lanes=True)
+    _commit(rt, "earlier settled words", through_s=15)
+    rt.publish_update("one", GeminiPreview(55 * R, (
+        GeminiSegment(15 * R, 55 * R, "Right.", source_lane="microphone"),)))
+    for i in range(5):
+        rt.publish_update("one", GeminiBase((20 + i * 5) * R, (
+            GeminiSegment((15 + i * 5) * R, (20 + i * 5) * R,
+                          "Right.", source_lane="microphone"),), degraded=True))
+    assert [r.text for r in rt.snapshot("one").session.effective_transcript
+            if r.source_lane == "microphone"] == ["Right."]
+
+
+def test_remembered_cut_preserves_a_new_turn_repeating_the_same_words(tmp_path):
+    rt = _runtime(tmp_path)
+    _commit(rt, COMMITTED, through_s=40)
+    assert _preview(rt, COMMITTED + " " + FRESH, now_s=45) == FRESH
+    # The new turn does not overlap the witnessed preview extent. Its words can
+    # really repeat the previous sentence, as the c6 microphone fixture does.
+    _a2_append_commit(rt, A2_GAP, through_s=50)
+    assert _preview(rt, COMMITTED + " " + FRESH, now_s=60) == COMMITTED + " " + FRESH
+
+
+def test_remembered_cut_resets_when_provider_rewrites_the_prefix(tmp_path):
+    rt = _runtime(tmp_path)
+    _commit(rt, COMMITTED, through_s=40)
+    _preview(rt, COMMITTED + " " + FRESH, now_s=55)
+    _a2_append_commit(rt, A2_GAP, through_s=50)
+    rewritten = "The provider now starts this turn with a completely different explanation. " + FRESH
+    assert _preview(rt, rewritten, now_s=60) == rewritten
+
+
+def test_remembered_cut_is_isolated_by_lane_and_cleared_with_preview(tmp_path):
+    rt = _runtime(tmp_path, lanes=True)
+    _commit(rt, COMMITTED, through_s=40)
+    _preview(rt, COMMITTED + " " + FRESH, now_s=55)
+    rt.publish_update("one", GeminiPreview(60 * R, (
+        GeminiSegment(40 * R, 60 * R, COMMITTED + " " + FRESH, source_lane="microphone"),)))
+    assert rt.snapshot("one").session.provisional.segments[0]["text"] == COMMITTED + " " + FRESH
+    rt.publish_update("one", GeminiPreview(60 * R, ()))
+    assert rt._sessions["one"].preview_cuts == []
+
+
+def test_remembered_cut_does_not_hide_a_later_repeated_chorus(tmp_path):
+    rt = _runtime(tmp_path)
+    old = "one settled introduction about the previous meeting then finish with a chorus now"
+    _commit(rt, old, through_s=40)
+    raw = ("one settled introduction about the previous meeting fresh unrevised speech has never "
+           "been committed and this completely different lengthy passage belongs to the new "
+           "chorus occurrence today then finish with a chorus now")
+    shown = _preview(rt, raw, now_s=55)
+    assert "fresh unrevised speech" in shown
+    assert shown.endswith("then finish with a chorus now")

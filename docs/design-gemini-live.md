@@ -202,7 +202,7 @@ runs; number words and digits align. The tail holds at least 60 units, growing w
 lane's preview (1.25 × its units + 8). A repeated head needs evidence equal to five words
 or nine CJK characters (weights 5 and 3, minimum 25), at least 60 % matched, with the
 existing bounded gaps. The cut uses original-string spans and drops leading Western
-and CJK punctuation. Committed and saved rows are untouched.
+and CJK punctuation. Rolling and saved rows are untouched.
 Measured arm C removes repeats on all ten recorded cells and preserves the 302 s English
 stream byte-for-byte (`prototypes/gemini-live/mic-speaker-echo/f1/NOTES.md`). A traditional
 commit under a simplified preview can leave 1–4 solid characters; no script folding is
@@ -210,6 +210,22 @@ applied. Heads shorter than nine characters or five words stay. A genuinely repe
 phrase at or above that minimum may be hidden in grey until committed. Japanese and
 Korean evidence is synthetic; real provider output and other unspaced scripts are unmeasured.
 Mixed scripts and doubled characters in committed rows are separate defects.
+
+The publisher also remembers a proven cut for the currently published rows. It retains
+that cut only in the same lane, with overlapping audio extent, a nondecreasing preview
+end, and identical comparable units through the cut. Rewritten prefixes and new turns
+discard it; an empty preview clears it. Memory holds only the current rows' removed
+prefixes and observed ends, not meeting history. It applies the remembered cut after
+the original alignment, never aligning the shortened suffix: that would hide a fresh
+second occurrence of a phrase (six recorded English publications in the rejected arm).
+Degraded bases use the same trim before committing preview words. Their clock is clipped
+at the fallback frontier, so a prior observed preview extent can carry the full prefix
+just committed, including a one-word reply. The c5b timeout replay commits "right" once
+instead of five times and adds paragraph suffixes instead of whole growing paragraphs.
+This is a measured partial repair, not a new frontier estimator: long-turn mismatches
+without a previously witnessed cut can still repeat. Local-tail and time-proportional
+cuts remain unqualified for preserving fresh speech. See
+`prototypes/gemini-live/mic-speaker-echo/a2/NOTES.md` for gates and replay limits.
 
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
