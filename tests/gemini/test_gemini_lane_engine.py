@@ -756,3 +756,25 @@ def test_saved_local_run_keeps_sustained_audio_across_context_boundary():
     gate = _local_gate(system, [])
     words = _local_phrase(start=15.25, end=15.3)
     assert len(gate.local_voice.local_words(mic, words, whole_lane=True)) == 5
+
+
+def test_preview_carries_each_lane_clock_and_original_turn_before_clipping(tmp_path):
+    engine, _ = _preview_composer(tmp_path)
+    updates=[]
+    engine.publish=updates.append
+    from dataclasses import dataclass
+    @dataclass(frozen=True,slots=True)
+    class TimePreview(GeminiPreview):
+        origins: tuple=()
+        lane_end_samples: tuple=()
+        finished_turns: tuple=()
+    try:
+        for lane,clock in [('system',20),('microphone',14)]:
+            origin=GeminiSegment(3*16000,clock*16000,'different '+lane+' words',source_lane=lane)
+            engine._on_update(lane,TimePreview(clock*16000,(origin,),(origin,),((lane,clock*16000),)))
+        combined=updates[-1]
+        assert combined.end_sample==20*16000
+        assert combined.lane_end_samples==(('system',20*16000),('microphone',14*16000))
+        assert [r.start_sample for r in combined.origins]==[3*16000,3*16000]
+    finally:
+        engine.close()

@@ -132,6 +132,9 @@ class GeminiSegment:
 class GeminiPreview:
     end_sample: int
     segments: tuple[GeminiSegment, ...]
+    origins: tuple[GeminiSegment, ...] = ()
+    lane_end_samples: tuple[tuple[str | None, int], ...] = ()
+    finished_turns: tuple[tuple[str | None, int], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -305,6 +308,142 @@ class ScriptedGeminiEngine:
 
 
 @dataclass(slots=True)
+class _PreviewTurnSnapshot:
+    pending: deque[tuple[int, tuple[str, ...]]] = field(default_factory=lambda: deque(maxlen=64))
+    snapshot: tuple[int, tuple[str, ...]] | None = None
+    lost_through: int = -1
+
+
+class _PreviewSnapshots:
+    def __init__(self):
+        self.turns = {}
+        self.clocks = {}
+        self.frontiers = {}
+        self.max_pending = 0
+        self.overflows = 0
+
+    def advance(self, solid):
+        # Confirmation follows currently visible solid, including replaceable fallback rows.
+        lanes = set(self.frontiers) | {r.source_lane for r in solid}
+        for lane in lanes:
+            through = max((r.end_sample for r in solid if r.source_lane == lane), default=0)
+            if through < self.frontiers.get(lane, 0):
+                for key in list(self.turns):
+                    if key[0] == lane:
+                        del self.turns[key]
+            self.frontiers[lane] = through
+            for key, turn in self.turns.items():
+                if key[0] != lane:
+                    continue
+                eligible = [p for p in turn.pending if p[0] <= through]
+                if eligible:
+                    turn.snapshot = eligible[-1]
+                elif turn.snapshot is not None and turn.lost_through > turn.snapshot[0]:
+                    turn.snapshot = None
+                turn.pending = deque((p for p in turn.pending if p[0] > through), maxlen=64)
+
+    def publication(self, origins, clocks, finished=()):
+        # Stale rows republished by the other lane are not new source publications.
+        finished = set(finished)
+        for lane, clock in clocks:
+            if clock <= self.clocks.get(lane, -1):
+                continue
+            self.clocks[lane] = clock
+            rows = [r for r in origins if r.source_lane == lane]
+            keys = {(lane, r.start_sample) for r in rows}
+            for key in list(self.turns):
+                if key[0] == lane and key not in keys:
+                    del self.turns[key]
+            for row in rows:
+                key = (lane, row.start_sample)
+                if sum(r.start_sample == row.start_sample for r in rows) != 1:
+                    self.turns.pop(key, None)
+                    continue
+                if key in finished and key not in self.turns:
+                    continue
+                turn = self.turns.setdefault(key, _PreviewTurnSnapshot())
+                units = tuple(u for u, _, _ in _preview_units(row.text))
+                through = self.frontiers.get(lane, 0)
+                if clock <= through:
+                    turn.snapshot = clock, units
+                else:
+                    if len(turn.pending) == turn.pending.maxlen:
+                        # A stalled frontier cannot grow history without bound; lost history abstains.
+                        turn.lost_through = turn.pending[0][0]
+                        self.overflows += 1
+                    turn.pending.append((clock, units))
+                    self.max_pending = max(self.max_pending, len(turn.pending))
+
+    def cuts(self, segments, origins):
+        cuts = []
+        for row in segments:
+            matches = [r for r in origins if r.source_lane == row.source_lane
+                       and r.text == row.text and r.start_sample <= row.start_sample
+                       and r.end_sample >= row.end_sample]
+            if len(matches) != 1:
+                cuts.append(0)
+                continue
+            origin = matches[0]
+            if sum(r.source_lane == origin.source_lane and r.start_sample == origin.start_sample
+                   for r in origins) != 1:
+                cuts.append(0)
+                continue
+            turn = self.turns.get((row.source_lane, origin.start_sample))
+            snapshot = turn.snapshot if turn is not None else None
+            if snapshot is None or snapshot[0] > self.frontiers.get(row.source_lane, 0):
+                cuts.append(0)
+                continue
+            units = [u for u, _, _ in _preview_units(row.text)]
+            cuts.append(next((i for i, (a, b) in enumerate(zip(snapshot[1], units)) if a != b),
+                             min(len(snapshot[1]), len(units))))
+        return cuts
+
+    def finish(self, keys):
+        for key in keys:
+            self.turns.pop(key, None)
+
+    def reset(self, lane):
+        # Keep the clock watermark: cached rows from the old socket cannot revive it.
+        for key in list(self.turns):
+            if key[0] == lane:
+                del self.turns[key]
+
+    def clear(self):
+        self.turns.clear()
+        self.clocks.clear()
+        self.frontiers.clear()
+
+
+def _apply_preview_time_cuts(segments, text_rows, cuts):
+    """Leave the text rule byte-identical; remove only a longer witnessed snapshot prefix."""
+    shown, at = [], 0
+    for row, cut in zip(segments, cuts):
+        text_row = None
+        if at < len(text_rows):
+            current = text_rows[at]
+            if ((current.start_sample, current.end_sample, current.source_lane) ==
+                    (row.start_sample, row.end_sample, row.source_lane)
+                    and row.text.endswith(current.text)):
+                text_row = current
+                at += 1
+        if text_row is None:
+            continue
+        if not cut:
+            shown.append(text_row)
+            continue
+        spans = _preview_units(row.text)
+        boundary = len(row.text) - len(text_row.text)
+        text_cut = sum(end <= boundary for _, _, end in spans)
+        if cut <= text_cut:
+            shown.append(text_row)
+            continue
+        text = row.text[spans[cut-1][2]:].lstrip(' \t\r\n,.;:!?，。；：！？、')
+        if text:
+            shown.append(replace(row, text=text))
+    return tuple(shown)
+
+
+@dataclass(slots=True)
 class _GeminiState:
     session_id: str
     session: LiveSession
@@ -355,6 +494,9 @@ class _GeminiState:
     window_lag_samples: list[int] = field(default_factory=list)
     preview_lag_samples: list[int] = field(default_factory=list)
     preview_cuts: list[tuple[str | None, int, list[str]]] = field(default_factory=list)
+    preview_snapshots: _PreviewSnapshots = field(default_factory=_PreviewSnapshots)
+    preview_counters: dict[str, dict[str, int]] = field(default_factory=dict)
+    preview_snapshot_errors: int = 0
     rolling_frontier: int = 0
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
@@ -536,11 +678,27 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             session = state.session
             try:
                 if isinstance(update, GeminiPreview):
+                    if update.finished_turns and not update.segments and not update.lane_end_samples:
+                        state.preview_snapshots.finish(update.finished_turns)
+                        return
                     epoch, generation, start = session.begin_provisional()
                     if update.end_sample < start:
                         return
-                    segments = _trim_committed_preview(
-                        update.segments, session.snapshot().effective_transcript, state.preview_cuts)
+                    solid = session.snapshot().effective_transcript
+                    text_rows = _trim_committed_preview(update.segments, solid, state.preview_cuts)
+                    snapshots = state.preview_snapshots
+                    try:
+                        snapshots.advance(solid)
+                        clocks_before = dict(snapshots.clocks)
+                        snapshots.publication(update.origins, update.lane_end_samples, update.finished_turns)
+                        time_cuts = snapshots.cuts(update.segments, update.origins)
+                        segments = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
+                        snapshots.finish(update.finished_turns)
+                        _preview_diagnostics(state, update, text_rows, segments, clocks_before)
+                    except Exception:
+                        segments = text_rows
+                        snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     transcript = _unlabelled_transcript(segments, start)
                     spans = tuple(span for lane in dict.fromkeys(
                         row.source_lane or "system" for row in segments)
@@ -583,6 +741,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         )
                     if not outcome.submitted:
                         raise ValueError(f"base commit refused: {outcome.refusal}")
+                    try:
+                        state.preview_snapshots.advance(session.snapshot().effective_transcript)
+                    except Exception:
+                        state.preview_snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     kind = "canonical_published"
                 elif isinstance(update, GeminiRolling):
                     _register_speakers(session, update.segments)
@@ -604,6 +767,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         (lane, end, prefix) for lane, end, prefix in state.preview_cuts
                         if not any(row.source_lane == lane and row.start_sample < end
                                    for row in removed)]
+                    try:
+                        state.preview_snapshots.advance(solid)
+                    except Exception:
+                        state.preview_snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     kind = "text_revision_applied"
                     state.rolling_frontier = max(state.rolling_frontier, update.end_sample)
                     state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
@@ -721,6 +889,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             raise ValueError("engine call count and cost basis must be operational metadata.")
         with self._lock:
             state = self._get(session_id)
+            if count_call and error_code is None and kind in {
+                    "live_preview", "system_live_preview", "microphone_live_preview"}:
+                state.preview_snapshots.reset(
+                    None if kind == "live_preview" else kind.partition("_")[0])
             if count_call:
                 state.calls_by_kind[kind] = state.calls_by_kind.get(kind, 0) + 1
             for counters, code in ((state.errors_by_code, error_code),
@@ -828,6 +1000,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "tentative_embed_p50_ms": None, "tentative_embed_p95_ms": None,
                     "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}
                    | self._tentative_call(state, "diagnostics", default={})),
+                "preview": {lane: dict(values) for lane, values in state.preview_counters.items()},
+                "preview_snapshot_max_pending": state.preview_snapshots.max_pending,
+                "preview_snapshot_history_overflows": state.preview_snapshots.overflows,
+                "preview_snapshot_errors": state.preview_snapshot_errors,
                 "tentative_errors": state.tentative_errors,
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
@@ -1012,6 +1188,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         await state.session.stop(1.0)
         with self._lock:
             state.preview_cuts.clear()
+            state.preview_snapshots.clear()
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
@@ -1337,6 +1514,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             }
             emit_operator_event(event)
             state.diagnostics_emitted = True
+        state.preview_snapshots.clear()
         engine, state.engine = state.engine, None
         close = getattr(engine, "close", None)
         if callable(close):
@@ -1376,6 +1554,38 @@ _PREVIEW_NUMBERS = {word: str(index) for index, word in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve thirteen "
     "fourteen fifteen sixteen seventeen eighteen nineteen twenty".split())}
 _CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
+
+
+def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before):
+    def counts(rows):
+        out = {}
+        for row in rows:
+            lane = row.source_lane or "system"
+            out[lane] = out.get(lane, 0) + len(_preview_units(row.text))
+        return out
+
+    raw, text, shown = map(counts, (update.segments, text_rows, shown_rows))
+    lanes = set(raw) | set(shown) | {lane or "system" for lane, _ in update.lane_end_samples}
+    clocks = {lane or "system": end for lane, end in update.lane_end_samples}
+    for lane in lanes:
+        totals = state.preview_counters.setdefault(lane, {
+            "lane_publications": 0, "units_published": 0, "text_hidden_units": 0,
+            "time_hidden_units": 0, "shown_units_max": 0})
+        source = next((key for key, _ in update.lane_end_samples
+                       if (key or "system") == lane), lane)
+        advanced = lane in clocks and clocks[lane] > clocks_before.get(source, -1)
+        if advanced:
+            totals["lane_publications"] += 1
+            totals["units_published"] += raw.get(lane, 0)
+        text_hidden = raw.get(lane, 0) - text.get(lane, 0)
+        time_hidden = text.get(lane, 0) - shown.get(lane, 0)
+        totals["text_hidden_units"] += text_hidden
+        totals["time_hidden_units"] += time_hidden
+        totals["shown_units_max"] = max(totals["shown_units_max"], shown.get(lane, 0))
+        totals.update(raw_units_last=raw.get(lane, 0), shown_units_last=shown.get(lane, 0),
+                      text_hidden_last=text_hidden,
+                      time_hidden_last=time_hidden, lane_end_sample=clocks.get(lane, 0),
+                      confirmed_sample=state.preview_snapshots.frontiers.get(source, 0))
 
 
 def _preview_units(text: str) -> list[tuple[str, int, int]]:

@@ -10,6 +10,7 @@ import time
 import unicodedata
 import wave
 from pathlib import Path
+from dataclasses import replace
 from array import array
 from typing import Callable, Sequence
 
@@ -935,11 +936,23 @@ class LaneGeminiEngine:
     def _on_update(self, lane: str, update: GeminiUpdate) -> None:
         with self._lock:
             if isinstance(update, GeminiPreview):
+                if update.finished_turns and not update.segments and not update.lane_end_samples:
+                    self.publish(GeminiPreview(update.end_sample, (), finished_turns=tuple(
+                        (lane, start) for _, start in update.finished_turns)))
+                    return
                 self._previews[lane] = update
                 end = max(p.end_sample for p in self._previews.values() if p is not None)
                 if end > self._base_committed:
+                    previews = [(name, preview) for name, preview in self._previews.items()
+                                if preview is not None]
+                    # Preserve source clocks and origins beside the clipped/filtered display rows.
+                    origins = tuple(replace(row, source_lane=name) for name, preview in previews
+                                    for row in preview.origins)
+                    clocks = tuple((name, preview.end_sample) for name, preview in previews)
+                    finished = tuple((name, start) for name, preview in previews
+                                     for _, start in preview.finished_turns)
                     self.publish(GeminiPreview(end,
-                        self._preview_rows(self._base_committed, end)))
+                        self._preview_rows(self._base_committed, end), origins, clocks, finished))
             elif isinstance(update, GeminiBase):
                 # Inner engines account locally. The public base advances only when
                 # both lane windows are ready, except for the bounded lag fallback.

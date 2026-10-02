@@ -257,7 +257,12 @@ class GeminiHybridEngine:
         if not text.strip():
             return
         with self._lock:
-            if self._closed or end_sample <= self._committed:
+            if self._closed:
+                return
+            if end_sample <= self._committed:
+                if final:
+                    self.publish(GeminiPreview(end_sample, (),
+                        finished_turns=((self.source_lane, start_sample),)))
                 return
             row = GeminiWord(text.strip(), "spk:?", start_sample, end_sample)
             if final:
@@ -273,13 +278,15 @@ class GeminiHybridEngine:
             end = min(self._accepted, max(self._committed, end_sample))
             if end <= self._committed:
                 return
-            preview = ordered_segments(
-                tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
-                                    w.text, source_lane=self.source_lane)
-                      for w in self._fast_words if w.end_sample > self._committed),
-                start_sample=self._committed, end_sample=end,
-            )
-            self.publish(GeminiPreview(end, preview))
+            origins = tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
+                                          w.text, source_lane=self.source_lane)
+                            for w in self._fast_words if w.end_sample > self._committed)
+            preview = ordered_segments(origins, start_sample=self._committed, end_sample=end)
+            # Joined/removed source rows do not have an unambiguous original turn identity.
+            if len(preview) != len(origins) or any(a.text != b.text for a, b in zip(preview, origins)):
+                origins = ()
+            finished = tuple((self.source_lane, w.start_sample) for w in self._live_finals)
+            self.publish(GeminiPreview(end, preview, origins, ((self.source_lane, end),), finished))
 
     def push_audio(self, start_sample: int, pcm16: bytes) -> None:
         with self._lock:
