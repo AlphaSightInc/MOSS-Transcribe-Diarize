@@ -80,7 +80,7 @@ def test_voiceprint_tab_does_not_disturb_desktop_workspace(viewport):
             page.goto('http://demo.test')
             page.locator('[data-history-boot="ready"]').wait_for()
             history = page.get_by_role('region', name='Meeting history', exact=True)
-            page.get_by_role('button', name='URL', exact=True).click()
+            page.get_by_role('button', name='YouTube', exact=True).click()
             sessions = page.evaluate("""() => {
                 const box = selector => {
                     const rect = document.querySelector(selector).getBoundingClientRect();
