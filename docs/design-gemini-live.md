@@ -189,6 +189,14 @@ check and remaining admitted words' label/insertion behavior stay unchanged. Sys
 restoration inserts whole checked holes, then assigns labels; it has no separately
 admitted source pieces. FIX6 measurements: `mic-speaker-echo/c6/NOTES.md`.
 
+Accepted limit (lead decision, review pass 8, R8-F1): text beside the hole cannot tell a
+shifted utterance from a second utterance with the same words. When a local phrase of at
+most 12 units is said twice within 1 s and clean-up keeps one copy, the other copy is
+treated as the time shift and the phrase is saved once, with or without a rejected
+neighbour (before FIX6 the mixed-hole case saved it twice; the isolated case already saved
+it once). Chosen over the opposite error, a phrase said once and saved twice (R6-F1).
+Constructed cases only; fresh-provider frequency unmeasured.
+
 Measured H prototype: lost name tokens 115 → 4 across 100 pairs; doubled adjacent units
 0; 236/250 names retained in 25 system engine cells. BC composition preserves F2's
 206/291/310 live/Stop/saved units of 343; omitted five-word replies restored at 10/20 dB
