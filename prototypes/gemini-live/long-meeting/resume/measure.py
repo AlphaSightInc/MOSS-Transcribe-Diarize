@@ -68,5 +68,39 @@ def main():
     summarize()
 
 
+def product():
+    import time
+    directory = run.EV / ("RS-product-" + time.strftime("%Y%m%d-%H%M%S"))
+    directory.mkdir(parents=True)
+    matrix, checks = [], {}
+    for gap, continuation in [(g, run.M) for g in (5, 30, 90, 119, 125)] + [(119, 45)]:
+        cell = run.run_cell("PRODUCT", gap, directory / f"gap{gap}-continue{continuation}", continuation)
+        matrix.append(cell)
+        if gap >= 120:
+            ok = cell["resume_status"] == 409 and cell["final_status"] == "interrupted"
+        else:
+            ok = (cell["resume_status"] == 200 and cell["final_status"] == "completed"
+                  and cell["decoded_mp3_seconds"] == run.N + gap + continuation
+                  and cell["gap_interior_max_amplitude"] == 0
+                  and cell["frames_accepted_after_resume"] == continuation * 4
+                  and cell["archives"] == ["audio.mp3"] and cell["same_engine"]
+                  and all(e["status"] == 409 for e in cell["events"] if e["action"].startswith("old "))
+                  and cell["meeting"]["transcript"]["interruptions"] == [
+                      {"start_sample": run.N * run.RATE, "end_sample": (run.N + gap) * run.RATE}])
+        checks[f"gap{gap}-continue{continuation}"] = ok
+        print(json.dumps(cell, indent=2), flush=True)
+    result = {"checks": checks, "matrix": matrix, "provider_calls": 0, "endpoint": "PRODUCT"}
+    (directory / "matrix.json").write_text(json.dumps(result, indent=2))
+    (run.EV / "RS-PRODUCT-LATEST.txt").write_text(str(directory) + "\n")
+    print("PRODUCT EVIDENCE", directory, json.dumps(checks), flush=True)
+    if not all(checks.values()):
+        raise SystemExit("Product matrix failed")
+
+
 if __name__ == "__main__":
-    summarize() if "--summarize" in sys.argv else main()
+    if "--product" in sys.argv:
+        product()
+    elif "--summarize" in sys.argv:
+        summarize()
+    else:
+        product()

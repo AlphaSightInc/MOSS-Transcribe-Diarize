@@ -101,3 +101,28 @@ Estimate (not measured implementation size): **server 180–260 lines; client 22
 **R1:** network/queue age and device-clock drift leave actual elapsed-time error unqualified; exact synthetic timeline and current browser transport are local evidence. **R2:** long-gap live transcript catch-up is delayed (30 s at 119 s gap); immediate Stop still preserves final audio in the scripted matrix, real-provider drain latency remains unmeasured. **R3:** exact physical mic/tab continuity cannot be guaranteed from `default` aliases or opaque labels; Bluetooth/unplug, chooser cancellation and real crash need acceptance. Browser restart restoring sessionStorage/cookie, expired/server-restarted meetings, summary worker transfer, real provider state/recognition after silence, lease/revocation race stress and product UI/built bundle are not qualified by this prototype. Server expiry and accepted Stop retain their existing terminal rules. No full backend/frontend suite run: no product code/test change or final commit; these are local protocol/browser bench measurements, not product certification.
 
 Frozen final receipts: `evidence/P74/resume/SUMMARY.json`; protocol `runs-20261002-120610/matrix.json`; boundaries `boundaries-20261002-120628/result.json`; browser `browser-20261002-120628/result.json`, `interrupted.png`, `resumed.png`. Earlier runs/failed share-label equality remain separate evidence; no adverse S1 result was discarded. The corrected summary removes the false premise that a media track label is a stable source identifier; it does not assert exact automatic tab restoration.
+
+## P74-RS server product replay (2026-10-02)
+
+The original prototype above is frozen history (commit `61ca865a`); `de54d1b2`
+integrates the binding product base `c7884d46`. The current default
+`measure.py` command (also `--product`) now runs the PRODUCT resume endpoint,
+without `ResumeProtocol` middleware or private capture-state reads.
+`--summarize` still reads the retained original protocol/browser receipts.
+Only the server protocol matrix is requalified here; Chrome restoration is RC work.
+
+One command: `PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-r5-f3.venv/bin/python prototypes/gemini-live/long-meeting/resume/measure.py --product`.
+Four 4 s continuations: 16/16 frames, one exact 13/38/98/127 s MP3 at
+5/30/90/119 s gaps, zero interior gap amplitude, same engine/name/meeting,
+completed. 125 s refuses and stays interrupted. 119 s +45 s: 180/180 frames,
+168 s MP3, 472000/960000 retained samples, first resumed live row after 30 s.
+The adopted snapshot and saved document include interruption bounds, and
+ordinary owner-bound/headerless tests retain their expectations. Full product
+regressions and full-suite receipts are indexed by P74-RS-STATUS.md.
+
+Product verdict: PASS at $0. New regression matrix: 26 failures on `c7884d46`,
+all green on the candidate; one headerless normal-meeting control green on both.
+Full backend command from R5B-COMMON: 2945 passed, 9 skipped, 2 xfailed,
+37 subtests passed in 437.80 s. No existing test expectation changed.
+Final product matrix: `evidence/P74/resume/RS-product-20261002-141816/matrix.json`;
+full suite: `evidence/P74/resume/RS-full-backend.txt`.

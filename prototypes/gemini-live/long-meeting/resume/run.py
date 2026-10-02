@@ -92,7 +92,7 @@ def wait_meeting(client, sid, status):
 def run_cell(mode, gap, directory, continuation=M):
     app, cookies, engines = build_app(directory)
     clock, timer = Clock(), FakeTimer()
-    protocol = ResumeProtocol(app, mode, clock) if mode != "baseline" else None
+    protocol = ResumeProtocol(app, mode, clock) if mode in {"S1", "S2"} else None
     record = {"mode": mode, "gap_seconds": gap, "continuation_seconds": continuation, "events": []}
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, cookies["a"])
@@ -139,10 +139,12 @@ def run_cell(mode, gap, directory, continuation=M):
             # Origin cookie, not just account, remains necessary.
             session(client, cookies["b"])
             event("different browser/account resume", client.post(base + "/resume", headers=new,
-                json={"expected_instance_id": "page-original", "heartbeat": hb("page-new")}))
+                json=({"expected_instance_id": "page-original", "instance_id": "page-new", "automatic": False}
+                      if mode == "PRODUCT" else {"expected_instance_id": "page-original", "heartbeat": hb("page-new")})))
             session(client, cookies["a"])
             takeover = event("resume", client.post(base + "/resume", headers=new,
-                json={"expected_instance_id": "page-original", "heartbeat": hb("page-new")}))
+                json=({"expected_instance_id": "page-original", "instance_id": "page-new", "automatic": False}
+                      if mode == "PRODUCT" else {"expected_instance_id": "page-original", "heartbeat": hb("page-new")})))
             state = takeover.json() if takeover.status_code == 200 else None
         record["resume_status"] = takeover.status_code
         if state is None:
@@ -156,12 +158,13 @@ def run_cell(mode, gap, directory, continuation=M):
         event("old heartbeat", client.post(base + "/heartbeat", headers=old, json=hb("page-original", 2)))
         event("old next frame", client.post(base + "/frames", headers=old,
             json=frame("system", N * 2, N + gap, 0)))
-        if mode == "S2":
+        if mode in {"S2", "PRODUCT"}:
             for operation in ("stop", "abort"):
                 event("old " + operation, client.post(base + "/" + operation, headers=old,
                     json={"deadline": 1} if operation == "stop" else {"reason": "old page"}))
             event("stale repeat takeover", client.post(base + "/resume", headers=old,
-                json={"expected_instance_id": "page-original", "heartbeat": hb("page-original", 2)}))
+                json=({"expected_instance_id": "page-original", "instance_id": "page-original", "automatic": False}
+                      if mode == "PRODUCT" else {"expected_instance_id": "page-original", "heartbeat": hb("page-original", 2)})))
         sequences = {k: v["next_sequence"] for k, v in state["lanes"].items()}
         if mode == "S1": sequences["system"] += 1  # old writer really consumed it
         accepted, max_retained, first = 0, 0, set(sequences)
@@ -203,8 +206,9 @@ def run_cell(mode, gap, directory, continuation=M):
             record["gap_interior_max_amplitude"] = max(map(abs, gap_values), default=0)
             record["gap_interior_seconds"] = len(gap_values) / RATE
         record["full_state_after_stop"] = {
-            "capture_writer": protocol.writers[sid], "anchor_ns": protocol.anchors.get(sid),
-            "last_capture_ends": protocol.last_ends[sid], "clock_now_ns": clock.now,
+            "capture_writer": state["instance_id"] if mode == "PRODUCT" else protocol.writers[sid],
+            "anchor_ns": None if mode == "PRODUCT" else protocol.anchors.get(sid),
+            "last_capture_ends": {k: v["last_capture_end_timestamp_ns"] for k, v in state["lanes"].items()}, "clock_now_ns": clock.now,
             "lease_released": sid not in st.live_helper_failures._sessions,
             "mixed_engine_audio_blocks": engines[0].audio_blocks,
         }
