@@ -4056,3 +4056,32 @@ def test_http_stop_bounds_wait_for_terminal_finalizer(tmp_path):
         assert scheduler.run_one()
         final = wait_snapshot(client, meeting_id, lambda body: body['snapshot']['session']['finalization_status'] == 'final')
         assert final['snapshot']['terminal_failure'] is None
+
+
+def test_capture_post_cache_policy_preserves_bodies_and_other_api_no_store(tmp_path):
+    """P74: stale clients must not retain no-store capture loaders; wire acks stay intact."""
+    database = tmp_path / "phase2.sqlite"
+    sessions = asyncio.run(provision(database))
+    with TestClient(make_app(database), base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        created = client.post("/api/live/sessions")
+        assert created.status_code == 201
+        mid = created.json()["id"]
+        base = f"/api/live/sessions/{mid}"
+        for lane in ("system", "microphone"):
+            response = client.post(f"{base}/frames", json=v2_frame(0, lane))
+            assert response.status_code == 200
+            assert response.json()["ack"]["lane"] == lane
+            assert response.headers["Cache-Control"] == "no-cache"
+        response = client.post(f"{base}/heartbeat", json=heartbeat())
+        assert response.status_code == 200
+        assert "helper_presence" in response.json()
+        assert response.headers["Cache-Control"] == "no-cache"
+        for route in ("frames", "heartbeat"):
+            response = client.post(f"{base}/{route}", json={})
+            assert response.status_code == 400
+            assert response.json()["detail"]
+            assert response.headers["Cache-Control"] == "no-cache"
+        assert client.get(f"{base}/snapshot").headers["Cache-Control"] == "no-store"
+        assert created.headers["Cache-Control"] == "no-store"
+        assert client.get("/api/meetings").headers["Cache-Control"] == "no-store"
