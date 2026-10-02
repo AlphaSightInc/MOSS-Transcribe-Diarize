@@ -485,6 +485,8 @@ export class CaptureClient {
   private stopping = false;
   private microphoneMuted = false;
   private captureOffsetNs = 0;
+  /** After a resume: the first context frame that belongs to this page's writing (P74 R5). */
+  private adoptedFromFrame = 0;
   private replaced = false;
   get captureInstanceId(): string { return this.instanceId; }
   get captureShareKind(): string | null { return this.displaySurface; }
@@ -728,6 +730,9 @@ export class CaptureClient {
       throw new Error("resume descriptor differs from preflight descriptor");
     // Receipt anchors the new context; all subsequent start AND end times share this offset.
     this.captureOffsetNs = state.capture_now_ns + Math.round((performance.now() - receivedAt) * 1e6) - Math.round(this.context.currentTime * 1e9);
+    // A chunk the worklet began before adoption would be stamped before the lane's accepted end
+    // (a 400 that closes capture on a takeover from a living page): it is never sent.
+    this.adoptedFromFrame = Math.ceil(this.context.currentTime * this.context.sampleRate);
     this.heartbeatSequence = state.heartbeat_next_sequence;
     this.heartbeatMonotonicNs = state.heartbeat_next_monotonic_ns - 1;
     for (const [lane, value] of this.lanes) {
@@ -826,6 +831,9 @@ export class CaptureClient {
     this.heartbeatPending = null;
     this.contextSuspended = false;
     this.stopping = false;
+    // The adopted clock belongs to the closed AudioContext; a later context starts from zero.
+    this.captureOffsetNs = 0;
+    this.adoptedFromFrame = 0;
     const context = this.context;
     this.context = null;
     this.preparation = null;
@@ -996,6 +1004,7 @@ export class CaptureClient {
       this.meterLaneHealth(lane, state, level, workletFrame.samples);
     }
     if (!this.session || this.stopping) return;
+    if (workletFrame.startFrame < this.adoptedFromFrame) return;
 
     this.queueHeartbeat(workletFrame);
     state.frameQueue.push({ workletFrame, deviceEpoch: state.deviceEpoch });
