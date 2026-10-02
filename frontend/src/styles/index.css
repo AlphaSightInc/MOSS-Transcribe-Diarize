@@ -3446,7 +3446,7 @@ textarea:focus {
   padding: 8px;
   display: grid;
   place-items: center;
-  opacity: 0;
+  opacity: 0.45; /* always present on the card; full strength on hover or focus */
 }
 .history-card:hover .history-delete-icon,
 .history-card:focus-within .history-delete-icon { opacity: 1; }
