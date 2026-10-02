@@ -121,7 +121,8 @@ def test_snapshot_preview_fault_falls_back_and_later_previews_publish(tmp_path,m
     assert not state.preview_snapshots.turns
     assert not state.preview_snapshots.clocks and not state.preview_snapshots.frontiers
     assert runtime.engine_diagnostics('one')['preview_snapshot_errors']==1
-    assert preview(runtime,raw,21)==expected
+    # D17: once the steps run again, the solid-tail anchor places the cut the text rule misses.
+    assert preview(runtime,raw,21)==FRESH
     assert runtime.engine_diagnostics('one')['preview_snapshot_errors']==1
 
 
@@ -201,10 +202,10 @@ def test_source_restart_same_turn_key_discards_snapshot(tmp_path):
     establish(runtime)
     runtime.record_engine_call('one',kind='system_live_preview')
     raw=COMMITTED+' '+FRESH
-    row=rt.GeminiSegment(15*R,20*R,raw,source_lane='system')
-    expected=' '.join(r.text for r in rt._trim_committed_preview((row,),runtime.snapshot('one').session.effective_transcript))
-    assert preview(runtime,raw,20)==expected
-    assert runtime.engine_diagnostics('one')['preview']['system']['time_hidden_last']==0
+    # The discarded snapshot adds nothing; D17's solid-tail anchor alone places the cut.
+    assert preview(runtime,raw,20)==FRESH
+    values=runtime.engine_diagnostics('one')['preview']['system']
+    assert values['time_hidden_last']==0 and values['anchor_publications']==1
 
 
 @pytest.mark.parametrize('turn',[16,5,20])
@@ -212,10 +213,10 @@ def test_new_split_merged_or_restated_turn_never_borrows_snapshot(tmp_path,turn)
     runtime=_runtime(tmp_path)
     establish(runtime)
     raw=COMMITTED+' '+FRESH
-    row=rt.GeminiSegment(max(15,turn)*R,25*R,raw,source_lane='system')
-    expected=' '.join(r.text for r in rt._trim_committed_preview((row,),runtime.snapshot('one').session.effective_transcript))
-    assert preview(runtime,raw,25,turn=turn)==expected
-    assert runtime.engine_diagnostics('one')['preview']['system']['time_hidden_last']==0
+    # No snapshot is borrowed (time cut 0); D17's solid-tail anchor alone places the cut.
+    assert preview(runtime,raw,25,turn=turn)==FRESH
+    values=runtime.engine_diagnostics('one')['preview']['system']
+    assert values['time_hidden_last']==0 and values['anchor_publications']==1
 
 
 def test_snapshot_lane_isolation(tmp_path):

@@ -322,6 +322,7 @@ class _PreviewSnapshots:
         self.frontiers = {}
         self.max_pending = 0
         self.overflows = 0
+        self.anchored = {}
 
     def advance(self, solid):
         # Confirmation follows currently visible solid, including replaceable fallback rows.
@@ -403,9 +404,11 @@ class _PreviewSnapshots:
         for key in keys:
             self.turns.pop(key, None)
 
-    def floor_cuts(self, segments, origins, today_rows):
+    def floor_cuts(self, segments, origins, today_rows, solid=()):
         # D16: retain the count despite rewrites, only within a valid original turn.
-        cuts, at = [], 0
+        # D17: the end of the lane's latest solid row, found in the turn at or after that
+        # count, places the cut there; a miss leaves the retained count in force.
+        cuts, at, anchors = [], 0, {}
         for row in segments:
             units = _preview_units(row.text)
             cut = len(units)
@@ -427,7 +430,16 @@ class _PreviewSnapshots:
                         (r.source_lane, r.start_sample) == key for r in origins) == 1:
                     if len(units) < turn.floor:
                         turn.floor = 0
-                    cut = max(cut, turn.floor)
+                    lane = row.source_lane
+                    if lane not in anchors:
+                        anchors[lane] = _solid_tail_anchor(solid, lane)
+                    held = max(cut, turn.floor)
+                    cut = max(held, _anchor_end(
+                        anchors[lane], [unit for unit, _, _ in units], turn.floor))
+                    if cut > held:
+                        totals = self.anchored.setdefault(lane or "system", [0, 0])
+                        totals[0] += cut - held
+                        totals[1] += 1
                     turn.floor = cut
             cuts.append(cut)
         return cuts
@@ -442,6 +454,38 @@ class _PreviewSnapshots:
         self.turns.clear()
         self.clocks.clear()
         self.frontiers.clear()
+
+
+def _solid_tail_anchor(solid, lane):
+    """The closing units (five words / nine CJK characters) of the lane's latest-ending solid row."""
+    latest = None
+    for index, row in enumerate(solid):
+        if row.source_lane == lane:
+            key = (row.end_sample, row.start_sample, index)
+            if latest is None or key > latest[0]:
+                latest = key, row
+    if latest is None:
+        return []
+    units = [unit for unit, _, _ in _preview_units(latest[1].text)]
+    weight = 0
+    for count in range(1, len(units) + 1):
+        weight += _unit_weight(units[-count])
+        if weight >= 25:
+            return units[-count:]
+    return []
+
+
+def _anchor_end(anchor, units, start):
+    """Where the first occurrence of `anchor` at or after `start` ends in `units`; 0 when absent."""
+    if not anchor:
+        return 0
+    allowed = set(anchor)
+    for index in range(max(0, start), len(units)):
+        if units[index] in allowed:
+            count = _repeated_head(anchor, units[index:index + len(anchor) + 8])
+            if count:
+                return index + count
+    return 0
 
 
 def _apply_preview_time_cuts(segments, text_rows, cuts):
@@ -723,7 +767,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         snapshots.publication(update.origins, update.lane_end_samples, update.finished_turns)
                         time_cuts = snapshots.cuts(update.segments, update.origins)
                         today_rows = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
-                        floor_cuts = snapshots.floor_cuts(update.segments, update.origins, today_rows)
+                        floor_cuts = snapshots.floor_cuts(update.segments, update.origins, today_rows, solid)
                         segments = _apply_preview_time_cuts(update.segments, today_rows, floor_cuts)
                         snapshots.finish(update.finished_turns)
                         _preview_diagnostics(state, update, text_rows, segments, clocks_before, today_rows)
@@ -1618,6 +1662,8 @@ def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before, to
         totals["time_hidden_units"] += time_hidden
         totals["floor_hidden_units"] += floor_hidden
         totals["floor_publications"] += int(floor_hidden > 0)
+        anchored = state.preview_snapshots.anchored.get(lane, (0, 0))
+        totals["anchor_hidden_units"], totals["anchor_publications"] = anchored[0], anchored[1]
         totals["shown_units_max"] = max(totals["shown_units_max"], shown.get(lane, 0))
         totals.update(raw_units_last=raw.get(lane, 0), shown_units_last=shown.get(lane, 0),
                       text_hidden_last=text_hidden,

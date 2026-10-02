@@ -357,6 +357,27 @@ solid; the user's stated tolerance (2026-10-02) is exactly this: temporary, neve
 into later turns. A text-anchor refinement that can re-place the cut is being measured
 (a7); until then the per-meeting `floor_hidden_units` counter reports how much the rule hid.
 
+**D17 O2 (2026-10-02, user): solid-tail anchor together with the cut floor.** The head-to-
+frontier text match needs an unbroken chain over the whole turn; the anchor needs agreement
+only at the confirmed frontier. Anchor = the closing units of the lane's latest-ENDING solid
+row with weight >= 25 (five words / nine CJK characters; a shorter row gives no anchor). It
+is searched in the turn's units at or after the retained count with the existing
+`_repeated_head` tolerance; the first hit moves the cut to its end, a miss leaves the floor
+in force. Same turn identity, lane isolation, lifecycle and fault boundary as the floor.
+Counters `preview.<lane>.anchor_hidden_units` / `anchor_publications` (numbers only);
+`floor_hidden_units` counts floor and anchor together.
+
+Measured (prototype a7, candidate C4; product functions equal the prototype on all 2,255
+grey rows of the two recorded long-turn episodes): repeat residue c6s 18,868 -> 314 and
+c6 73,989 -> 11,852 unit-seconds (floor alone 1,730 / 73,989); complete Mandarin, English
+and R5-D streams unchanged apart from the one floor change.
+**Accepted limit (user-informed):** when solid's ending is absent from grey at its own
+place and the same five words occur later in fresh speech, the cut lands after the later
+copy and 20-29 fresh units (constructed controls) stay out of grey until solid. ALREADY-
+SATISFIED and once-per-tail guards were measured and changed nothing. Cost at two hours on
+a 900-unit turn: +0 to +0.75 ms per publication over the floor step. Live provider and
+physical-device behaviour unmeasured; the user's meetings and the counters are the test.
+
 C1 product matches the frozen A5 prototype on all 1,005 complete A4 publications.
 The only difference from C0 is Mandarin publication137 at69s, cut144->145; English575
 and R5-D64 are unchanged. Conditional c6s published-row repair: 478 observations,
