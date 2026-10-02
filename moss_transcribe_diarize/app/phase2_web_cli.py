@@ -17,6 +17,7 @@ from .phase2 import DEFAULT_PHASE2_DATABASE_PATH, create_phase2_app
 from .phase2_audio import DEFAULT_PHASE2_MEETING_AUDIO_ROOT
 from .phase2_file import DEFAULT_PHASE2_FILE_WORK_ROOT
 from .phase2_control import DEFAULT_PHASE2_CONTROL_SOCKET_PATH
+from .gemini_lane_engine import GEMINI_MIC_WINDOW_SECONDS, GEMINI_MIC_WINDOW_STRIDE_SECONDS
 
 
 DEFAULT_MODEL = Path(__file__).resolve().parents[2] / "pretrained" / "moss-transcribe-diarize"
@@ -142,8 +143,6 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
 
 GEMINI_WINDOW_LMAX_SECONDS = 90
 GEMINI_WINDOW_STRIDE_SECONDS = 15
-GEMINI_MIC_WINDOW_SECONDS = 30
-GEMINI_MIC_WINDOW_STRIDE_SECONDS = 15
 GEMINI_CONTINUITY_E = 0.46
 GEMINI_CONTINUITY_W = 0.60
 GEMINI_BIRTH_MIN_SECONDS = 2
@@ -213,7 +212,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                                        GeminiHybridEngine,
                                        WeSpeakerWindowEmbeddings)
     from .gemini_continuity_registry import ContinuityRegistry
-    from .gemini_lane_engine import (AcousticEchoGuard, ConditionalMicrophoneTerminal, LaneGeminiEngine,
+    from .gemini_lane_engine import (AcousticEchoGuard, ConditionalMicrophoneTerminal, LaneGeminiEngine, LocalVoiceEvidence,
                                      VoicedLiveWords, MicrophoneWordGate,
                                      SystemWordLedger, CrossLaneVoiceEchoGuard,
                                      WebRtcSpeechDetector)
@@ -250,6 +249,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
               "terminal_merge_cosine": 0.65, "terminal_converse_gap_seconds": 2,
               "word_gate": "webrtc-mode1-10ms-pad200ms",
               "capture_lanes": "system_and_microphone_diarized",
+              "microphone_local_voice": "echo_return_median_plus6dB_vad3_0p4s_weight15_coverage0p8",
               "microphone_echo_guard": "text_acoustic_and_voice_cosine_0p60_overlap_400ms"}
     identity_policy = {
         "registry": "word-time-overlap-hungarian",
@@ -260,7 +260,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     descriptor = LiveServiceDescriptor(
         source_revision=config.source_revision,
         provider_name="gemini-3.5-transcribe",
-        provider_revision="hybrid-w3-mic-short-v8",
+        provider_revision="hybrid-w3-mic-short-v9",
         provider_manifest_hash=hash_config({"gemini_policy": policy, "identity": identity_policy}),
         config_hashes=LiveServiceConfigHashes.from_parts(
             endpoint_config={"preview_model": "gemini-3.5-transcribe-live",
@@ -314,7 +314,8 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
             mic_word_gate = MicrophoneWordGate(
                 mic_gate, system_words, acoustic_guard,
                 lambda counts: mic_report(kind="gate", count_call=False, **counts),
-                voice_guard=voice_echo, embedding_source=mic_embeddings)
+                voice_guard=voice_echo, embedding_source=mic_embeddings,
+                local_voice=LocalVoiceEvidence(acoustic_guard.system_read))
             system_terminal = TerminalTranscriber(
                 system_diarizer, identity_policy=FinalWordPolicy(encoder),
                 stitcher=LongFinalStitcher(encoder), report_usage=system_report,
@@ -330,9 +331,14 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 return tuple(GeminiWord(word.text, mapping[word.speaker],
                                         word.start_sample, word.end_sample)
                              for word in filtered)
+            def mic_witness_filter(cleanup, kept, witness, skip):
+                return mic_word_gate.restore_witnessed_words(
+                    lane_engine.lane_tape("microphone").read(), cleanup, kept, witness,
+                    system_terminal.last_words, system_pcm16=lane_engine.lane_tape("system").read(),
+                    skip=skip, local_speaker="local-0001")
             mic_terminal = TerminalTranscriber(
                 mic_diarizer, diarize=True, identity_policy=FinalWordPolicy(encoder),
-                word_gate=mic_gate, word_filter=mic_terminal_filter,
+                word_gate=mic_gate, word_filter=mic_terminal_filter, witness_filter=mic_witness_filter,
                 source_lane="microphone",
                 report_usage=mic_report, voiced_audio=mic_batch_detector)
             def preview_words(report):

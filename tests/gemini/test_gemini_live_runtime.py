@@ -1553,3 +1553,61 @@ def test_failing_tentative_labeler_disables_guesses_but_never_fails_the_meeting(
     assert snapshot["session"]["provisional"]["segments"][0]["tentative_speaker"] is None
     assert snapshot["engine_diagnostics"]["tentative_errors"] == 1
     assert Broken.closed and rt._sessions["one"].tentative is None
+
+
+def test_engine_diagnostics_report_local_voice_counters(tmp_path):
+    rt = runtime(tmp_path, {'one': ([], ())})
+    rt.create(session_id='one', engine_settings=settings())
+    rt.record_engine_call('one', kind='microphone_gate', count_call=False,
+        mic_words_from_provider=9, mic_words_kept_by_local_voice_level=5,
+        mic_words_kept_unanchored_by_local_voice=3, mic_echo_return_db=-41.2,
+        mic_local_voice_seconds=1.1)
+    diagnostics = rt.engine_diagnostics('one')
+    for key, expected in {'mic_words_from_provider': 9, 'mic_words_kept_by_local_voice_level': 5,
+            'mic_words_kept_unanchored_by_local_voice': 3, 'mic_echo_return_db': -41.2,
+            'mic_local_voice_seconds': 1.1}.items():
+        assert diagnostics[key] == diagnostics['lanes']['microphone'][key] == expected
+
+
+@pytest.mark.parametrize('cleanup', [False, True])
+def test_meeting_engine_diagnostics_emitted_once_after_final_work(tmp_path, caplog, cleanup):
+    import json
+    from moss_transcribe_diarize.app.phase2_operator import LOGGER
+    async def run():
+        release = asyncio.Event()
+        class Engine(ScriptedGeminiEngine):
+            async def finish(self, tape):
+                await release.wait()
+                rt.record_engine_call('one', kind='microphone_terminal', mic_words_from_provider=5)
+                return (GeminiSegment(0, 8000, 'private transcript', 'speaker-0001'),)
+        rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+            engine_factory=lambda _id, publish, _usage, _settings=None: Engine(publish,
+                batches=[(GeminiBase(16000, ()), GeminiRolling(0, 16000,
+                    (GeminiSegment(0, 8000, 'private transcript', 'speaker-0001'),)))], terminal=()))
+        rt.create(session_id='one', engine_settings=settings(cleanup_after_stop=cleanup))
+        rt.record_engine_call('one', kind='microphone_gate', count_call=False, mic_words_from_provider=7)
+        rt.accept_frame('one', frame(0))
+        await rt.stop('one', 1)
+        if cleanup:
+            assert not [r for r in caplog.records if 'meeting_engine_diagnostics' in r.message]
+        release.set()
+        await rt.wait_terminal('one')
+        rt._release_tape(rt._sessions['one'])
+    with caplog.at_level('INFO', logger=LOGGER.name):
+        asyncio.run(run())
+    events = [json.loads(r.message) for r in caplog.records if 'meeting_engine_diagnostics' in r.message]
+    assert len(events) == 1
+    event = events[0]
+    assert event['schema'] == 'moss-operator-event.v1'
+    assert event['context']['meeting_id'] == 'one'
+    assert event['context']['engine_diagnostics']['mic_words_from_provider'] == (12 if cleanup else 7)
+    encoded = json.dumps(event)
+    assert 'private transcript' not in encoded and 'test-key' not in encoded and 'engine_settings' not in encoded
+    def numeric(value):
+        return all(numeric(v) for v in value.values()) if isinstance(value, dict) else type(value) in (int, float)
+    assert numeric(event['context']['engine_diagnostics'])
+    from moss_transcribe_diarize.app.phase2_operator import serialize_operator_payload, OperatorProjectionError
+    assert serialize_operator_payload('event', event) == event
+    event['context']['engine_diagnostics']['transcript'] = 'private transcript'
+    with pytest.raises(OperatorProjectionError):
+        serialize_operator_payload('event', event)

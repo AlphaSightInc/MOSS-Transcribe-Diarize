@@ -1,5 +1,5 @@
 import { type JSX } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import "../styles/transcript.css";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { nameMeetingSpeaker, reassignMeetingPassages, VoiceprintEvidenceNotAdmittedError } from "../api/speakers";
@@ -47,6 +47,7 @@ interface TranscriptLegendEntry {
 interface PassageCorrectionTarget {
   meetingId: string;
   passageIds: string[];
+  speakerId: string;
 }
 
 /** The one voiceprint line the pane keeps (Q6): enrollment was refused or had no usable audio. */
@@ -106,6 +107,11 @@ export function TranscriptPane() {
   const [savingCorrection, setSavingCorrection] = useState(false);
   const [correctionError, setCorrectionError] = useState<string | null>(null);
   const correctionDialogRef = useRef<HTMLDialogElement | null>(null);
+  const correctionControlRef = useRef<HTMLButtonElement | null>(null);
+  const correctionListRef = useRef<HTMLDivElement | null>(null);
+  const correctionNameRef = useRef<HTMLInputElement | null>(null);
+  const [correctionListOpen, setCorrectionListOpen] = useState(false);
+  const [correctionActiveIndex, setCorrectionActiveIndex] = useState(0);
 
   const fullTranscriptItems = transcript.value;
   const searchQuery = transcriptSearchQuery.value.trim();
@@ -150,7 +156,7 @@ export function TranscriptPane() {
   const canNameSpeakers = activeSessionId !== null;
   const legendEntries = buildLegendEntries(fullTranscriptItems, speakerLabel);
   const correctionSpeakers = legendEntries.filter(
-    entry => !isBackendUnknownSpeakerId(entry.speakerId)
+    entry => !isBackendUnknownSpeakerId(entry.speakerId) && entry.speakerId !== correctionTarget?.speakerId
   );
   const canCorrectPassages =
     activeSessionId !== null &&
@@ -170,7 +176,7 @@ export function TranscriptPane() {
     setNamingError(null);
   }, [activeSessionId, canNameSpeakers]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setCorrectionTarget(null);
     setCorrectionError(null);
   }, [activeSessionId]);
@@ -191,19 +197,49 @@ export function TranscriptPane() {
     };
   }, [namingTarget]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!correctionTarget) return;
     const dialog = correctionDialogRef.current;
     if (!dialog) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (typeof dialog.showModal === "function") dialog.showModal();
     else dialog.setAttribute("open", "");
+    if (!correctionListOpen) correctionControlRef.current?.focus();
     return () => {
       if (dialog.open && typeof dialog.close === "function") dialog.close();
       else dialog.removeAttribute("open");
       previousFocus?.focus();
     };
   }, [correctionTarget]);
+
+  useLayoutEffect(() => {
+    if (!correctionTarget || !correctionListOpen) return;
+    const options = correctionListRef.current?.querySelectorAll<HTMLElement>('[role="option"]');
+    if (correctionActiveIndex === correctionSpeakers.length) correctionNameRef.current?.focus();
+    else options?.[correctionActiveIndex]?.focus();
+  }, [correctionTarget, correctionListOpen, correctionActiveIndex]);
+
+  function closeCorrectionList(): void {
+    setCorrectionListOpen(false);
+    correctionControlRef.current?.focus();
+  }
+
+  function correctionKeyDown(event: JSX.TargetedKeyboardEvent<HTMLElement>): void {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (correctionListOpen) closeCorrectionList();
+      else setCorrectionTarget(null);
+    } else if ((event.key === "ArrowDown" || event.key === "ArrowUp") &&
+      (event.target as HTMLElement).closest(".passage-choice")) {
+      event.preventDefault();
+      const count = correctionSpeakers.length + 1;
+      setCorrectionActiveIndex(correctionListOpen
+        ? (correctionActiveIndex + (event.key === "ArrowDown" ? 1 : -1) + count) % count
+        : event.key === "ArrowDown" ? 0 : count - 1);
+      setCorrectionListOpen(true);
+    }
+  }
 
   function openSpeakerName(entry: TranscriptLegendEntry | undefined): void {
     if (namingBlocked(entry) !== null || !entry) return;
@@ -251,9 +287,11 @@ export function TranscriptPane() {
   function openPassageCorrection(turn: TranscriptTurn): void {
     if (!canCorrectPassages || turn.segment_ids.length === 0) return;
     const existing = correctionSpeakers.find(entry => entry.speakerId !== turn.speaker_entity_id);
-    setCorrectionTarget({ meetingId: activeSessionId!, passageIds: [...turn.segment_ids] });
-    setCorrectionMode(existing ? "existing" : "new");
-    setCorrectionSpeakerId(existing?.speakerId ?? "");
+    setCorrectionTarget({ meetingId: activeSessionId!, passageIds: [...turn.segment_ids], speakerId: turn.speaker_entity_id });
+    setCorrectionMode("new");
+    setCorrectionSpeakerId("");
+    setCorrectionListOpen(!existing);
+    setCorrectionActiveIndex(0);
     setCorrectionName("");
     setCorrectionError(null);
   }
@@ -261,6 +299,7 @@ export function TranscriptPane() {
   async function savePassageCorrection(event: Event): Promise<void> {
     event.preventDefault();
     if (!correctionTarget || !activeSessionId || savingCorrection || refinementRunning) return;
+    if (correctionMode === "existing" ? !correctionSpeakerId : !correctionName.trim()) return;
     const meetingId = correctionTarget.meetingId;
     if (activeSessionId !== meetingId) {
       setCorrectionTarget(null);
@@ -453,23 +492,58 @@ export function TranscriptPane() {
         </dialog>
       ) : null}
       {correctionTarget ? (
-        <dialog ref={correctionDialogRef} className="history-dialog" aria-labelledby="passage-speaker-title"
-          onCancel={() => setCorrectionTarget(null)}>
+        <dialog ref={correctionDialogRef} className="history-dialog passage-dialog" aria-labelledby="passage-speaker-title"
+          onKeyDown={correctionKeyDown} onCancel={event => { event.preventDefault(); setCorrectionTarget(null); }}>
           <form onSubmit={(event) => void savePassageCorrection(event)}>
             <h3 id="passage-speaker-title">Reassign passage</h3>
-            <label><input type="radio" name="passage-target" checked={correctionMode === "existing"}
-              disabled={savingCorrection || correctionSpeakers.length === 0}
-              onChange={() => setCorrectionMode("existing")} /> Existing person</label>
-            <select aria-label="Existing person" value={correctionSpeakerId}
-              disabled={savingCorrection || correctionMode !== "existing"}
-              onChange={event => setCorrectionSpeakerId(event.currentTarget.value)}>
-              {correctionSpeakers.map(entry => <option key={entry.speakerId} value={entry.speakerId}>{entry.visibleLabel}</option>)}
-            </select>
-            <label><input type="radio" name="passage-target" checked={correctionMode === "new"}
-              disabled={savingCorrection} onChange={() => setCorrectionMode("new")} /> New person</label>
-            <input aria-label="New person name" value={correctionName}
-              disabled={savingCorrection || correctionMode !== "new"}
-              onInput={event => setCorrectionName(event.currentTarget.value)} />
+            <div className="passage-choice" onBlur={event => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setCorrectionListOpen(false);
+            }}>
+              <button ref={correctionControlRef} type="button" className="passage-choice-control"
+                role="combobox" aria-label="Speaker" aria-haspopup="listbox"
+                aria-expanded={correctionListOpen} aria-controls="passage-speaker-list" disabled={savingCorrection}
+                onClick={() => {
+                  setCorrectionActiveIndex(correctionMode === "existing"
+                    ? correctionSpeakers.findIndex(entry => entry.speakerId === correctionSpeakerId) : correctionSpeakers.length);
+                  setCorrectionListOpen(!correctionListOpen);
+                }}>
+                <span>{correctionMode === "existing"
+                  ? correctionSpeakers.find(entry => entry.speakerId === correctionSpeakerId)?.visibleLabel
+                  : correctionName.trim() || "New speaker"}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+              </button>
+              {correctionListOpen ? (
+                <div ref={correctionListRef} id="passage-speaker-list" className="passage-choice-list"
+                  role="listbox" aria-label="Speaker">
+                  {correctionSpeakers.map((entry, index) => (
+                    <div key={entry.speakerId} role="option" tabIndex={-1} className="passage-choice-option"
+                      data-speaker-id={entry.speakerId}
+                      aria-selected={correctionMode === "existing" && correctionSpeakerId === entry.speakerId}
+                      onFocus={() => setCorrectionActiveIndex(index)}
+                      onClick={() => {
+                        setCorrectionMode("existing"); setCorrectionSpeakerId(entry.speakerId); closeCorrectionList();
+                      }} onKeyDown={event => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault(); event.currentTarget.click();
+                        }
+                      }}>
+                      <span className="legend-chip-dot" style={{ "--sp": entry.colorToken } as JSX.CSSProperties} />
+                      <span>{entry.visibleLabel}</span>
+                    </div>
+                  ))}
+                  <div role="option" className="passage-choice-option passage-choice-new" aria-label="New speaker"
+                    aria-selected={correctionMode === "new"} onClick={() => correctionNameRef.current?.focus()}>
+                    <input ref={correctionNameRef} aria-label="New speaker" placeholder="New speaker" value={correctionName}
+                      disabled={savingCorrection} onFocus={() => {
+                        setCorrectionMode("new"); setCorrectionActiveIndex(correctionSpeakers.length);
+                      }} onInput={event => setCorrectionName(event.currentTarget.value)}
+                      onKeyDown={event => {
+                        if (event.key === "Enter") { event.preventDefault(); closeCorrectionList(); }
+                      }} />
+                  </div>
+                </div>
+              ) : null}
+            </div>
             {correctionError ? <p role="alert">{correctionError}</p> : null}
             <div className="history-dialog-actions">
               <button className="history-toolbar-btn" type="button" disabled={savingCorrection}

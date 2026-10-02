@@ -10,37 +10,24 @@ import time
 import unicodedata
 import wave
 from pathlib import Path
+from dataclasses import replace
 from array import array
 from typing import Callable, Sequence
 
 from .gemini_hybrid_engine import attributed_embedding_intervals
 from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel, GeminiTurnBridge,
-                                  GeminiRolling, GeminiSegment, GeminiUpdate, _PREVIEW_NUMBERS)
+                                  GeminiRolling, GeminiSegment, GeminiUpdate,
+                                  _preview_units, _unit_weight)
 from .gemini_provider import GeminiWord
+from .gemini_coverage import MIN_RUN_SAMPLES, _span, already_beside, uncovered_runs
 from .live_span_bounds import LIVE_SAMPLE_RATE
+
+GEMINI_MIC_WINDOW_SECONDS = 30
+GEMINI_MIC_WINDOW_STRIDE_SECONDS = 15
 
 
 def _token(text: str) -> str:
     return "".join(re.findall(r"[^\W_]+(?:'[^\W_]+)?", text.lower(), flags=re.UNICODE))
-
-
-_CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
-
-
-def _preview_units(text: str) -> list[tuple[str, int, int]]:
-    """Comparable units with their text spans: a CJK character each, other letter/digit runs whole."""
-    units = []
-    for match in re.finditer(r"[^\W_\d]+|\d+", text):
-        token, at, i = match.group(), match.start(), 0
-        while i < len(token):
-            j = i + 1
-            if not unicodedata.name(token[i], "").startswith(_CJK):
-                while j < len(token) and not unicodedata.name(token[j], "").startswith(_CJK):
-                    j += 1
-            unit = token[i:j].casefold()
-            units.append((_PREVIEW_NUMBERS.get(unit, unit), at + i, at + j))
-            i = j
-    return units
 
 
 def _repeated_units(reference: Sequence[str], units: Sequence[str]) -> set[int]:
@@ -64,8 +51,7 @@ def _repeated_units(reference: Sequence[str], units: Sequence[str]) -> set[int]:
                    and units[index + size] == reference[at + size]):
                 size += 1
             longest = max(longest, size)
-        if sum(3 if len(unit) == 1 and unicodedata.name(unit, "").startswith(_CJK) else 5
-               for unit in units[index:index + longest]) >= 15:
+        if sum(_unit_weight(unit) for unit in units[index:index + longest]) >= 15:
             repeated.update(range(index, index + longest))
             index += longest
         else:
@@ -366,18 +352,165 @@ class AcousticEchoGuard:
         return tuple(kept)
 
 
-class MicrophoneWordGate:
-    """One meeting's microphone word admission for live windows and the saved pass.
+def _local_text_weight(words: Sequence[GeminiWord]) -> int:
+    return sum(_unit_weight(unit) for word in words for unit, _, _ in _preview_units(word.text))
 
-    Local speech context is a continuous attributed span of at least 2 s among the gated
-    words (the evidence a voiceprint needs). Without it, measured mic words are room noise or
-    echo residue that Gemini filled with short, often foreign-language words.
+
+class LocalVoiceEvidence:
+    """Sustained microphone speech above the tab's measured echo return.
+
+    Runs use provider labels and 0.6 s joins, before the level/voice/text guards.
+    Short local runs admit only themselves; they do not establish the lane's 2 s anchor.
     """
+
+    def __init__(self, system_read: Callable[[int, int], bytes], *, vad_factory=None):
+        if vad_factory is None:
+            import webrtcvad
+            vad_factory = lambda: webrtcvad.Vad(3)
+        self.system_read = system_read
+        self.vad_factory = vad_factory
+        self.echo_return_db: float | None = None
+        self.sustained_seconds = 0.0
+        self._seen_stretches: list[tuple[int, int]] = []
+
+    def _frames(self, mic_pcm16: bytes, system_pcm16: bytes):
+        import numpy as np
+        frame = LIVE_SAMPLE_RATE // 100
+        mic = np.frombuffer(mic_pcm16, dtype="<i2")
+        tab = np.frombuffer(system_pcm16, dtype="<i2")
+        n = min(len(mic), len(tab)) // frame
+        if not n:
+            return np.zeros(0, dtype=bool)
+        mic, tab = mic[:n*frame], tab[:n*frame]
+        mic_vad, tab_vad = self.vad_factory(), self.vad_factory()
+        step = frame*2
+        mic_voice = np.fromiter((mic_vad.is_speech(mic_pcm16[i*step:(i+1)*step], LIVE_SAMPLE_RATE)
+                                for i in range(n)), dtype=bool, count=n)
+        tab_voice = np.fromiter((tab_vad.is_speech(system_pcm16[i*step:(i+1)*step], LIVE_SAMPLE_RATE)
+                                for i in range(n)), dtype=bool, count=n)
+        mic_rms = np.sqrt((mic.astype(np.float64).reshape(n, frame)**2).mean(axis=1))
+        tab_rms = np.sqrt((tab.astype(np.float64).reshape(n, frame)**2).mean(axis=1))
+        pad_rms = np.concatenate([np.zeros(10), tab_rms])
+        pad_voice = np.concatenate([np.zeros(10, dtype=bool), tab_voice])
+        best = np.max(np.stack([pad_rms[k:k+n] for k in range(11)]), axis=0)
+        near = np.any(np.stack([pad_voice[k:k+n] for k in range(11)]), axis=0)
+        measured = near & (best > 0)
+        if measured.sum() >= 100:
+            echo_return = float(np.median(20*np.log10(np.maximum(mic_rms[measured], 1e-3)/best[measured])))
+            self.echo_return_db = echo_return
+            return mic_voice & (~near | (mic_rms > best*10**((echo_return+6)/20)))
+        return mic_voice & (~near | (mic_rms >= best*10**(-15/20)))
+
+    def _audio(self, mic_pcm16: bytes, words: Sequence[GeminiWord], offset_sample: int,
+               whole_lane: bool, frame_cache=None):
+        import numpy as np
+        frame = LIVE_SAMPLE_RATE // 100
+        n = len(mic_pcm16)//2//frame
+        flags = np.zeros(n, dtype=bool)
+        if not whole_lane:
+            part = self._frames(mic_pcm16, self.system_read(offset_sample, offset_sample+len(mic_pcm16)//2))
+            flags[:len(part)] = part
+            return flags
+        stride, context = GEMINI_MIC_WINDOW_STRIDE_SECONDS*100, GEMINI_MIC_WINDOW_SECONDS*100
+        ends = list(range(stride, n+1, stride))
+        if not ends or ends[-1] < n:
+            ends.append(n)
+        # Include the 0.2 s word pad plus the 0.4 s evidence stretch at either frontier.
+        first = min((w.start_sample+w.end_sample)//2 for w in words)//frame-60
+        last = max((w.start_sample+w.end_sample)//2 for w in words)//frame+61
+        done = 0
+        for end in ends:
+            lo = max(0, end-context)
+            if end > first and done < last:
+                key = (lo, end)
+                if frame_cache is not None and key in frame_cache:
+                    part = frame_cache[key]
+                else:
+                    part = self._frames(mic_pcm16[lo*frame*2:end*frame*2],
+                                        self.system_read(lo*frame, end*frame))
+                    if frame_cache is not None:
+                        frame_cache[key] = part
+                flags[done:end] = part[done-lo:end-lo]
+            done = end
+        return flags
+
+    @staticmethod
+    def _runs(words: Sequence[GeminiWord]) -> list[list[GeminiWord]]:
+        by_label: dict[str, list[GeminiWord]] = {}
+        for word in words:
+            by_label.setdefault(getattr(word, "source_partition", word.speaker), []).append(word)
+        runs = []
+        for rows in by_label.values():
+            end = None
+            for word in sorted(rows, key=lambda w: w.start_sample):
+                if end is not None and word.start_sample-end <= .6*LIVE_SAMPLE_RATE:
+                    runs[-1].append(word)
+                    end = max(end, word.end_sample)
+                else:
+                    runs.append([word])
+                    end = word.end_sample
+        return runs
+
+    def local_words(self, mic_pcm16: bytes, words: Sequence[GeminiWord], *,
+                    offset_sample: int = 0, whole_lane: bool = False, frame_cache=None) -> dict[int, int]:
+        import numpy as np
+        if not words:
+            return {}
+        flags = self._audio(mic_pcm16, words, offset_sample, whole_lane, frame_cache)
+        stretches, start, last = [], None, None
+        for index in np.flatnonzero(flags):
+            if start is None:
+                start = index
+            elif index-last-1 > 5:
+                stretches.append((int(start), int(last)+1))
+                start = index
+            last = index
+        if start is not None:
+            stretches.append((int(start), int(last)+1))
+        stretches = [(a, b) for a, b in stretches if b-a >= 40]
+        sustained = np.zeros(len(flags), dtype=bool)
+        frame = LIVE_SAMPLE_RATE//100
+        for a, b in stretches:
+            sustained[a:b] = True
+        seen = sorted(self._seen_stretches + [(offset_sample+a*frame, offset_sample+b*frame)
+                                             for a, b in stretches])
+        merged = []
+        for a, b in seen:
+            if merged and a <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(b, merged[-1][1]))
+            else:
+                merged.append((a, b))
+        self._seen_stretches = merged
+        self.sustained_seconds = sum(b-a for a, b in merged)/LIVE_SAMPLE_RATE
+
+        def on(mask, word):
+            middle = ((word.start_sample+word.end_sample)//2-offset_sample)//frame
+            return bool(mask[max(0, middle-20):max(0, middle+21)].any())
+        local = {}
+        for number, run in enumerate(self._runs(words)):
+            on_audio = [w for w in run if on(flags, w)]
+            if (any(on(sustained, w) and _local_text_weight((w,)) > 0 for w in run)
+                    and len(on_audio) >= .8*len(run) and _local_text_weight(on_audio) >= 15):
+                local.update((id(w), number) for w in on_audio)
+        return local
+
+    def is_local_run(self, mic_pcm16: bytes, words: Sequence[GeminiWord], *,
+                     offset_sample: int = 0, whole_lane: bool = False) -> bool:
+        """Judge one candidate run alone, independent of lane memory or neighbouring words."""
+        local = self.local_words(mic_pcm16, words, offset_sample=offset_sample, whole_lane=whole_lane)
+        return bool(words) and len(local) >= .8*len(words) and _local_text_weight(
+            tuple(w for w in words if id(w) in local)) >= 15
+
+
+class MicrophoneWordGate:
+    """One meeting's microphone admission: existing 2 s anchor or measured local run."""
 
     def __init__(self, webrtc_gate, system_words: SystemWordLedger,
                  acoustic_gate=None, report_drops=None,
                  voice_guard: CrossLaneVoiceEchoGuard | None = None,
-                 embedding_source=None):
+                 embedding_source=None, local_voice: LocalVoiceEvidence | None = None):
+        self.local_voice = local_voice
+        self._local_level_kept = self._local_unanchored_kept = 0
         self.webrtc_gate = webrtc_gate
         self.system_words = system_words
         self.acoustic_gate = acoustic_gate
@@ -386,6 +519,8 @@ class MicrophoneWordGate:
         self.embedding_source = embedding_source
         self.local_speech_seen = False
         self.lane_withheld_words = 0
+        self._terminal_frame_cache = {}
+        self._terminal_system_vectors = None
 
     def _record(self, before: int, acoustic: int, after_voice: int,
                 after_text: int, unanchored: int = 0, lane_withheld: int = 0) -> None:
@@ -398,15 +533,58 @@ class MicrophoneWordGate:
                 counts["unanchored_window_dropped_words"] = unanchored
             if lane_withheld:
                 counts["unanchored_lane_withheld_words"] = lane_withheld
+            if self.local_voice is not None:
+                counts.update(mic_words_from_provider=before,
+                              mic_words_kept_by_local_voice_level=self._local_level_kept,
+                              mic_words_kept_unanchored_by_local_voice=self._local_unanchored_kept,
+                              mic_local_voice_seconds=self.local_voice.sustained_seconds)
+                if self.local_voice.echo_return_db is not None:
+                    counts["mic_echo_return_db"] = self.local_voice.echo_return_db
             self.report_drops(counts)
+
+    def _level(self, pcm16, words, offset_sample, local):
+        today = (self.acoustic_gate.filter(pcm16, words, offset_sample=offset_sample)
+                 if self.acoustic_gate is not None else tuple(words))
+        kept_ids = {id(word) for word in today}
+        kept = tuple(word for word in words if id(word) in kept_ids or id(word) in local)
+        self._local_level_kept = len(kept)-len(today)
+        self._local_unanchored_kept = 0
+        return kept
+
+    @staticmethod
+    def _text(kept, system, vectors, local):
+        guard = TextEchoGuard()
+        today = guard.filter_voice_aware(kept, system, vectors)
+        if not local:
+            return today
+        phrase_only = {id(w) for w in guard.filter_voice_aware(
+            kept, system, {w.speaker: None for w in kept})}
+        passed = {id(w) for w in today}
+        return tuple(w for w in kept if id(w) in passed or (id(w) in local and id(w) in phrase_only))
+
+    @staticmethod
+    def _local_kept(kept, local):
+        by_run = {}
+        for word in kept:
+            if id(word) in local:
+                by_run.setdefault(local[id(word)], []).append(word)
+        ids = {id(w) for run in by_run.values() if _local_text_weight(run) >= 15 for w in run}
+        rescued = tuple(w for w in kept if id(w) in ids)
+        return rescued
+
+    def _evidenced(self, kept, local):
+        rescued = self._local_kept(kept, local)
+        self._local_unanchored_kept = len(rescued)
+        return rescued
 
     def filter(self, pcm16: bytes, words: Sequence[GeminiWord], *,
                offset_sample: int = 0) -> tuple[GeminiWord, ...]:
         voiced = self.webrtc_gate.filter(pcm16, words, offset_sample=offset_sample)
         if not voiced:
             return ()
-        acoustic = (self.acoustic_gate.filter(pcm16, voiced, offset_sample=offset_sample)
-                    if self.acoustic_gate is not None else voiced)
+        local = (self.local_voice.local_words(pcm16, voiced, offset_sample=offset_sample)
+                 if self.local_voice is not None else {})
+        acoustic = self._level(pcm16, voiced, offset_sample, local)
         through_sample = offset_sample + len(pcm16) // 2
         system = self.system_words.words_through(through_sample)
         kept = acoustic
@@ -415,18 +593,16 @@ class MicrophoneWordGate:
             kept = self.voice_guard.filter_mic(
                 kept, vectors, through_sample=through_sample)
             after_voice = len(kept)
-            kept = TextEchoGuard().filter_voice_aware(kept, system, vectors)
+            kept = self._text(kept, system, vectors, local)
         else:
             after_voice = len(kept)
             kept = TextEchoGuard().filter(kept, system)
         after_text = len(kept)
-        # Local speech context: a live window whose surviving words hold no continuous
-        # attributed span of at least 2 s (the evidence a voiceprint needs) is room noise or
-        # echo residue that Gemini filled with short, often foreign-language words. Its words
-        # stay out of the live view; the whole-recording pass still decides the saved text.
+        # Short local runs admit only their surviving words; only a 2 s span opens the lane.
         unanchored = 0
         if kept and not attributed_embedding_intervals(kept):
-            unanchored, kept = len(kept), ()
+            rescued = self._evidenced(kept, local)
+            unanchored, kept = len(kept)-len(rescued), rescued
         elif kept:
             self.local_speech_seen = True
         self._record(len(voiced), len(acoustic), after_voice, after_text, unanchored)
@@ -436,32 +612,97 @@ class MicrophoneWordGate:
                         system_words: Sequence[GeminiWord], *,
                         system_pcm16: bytes | None = None) -> tuple[GeminiWord, ...]:
         # TerminalTranscriber has already applied the mic WebRTC word gate.
-        acoustic = (self.acoustic_gate.filter(mic_pcm16, words)
-                    if self.acoustic_gate is not None else tuple(words))
+        self._terminal_frame_cache = {}
+        self._terminal_system_vectors = None
+        local = (self.local_voice.local_words(
+            mic_pcm16, words, whole_lane=True, frame_cache=self._terminal_frame_cache)
+                 if self.local_voice is not None else {})
+        acoustic = self._level(mic_pcm16, words, 0, local)
         kept = acoustic
         if self.voice_guard is not None and kept and system_pcm16 is not None:
             mic_vectors = self.embedding_source(mic_pcm16, 0, kept)
             system_vectors = self.embedding_source(system_pcm16, 0, system_words)
+            self._terminal_system_vectors = (tuple(system_words), system_vectors)
             kept = self.voice_guard.filter_terminal(
                 kept, mic_vectors, system_words, system_vectors)
             after_voice = len(kept)
-            kept = TextEchoGuard().filter_voice_aware(kept, system_words, mic_vectors)
+            kept = self._text(kept, system_words, mic_vectors, local)
         else:
             after_voice = len(kept)
             kept = TextEchoGuard().filter(kept, system_words)
         after_text = len(kept)
-        # Saved text: only a meeting whose microphone never showed local speech context (in
-        # any live window or in these words) loses its mic words; one real local turn keeps
-        # every saved mic word as before, short replies included.
+        # Lane memory retains its 2 s meaning. Without it, each local run earns admission.
         withheld = 0
         if kept and not self.local_speech_seen:
             if attributed_embedding_intervals(kept):
                 self.local_speech_seen = True
             else:
-                withheld, kept = len(kept), ()
+                rescued = self._evidenced(kept, local)
+                withheld, kept = len(kept)-len(rescued), rescued
                 self.lane_withheld_words += withheld
         self._record(len(words), len(acoustic), after_voice, after_text, lane_withheld=withheld)
         return kept
+
+    def restore_witnessed_words(self, mic_pcm16: bytes, cleanup: Sequence[GeminiWord],
+                               kept: Sequence[GeminiWord], witness: Sequence[GeminiWord],
+                               system_words: Sequence[GeminiWord], *, system_pcm16: bytes,
+                               skip=(), local_speaker: str = "local"):
+        """Judge each provider-hole candidate alone, then copy a kept neighbour's label."""
+        output, restored = list(kept), []
+        if self.local_voice is None:
+            return tuple(output), restored
+        frame_cache, self._terminal_frame_cache = self._terminal_frame_cache, {}
+        previous_system, self._terminal_system_vectors = self._terminal_system_vectors, None
+        # Source partitions preserve request evidence independently of published identity.
+        candidates = [(tuple(run), samples)
+                      for run, samples in uncovered_runs(cleanup, witness, skip=skip)
+                      if samples >= MIN_RUN_SAMPLES]
+        if not candidates:
+            return tuple(output), restored
+        # Share voice activity only: local/voice/text admission still judges each candidate alone.
+        voiced_ids = {id(w) for w in self.webrtc_gate.filter(
+            mic_pcm16, tuple(w for run, _ in candidates for w in run))}
+        system_vectors = (previous_system[1] if previous_system is not None
+                          and previous_system[0] == tuple(system_words) else None)
+        for run, samples in candidates:
+            voiced = tuple(w for w in run if id(w) in voiced_ids)
+            local = self.local_voice.local_words(
+                mic_pcm16, voiced, whole_lane=True, frame_cache=frame_cache)
+            # local_words owns each source run's 80% denominator, never the whole hole.
+            if not local:
+                continue
+            admitted = self._local_kept(voiced, local)
+            today = (self.acoustic_gate.filter(mic_pcm16, admitted)
+                     if self.acoustic_gate is not None else admitted)
+            ids = {id(w) for w in today}
+            admitted = tuple(w for w in admitted if id(w) in ids or id(w) in local)
+            if self.voice_guard is not None and admitted:
+                a, b = min(w.start_sample for w in admitted), max(w.end_sample for w in admitted)
+                mic_vectors = self.embedding_source(mic_pcm16[a*2:b*2], a, admitted)
+                if system_vectors is None:
+                    system_vectors = self.embedding_source(system_pcm16, 0, system_words)
+                admitted = self.voice_guard.filter_terminal(admitted, mic_vectors, system_words, system_vectors)
+                admitted = self._text(admitted, system_words, mic_vectors, local)
+            else:
+                admitted = TextEchoGuard().filter(admitted, system_words)
+            admitted = self._local_kept(admitted, local)
+            source_runs = {}
+            for word in admitted:
+                source_runs.setdefault(local[id(word)], []).append(word)
+            shifted = {id(w) for source_run in source_runs.values()
+                       if already_beside(source_run, cleanup) for w in source_run}
+            admitted = tuple(w for w in admitted if id(w) not in shifted)
+            if not admitted:
+                continue
+            a, b = admitted[0].start_sample, max(_span(w)[1] for w in admitted)
+            neighbours = [w for w in kept if w.end_sample <= a or w.start_sample >= b]
+            speaker = min(neighbours, key=lambda w: (
+                max(a-w.end_sample, w.start_sample-b, 0), w.start_sample)).speaker if neighbours else local_speaker
+            output.extend(GeminiWord(w.text, speaker, w.start_sample, _span(w)[1]) for w in admitted)
+            restored.append({"text": [w.text for w in admitted], "start_s": a/LIVE_SAMPLE_RATE,
+                             "end_s": b/LIVE_SAMPLE_RATE, "uncovered_s": samples/LIVE_SAMPLE_RATE,
+                             "speaker": speaker})
+        return tuple(sorted(output, key=lambda w: (w.start_sample, w.end_sample))), restored
 
 
 class WebRtcSpeechDetector:
@@ -555,6 +796,9 @@ class ConditionalMicrophoneTerminal:
 
     def set_witness(self, rows: Sequence[GeminiSegment]) -> None:
         self.terminal.set_witness(rows)
+
+    def set_witness_words(self, words: Sequence[GeminiWord]) -> None:
+        self.terminal.set_witness_words(words)
 
     @property
     def coverage_gaps(self) -> tuple[tuple[int, int], ...]:
@@ -692,11 +936,23 @@ class LaneGeminiEngine:
     def _on_update(self, lane: str, update: GeminiUpdate) -> None:
         with self._lock:
             if isinstance(update, GeminiPreview):
+                if update.finished_turns and not update.segments and not update.lane_end_samples:
+                    self.publish(GeminiPreview(update.end_sample, (), finished_turns=tuple(
+                        (lane, start) for _, start in update.finished_turns)))
+                    return
                 self._previews[lane] = update
                 end = max(p.end_sample for p in self._previews.values() if p is not None)
                 if end > self._base_committed:
+                    previews = [(name, preview) for name, preview in self._previews.items()
+                                if preview is not None]
+                    # Preserve source clocks and origins beside the clipped/filtered display rows.
+                    origins = tuple(replace(row, source_lane=name) for name, preview in previews
+                                    for row in preview.origins)
+                    clocks = tuple((name, preview.end_sample) for name, preview in previews)
+                    finished = tuple((name, start) for name, preview in previews
+                                     for _, start in preview.finished_turns)
                     self.publish(GeminiPreview(end,
-                        self._preview_rows(self._base_committed, end)))
+                        self._preview_rows(self._base_committed, end), origins, clocks, finished))
             elif isinstance(update, GeminiBase):
                 # Inner engines account locally. The public base advances only when
                 # both lane windows are ready, except for the bounded lag fallback.

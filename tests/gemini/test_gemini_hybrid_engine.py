@@ -775,3 +775,50 @@ def test_worker_exception_is_counted_instead_of_silently_stopping_labels():
     assert any(row.get("error_code") == "worker_RuntimeError" and row.get("count_call") is False
                for row in usage)
     engine.close()
+
+
+def test_stream_preview_preserves_original_turn_before_projection_and_final_key():
+    updates=[]
+    engine=make_engine(updates)
+    try:
+        engine._accepted=30*16000
+        engine._committed=15*16000
+        engine._on_live_text('a continuous original turn',3*16000,20*16000,False)
+        preview=updates[-1]
+        assert hasattr(preview,'origins')
+        assert preview.origins[0].start_sample==3*16000
+        assert preview.segments[0].start_sample==15*16000
+        assert preview.lane_end_samples==((None,20*16000),)
+        engine._on_live_text('a continuous original turn completed',3*16000,21*16000,True)
+        assert updates[-1].finished_turns==((None,3*16000),)
+    finally:
+        engine.close()
+
+
+def test_merged_preview_abstains_from_original_turn_identity():
+    updates=[]
+    engine=make_engine(updates)
+    try:
+        engine._accepted=20*16000
+        engine._on_live_text('first final words',0,20*16000,True)
+        engine._on_live_text('new restated interim words',20*16000,20*16000,False)
+        preview=updates[-1]
+        assert len(preview.segments)==1
+        assert preview.origins==()
+    finally:
+        engine.close()
+
+
+def test_already_confirmed_final_reports_end_without_text_publication():
+    updates=[]
+    engine=make_engine(updates)
+    try:
+        engine._accepted=20*16000
+        engine._committed=15*16000
+        engine._on_live_text('covered final',0,14*16000,True)
+        assert len(updates)==1
+        assert updates[0].segments==()
+        assert updates[0].lane_end_samples==()
+        assert updates[0].finished_turns==((None,0),)
+    finally:
+        engine.close()

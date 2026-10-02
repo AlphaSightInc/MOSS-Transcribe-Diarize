@@ -75,7 +75,35 @@ retry: on the real E1 run the preview witness (which also hears speaker echo on
 the microphone lane) fired 12 times on normal audio and re-inserted echo text,
 and a missed live window only affects the live view. A final chunk uses
 committed live rows as its witness, retries once, then carries live rows across
-any remaining missing interval, so the saved transcript never loses live speech.
+remaining witnessed gaps of at least 10 s. Rule H additionally keeps the timed words
+actually committed by rolling windows; a later window's straddling word replaces the
+earlier truncated copy. Stop-tail recovery and File/URL runs do not supply these words.
+
+After final identity labels (or the chunk stitcher), H finds consecutive live words in
+provider holes: at most 0.1 s covered per word, not fully covered, and at least 0.15 s
+uncovered across the run. Zero-length words count as 0.1 s. Equal adjacent edge words
+(including the same numeral written two ways) are removed. H2 also withholds a whole
+candidate run whose comparable units already form the adjacent clean-up suffix or
+prefix: clean-up word ends/starts within 1 s of the candidate boundary, at most 12
+units on either side, allowing the existing 0.1 s overlap. Chinese word grouping and
+numeral spelling do not change equality. This shared discovery check runs before
+either lane admits a restore; it never rewrites clean-up words or trims part of a run.
+It removes nearby timing-shift duplicates, but can withhold a genuine omitted repetition.
+Recorded H100 and 127 engine cells lose no words; four deliberate repetition fixtures
+lose 8 candidate words. Shifts beyond the bounds and partly shifted runs remain limits.
+See `prototypes/gemini-live/mic-speaker-echo/h2/NOTES.md` for measurements and explicit
+stress-export reconstructions (original pre-restore word provenance unavailable).
+The existing 10 s fallback
+owns its intervals; H skips them. An empty clean-up answer saves the live rows as
+committed; rule H's independent admission does not apply to them. On the system lane,
+committed witnesses retain their published live identity. Each restored word takes the
+nearest kept final word's label among words overlapping witnesses of that same live
+identity. A live identity absent from every kept final word gets its own final label;
+the existing final-to-live name mapping can preserve its live name. Unassigned witnesses
+retain H's nearer-neighbour label. No restored word supplies bridge evidence. This runs
+after the stitcher/identity policy and before existing word gates. Clean-up words retain
+their text, times and labels. `witness_restored_words` counts inserted words without
+adding a provider request; it appears in the numeric operator diagnostics.
 
 The provider parser clamps a word end before its start or beyond the call audio to
 `min(start+1 s, audio end)` and drops a word starting past the audio tolerance. The
@@ -88,20 +116,124 @@ when successive same-speaker gaps are ≤1.5 s. Production WebRTC mode 1, 10 ms 
 a rolling or final word only when no voiced frame lies in its ±0.2 s padded span.
 Final labels map back to live meeting IDs by sample overlap (ADR-0005 D8).
 
-The microphone gate also requires either no system WebRTC voice over a word or
-microphone RMS at least −15 dB relative to the best system RMS at a 0–100 ms lag.
-The existing normalized-token echo guard must also pass. Both filters run on rolling
-and final mic words. A live (rolling) mic window publishes words only when its gated
-words hold a continuous attributed span of at least 2 s (0.6 s joins, the same evidence a
-voiceprint needs); otherwise its words are counted as `mic_words_dropped_unanchored` and the
-terminal pass decides the saved text (round 4, issue #3: noise and echo-residue windows
-produced 165 → 3 invented, often foreign-language, words with unchanged non-backchannel
-retention; `prototypes/gemini-live/mic-hallucination/NOTES.md`). The saved (terminal and
-Stop-tail) mic words are withheld only when the meeting's microphone never showed such a span,
-in any live window or in the saved words themselves; they are counted as
-`mic_words_withheld_unanchored_lane`, and a Stop tail withheld this way counts as covered, not
-as a failed recovery (listen-only speaker lanes 104/73 → 0/0 saved invented words; saved
-retention unchanged on six lanes with local speech; margin 1.9 s vs 2 s). W3's provisional text lacks reliable word timing, so the lane
+The microphone gate retains the existing level and two-second anchor rules and adds
+measured local-voice evidence (round 5b, `hybrid-w3-mic-short-v9`). `LocalVoiceEvidence`
+reads the two lane tapes in 10 ms frames with fresh WebRTC mode-3 detectors per context.
+The tab reference is its loudest frame in the preceding 0–100 ms. Echo return is the
+median microphone/tab level on tab-voiced frames; with less than one second of tab
+speech, the existing fixed −15 dB level test stands in. An unexplained frame is voiced
+microphone audio while the tab is silent, or more than 6 dB above its measured echo
+return. A sustained stretch lasts at least 0.4 s, bridging holes of at most 50 ms.
+
+A provider-label run joins words across gaps of at most 0.6 s, before the level gate.
+It is local if it touches a sustained stretch, at least 80% of its words touch unexplained
+audio (word midpoint ±0.2 s), and those words weigh at least 15: three words or five
+CJK-like characters. A: local words survive the fixed level gate. C: local words are
+removed by the text guard only as part of a two-word echo phrase; the voice guard stays
+unchanged. B: without a two-second attributed span, only surviving local runs still
+weighing 15 are admitted. `local_speech_seen` retains its two-second meaning, so a short
+reply admits only itself. `MicrophoneWordGate(local_voice=None)` preserves prior behavior.
+The saved and Stop-tail passes compute the same frame facts in 30 s contexts every
+15 s, only computing contexts overlapping the candidate words. Withholding still counts
+a Stop tail as covered, rather than failed recovery.
+
+For clean-up witness restoration (WP-C), `LocalVoiceEvidence` judges **one restore
+candidate run alone**, after clean-up words were gated. A committed witness carries
+two independent authorities: its **source partition** for admission evidence and its
+**published live identity** for display/name continuity. Source partitions retain the
+provider's request-local grouping, even when the identity registry aliases labels.
+Consecutive requests continue a source partition only when they re-hear at least two
+distinct committed words, matching at least two distinct new words with the same text
+and both endpoints within the provider's 0.1 s step. Occurrences use text/start/end;
+duplicate matches to one occurrence do not count twice. A lone common-word coincidence
+cannot continue a partition or move an old witness into a new group.
+Equal raw labels or published IDs alone never establish continuity.
+
+A new label matching two earlier partitions gets a fresh partition; the earlier groups
+stay separate. Two new labels matching one earlier partition get separate new partitions;
+only earlier words positively matching exactly one new label move into that partition.
+All raw matches participate in ambiguity checks: a weak competing label or partition
+still prevents whole-group continuation. Only qualifying two-word edges authorize
+continuation or matched-word transfers; weaker edges stay separate.
+Unmatched or ambiguous words stay separate. Thus a corrected seam prefix can accompany
+its suffix without pooling two voices. Without correspondence a short reply crossing a
+frontier may remain withheld. Published `GeminiRelabel` rows update witness identity,
+never the source partition. Different source partitions retain independent local-run
+text-weight evidence; two words from each cannot combine to meet the 15-weight bar.
+Each partition/run owns its 80% denominator: rejected groups neither lend evidence nor
+veto an eligible reply in the same provider hole. Only eligible local words proceed to
+the remaining guards and the surviving per-run weight-15 check. A one-word re-heard seam
+prefix cannot establish correspondence; each separated piece must qualify on its own.
+The measured five-word English control saves its four-word suffix and withholds its
+one-word prefix. Two-word-prefix seams remain 5/5 across identity/label changes.
+Their samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
+independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
+its speaker. An anchored lane never waives this evidence requirement.
+Hole discovery uses the ungated provider timeline: gate removal is not an omission.
+Each candidate passes voice activity, independent local-run evidence, and the existing
+microphone guards; only surviving local runs still weighing 15 are restored. Microphone
+final labeling retains the measured kept-neighbour policy, independent of its source
+partition and uncertain published identity. The nearer
+kept clean-up neighbour supplies the label (earlier wins a tie); without one, the lane's
+local speaker does. Other restored runs never serve as clean-up neighbours. Witness
+voice activity is scanned once; saved-pass 30 s local-frame facts and system vectors
+are reused. Microphone embeddings read only the candidate's audio span. Re-admission
+does not increment provider or local-rescue counters or change the lane anchor.
+
+After the surviving per-run weight check, each admitted source run is compared with
+the original clean-up words using H2's same whole-run time-shift rule (1 s, 12
+comparable units, existing 0.1 s overlap). A rejected neighbour cannot hide a shifted
+reply already beside the hole: the matching source run is withheld before label
+assignment and insertion, and adds nothing to `witness_restored_words`. The hole-level
+check and remaining admitted words' label/insertion behavior stay unchanged. System
+restoration inserts whole checked holes, then assigns labels; it has no separately
+admitted source pieces. FIX6 measurements: `mic-speaker-echo/c6/NOTES.md`.
+
+Accepted limit (lead decision, review pass 8, R8-F1): text beside the hole cannot tell a
+shifted utterance from a second utterance with the same words. When a local phrase of at
+most 12 units is said twice within 1 s and clean-up keeps one copy, the other copy is
+treated as the time shift and the phrase is saved once, with or without a rejected
+neighbour (before FIX6 the mixed-hole case saved it twice; the isolated case already saved
+it once). Chosen over the opposite error, a phrase said once and saved twice (R6-F1).
+Constructed cases only; fresh-provider frequency unmeasured.
+
+Measured H prototype: lost name tokens 115 → 4 across 100 pairs; doubled adjacent units
+0; 236/250 names retained in 25 system engine cells. BC composition preserves F2's
+206/291/310 live/Stop/saved units of 343; omitted five-word replies restored at 10/20 dB
+below the tab; zero invented/noise restores on 28 round-4 samples, anchored included.
+Sources: `prototypes/gemini-live/mic-speaker-echo/{f3,bc}/NOTES.md`.
+Product verification (R5B-C, W off): all 127 recorded engine/level cells reproduce
+the composition prototype's text/times; the 100-pair, reply and negative results
+above are unchanged. Speaker error remains .0907/.1217 on the two truth controls;
+added duplicates, row-ownership failures and counter mismatches are zero. Receipts:
+`~/Documents/Codex/2026-09-28/moss-gemini/evidence/P72/r5b-c/verdict.json`.
+Limits: cannot recover words live never committed or clean-up replaced in time;
+microphone replies below weight 15 remain withheld, even on anchored lanes. System
+live-only inventions/stutters can return; restored script stays as live supplied it.
+Physical echo cancellation, fresh provider behavior and the >900 s chunk plan remain
+unmeasured by the recorded prototype.
+
+The recorded prototype admitted 15/15 short English and 15/15 Mandarin saved units at
+−40 dB echo; quiet double-talk 20 dB below the tab retained 27/31 long-turn units.
+Across 18 engine cells, live/Stop/saved recall rose from 90/101/157 to 206/291/310 of
+343. Five listener/noise engine cells and 28 rebuilt round-4 negative provider answers
+(908 voice-gated words) kept zero invented/echoed words; echo-only admission remained
+zero at −40/−25/−15 dB. Source: `prototypes/gemini-live/mic-speaker-echo/f2/NOTES.md`.
+One/two-word replies without an anchored turn remain withheld; words absent from the
+provider answer cannot be admitted; another room voice can qualify from 0.4 s.
+Physical echo cancellation and double-talk attenuation remain **unmeasured**, requiring
+the plan's attended device check. Grey microphone echo fragments are unchanged.
+
+Per-meeting and per-lane diagnostics add `mic_words_from_provider` (after voice activity),
+`mic_words_kept_by_local_voice_level`, `mic_words_kept_unanchored_by_local_voice`,
+`mic_echo_return_db` (last measured; null until measured), and `mic_local_voice_seconds`
+(union of sustained spans observed so far, avoiding double-counting overlapping windows).
+At final release, after clean-up or at live-only close, the shared operator journal
+emits one `moss-operator-event.v1` event, code `meeting_engine_diagnostics`, containing
+meeting id and numeric diagnostics only. Engine settings, strings, nulls and booleans
+are omitted. No transcript, audio, credentials, new storage, or provider requests.
+
+W3's provisional text lacks reliable word timing, so the lane
 composer removes from a mic preview row every run of at least three words (five CJK
 characters) that occurs anywhere in the system words it could echo: committed system rows
 and the system preview ending within n/1.5 + 5 s of the row (n = its units). Each run is
@@ -121,9 +253,101 @@ reply in a new language waits ≈13 s for its commit, a sentence ≤0.6 s
 (`prototypes/gemini-live/preview-script/NOTES.md`). System text wins an echo tie; a later
 overlapping row in the same lane replaces the earlier one.
 At the commit frontier, the public publisher aligns each preview chunk's head to
-the last 60 tokens of committed effective speech in the same lane. A match of at
-least five tokens trims the repeated prefix; number words and digits align.
-A truly identical simultaneous phrase can be hidden in preview.
+visible text in the same lane: committed speech followed by preview rows already kept.
+Comparable units are individual CJK, kana or Hangul characters and whole other letter/digit
+runs; number words and digits align. The tail holds at least 60 units, growing with the
+lane's preview (1.25 × its units + 8). A repeated head needs evidence equal to five words
+or nine CJK characters (weights 5 and 3, minimum 25), at least 60 % matched, with the
+existing bounded gaps. The cut uses original-string spans and drops leading Western
+and CJK punctuation. Rolling and saved rows are untouched.
+Measured arm C removes repeats on all ten recorded cells and preserves the 302 s English
+stream byte-for-byte (`prototypes/gemini-live/mic-speaker-echo/f1/NOTES.md`). A traditional
+commit under a simplified preview can leave 1–4 solid characters; no script folding is
+applied. Heads shorter than nine characters or five words stay. A genuinely repeated
+phrase at or above that minimum may be hidden in grey until committed. Japanese and
+Korean evidence is synthetic; real provider output and other unspaced scripts are unmeasured.
+Mixed scripts and doubled characters in committed rows are separate defects.
+
+The publisher also remembers a proven cut for the currently published rows. It retains
+that cut only in the same lane, with overlapping audio extent, a nondecreasing preview
+end, and identical comparable units through the cut. Rewritten prefixes and new turns
+discard it; an empty preview clears it. Memory holds only the current rows' removed
+prefixes and observed ends, not meeting history. It applies the remembered cut after
+the original alignment, never aligning the shortened suffix: that would hide a fresh
+second occurrence of a phrase (six recorded English publications in the rejected arm).
+After a successful rolling update, a remembered cut is forgotten if that lane loses
+a visible base row starting before the cut's observed end. Earlier rolling rows remain
+visible, so normal rolling appends retain their cuts across later divergence. The next
+preview realigns against current solid text. This restores all 61 words hidden by the
+81-word degraded paragraph → 20-word rolling replacement; an empty replacement restores
+all 81. Other-lane and retained-base proofs survive. Stop clears cuts after tail drain;
+new meetings start empty. `prototypes/gemini-live/mic-speaker-echo/a5/NOTES.md` records
+the replacement/lifecycle controls and unchanged 2,749-call F1/A2 replay.
+Degraded bases use the same trim before committing preview words. Their clock is clipped
+at the fallback frontier, so a prior observed preview extent can carry the full prefix
+just committed, including a one-word reply. The c5b timeout replay commits "right" once
+instead of five times and adds paragraph suffixes instead of whole growing paragraphs.
+This is a measured partial repair, not a new frontier estimator: long-turn mismatches
+without a previously witnessed cut can still repeat. Local-tail and time-proportional
+cuts remain unqualified for preserving fresh speech. See
+`prototypes/gemini-live/mic-speaker-echo/a2/NOTES.md` for gates and replay limits.
+
+The user chose the T4 time-ownership trade (D15, 2026-10-01): grey should show
+only what arrived after that lane's confirmed point. Older grey words may disappear
+when that stretch is confirmed even if the solid model omitted them; the saved
+transcript is unchanged. A3 measured 22-word, 11-word and 169-character omissions
+that this decision now accepts (`prototypes/gemini-live/mic-speaker-echo/a3/NOTES.md`).
+
+The T4 time cut carries original source turns beside the rendered rows, before their
+starts are clipped. Each lane keeps its own publication clock; an update from the other
+lane cannot re-date cached text. For each active original turn, the latest publication
+at or before that lane's confirmed point supplies a snapshot. Confirmation follows the
+end of currently visible solid rows in that lane, including degraded fallback rows; it
+cannot advance on an empty base/window clock alone. If replacement makes that extent
+retreat, snapshot history is discarded. The unchanged comparable-unit prefix of the
+snapshot is removed only when it extends beyond the existing text cut. A unit is hidden
+only if the time rule proves it was published at or before the confirmed point, or the
+existing text rules cut it exactly as today. The existing genuine-repeat limit above
+remains; the lead explicitly amended A4's freshness gate to judge time additions only.
+
+Different original starts never borrow snapshots. Duplicate source keys, joined rows,
+ambiguous origins and text changed by lane filtering abstain. Prefix rewrites shorten
+the cut; a unit count alone cannot justify removing rewritten words. Pending history
+holds at most 64 publications per active turn plus one snapshot. If a stalled frontier
+needs history discarded at that bound, the time rule abstains until retained history is
+eligible; a dropped newer publication cannot leave an older snapshot in force. Once
+a retained eligible publication supersedes the dropped history, its cut remains valid.
+Source/socket restart clears that lane's snapshots and keeps its clock
+watermark against stale cached rows. Finals clear their turn, even when already covered
+and therefore forwarded only as metadata; Stop and meeting release clear all snapshot
+text. The text rules' separate remembered cuts and their invalidation stay unchanged.
+The time rule is optional: a fault in preview snapshot processing publishes the
+already-computed text-rule rows, clears snapshot state and increments numeric
+`preview_snapshot_errors`. Snapshot advance faults after base/rolling commits likewise
+clear/count/continue. The meeting remains active; later previews can publish normally.
+
+Recorded product replay matches the prototype on 366 Mandarin, 575 English and 64 R5-D
+publications. Mandarin changes 23 calls, removing 46 additional old unit-publications;
+English and R5-D output are unchanged. All six divergence injections remove the repeat
+and keep their fresh suffix; time additions outside the exact snapshot prefix are zero.
+The 61-word degraded-replacement control remains visible. Added source-to-publication
+mean work is 0.34/0.70/0.19 ms, respectively; pending peaks are 35/28 for the long streams.
+Numeric-only `engine_diagnostics.preview` exposes per-lane raw/shown units, text
+and additional time removal, maximum grey units, source clock, confirmed point and
+publication totals; history maxima/overflows are separate numeric fields. Diagnostics
+count only current preview text; saved-text unit totals are omitted without a cache.
+A fixed two-hour synthetic solid transcript (1440 rows, 720 per lane) measures 0.635 ms
+mean added runtime work per publication, including snapshot scans and diagnostics;
+the removed whole-solid count made the same population cost 97.642 ms.
+
+Combined later-solid-proxy residue reaches 4 Mandarin / 5 English units on non-rewrite
+publications, present for 45/41 cumulative publication seconds; rewrite publications
+reach 4/3 units. Those are recorded text/clock proxy metrics, not a fresh-provider or
+browser qualification. Original rewrite counts are 16/41; raw stress streams, physical
+device behavior and live long-run qualification remain unmeasured here. The bench and
+exact real-run diagnostics contract are in
+`prototypes/gemini-live/mic-speaker-echo/a4/NOTES.md`; A3's raw-publication capture
+contract still applies to the lead's future real run.
 
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
@@ -300,6 +524,47 @@ drops the veto for 7 of 38 different-speaker pairs there — every time a label 
 shipped either. The open primitive is label purity, not the alternation rule. Numbers and gates:
 `prototypes/gemini-live/aba-veto/NOTES.md`.
 
+## Round 5: a renamed speaker in a summary (2026-10-01)
+
+- **Defect.** After a rename the summary still said "Speaker 1". A summary is prose written once by a model that was
+  given every transcript row under its speaker's name at that moment (`GeminiSummaryGenerator`: `"speaker": row["speaker"]`).
+  A rename rewrites the transcript rows and, by decision D1 (#15), asks the model nothing, so the stored prose kept
+  the old name. A second defect hid behind it: the Markdown export kept a summary only when its version equalled the
+  transcript's, and a rename raises the transcript version, so after any rename the export dropped the whole summary.
+- **Structural question.** Which words of a stored summary mean which speaker, and under what name is that speaker
+  shown now?
+- **Primitives.** (1) *Given names*: the name each speaker id carried in the transcript handed to the generator, saved
+  with the summary (`speaker_names` in the artifact's `provenance_json`; returned by `/summary/live`). (2) *Current
+  names*: the name each speaker id shows in the transcript now (`transcriptSpeakerNames`, the transcript's own label
+  rule). (3) *Reading*: every whole mention of a given name is shown as that speaker's current name
+  (`renameSummarySpeakers`, `frontend/src/lib/summarySpeakers.ts`), in the Summary pane and in the Markdown export.
+  The stored document is never rewritten, so a second rename, a swap of two names and a rename back all start from
+  the same text. Neither side can be dropped: without (1) a search has only the default label to look for.
+- **Why not search for the default label.** "Speaker 1" is what speaker-0001 is called only until someone names it. A
+  speaker named Alice before the summary (by a voiceprint, or by hand during the meeting) is "Alice" in the prose;
+  renaming her to "Alicia" afterwards leaves a default-label search nothing to find. And before round 4 (F4)
+  "Speaker n" was numbered by order of first speech in one transcript version, not read off the id
+  (`docs/plan-r3-ui.md` I-4), so in an older summary "Speaker 1" need not be speaker-0001: the search could put one
+  person's new name on another person's sentences. How often that would happen is unmeasured.
+- **Invariants.** No model call and no summary request on a rename. Only given names are looked for: a default label
+  the generator never used is ordinary text. A name must be whole: "Speaker 1" is not in "Speaker 10", nor "Al" in
+  "Also"; all given names are matched together, longest first, so "Ann" inside another speaker's "Ann Lee" belongs to
+  the longer name. Chinese writes no space between words, so a Chinese neighbour needs no gap ("Speaker 2介绍了…").
+  A name is left as written when its speaker is no longer in the transcript, when the transcript shows that speaker
+  as unattributed, or when two speakers were given one name and now differ. Timestamps and data values are not prose
+  and are not touched.
+- **Measured.** On the 84 recorded Gemini summaries under `prototypes/gemini-live/live-summary/` (37 Chinese) the
+  model wrote the given label verbatim in 252 of 252 mentions (0 paraphrases such as "the first speaker" or a
+  translated label; 49 mentions touch a Chinese character). The reading rule renamed 252/252, changed 0 characters
+  outside them, and made 0 false rewrites of the word "You" (the first microphone voice's default name).
+- **Summaries saved before this change** carry no given names; they are shown exactly as stored (no guess), in the
+  pane and in the export. Refresh regenerates one with the current names.
+- **Cannot do.** Tell a name from the same word used otherwise ("You", "Will", "May" in a quoted sentence); follow a
+  mention the model paraphrased or lower-cased; split a Chinese name from a longer word that only starts with it
+  ("张伟" inside a non-speaker's "张伟明"); follow a passage correction (its rows move to another speaker, the prose
+  does not); rename the meeting title the first summary set. How Gemini mentions the microphone voice "You" in a
+  two-lane summary is unmeasured (no recorded two-lane summary in the repo).
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different
@@ -316,7 +581,7 @@ are supporting populations.
 | Long60 2586 s, `6c5776e3` | 5/5 IDs; settled/final raw DER .043404/.034375; Lex retained one dominant ID; cost $2.461/audio-hour | Label p50 26.517 s first 5 min, 29.519 s last 5 min before L1 |
 | Public long60 first 600 s, `0b9deed5` candidate | Label p50/p90 18.262/25.015 s, 583/600 labeled buckets, 0 skipped ticks, two IDs at Stop; before 26.761/37.508 s, 597/600 buckets, one skip | Standalone after run ends at 600 s; full-meeting lag and the 14-bucket coverage difference remain open |
 | Real cross-meeting public voiceprints, `c58595da` | Lex named from Bill60, auto-named on Keyu60; Lex and Keyu both auto-named on Keyu5m; Bill remained unnamed on Bill5m (0/524 Bill-dominant observations named) | Earlier code path, same naming seam; natural-room recordings unmeasured |
-| E1 microphone acoustic gate, `e7078edc` | 0/20 stray final mic words outside operator intervals; phrase recall 7/7, 6/7, 4/5 | Echo ≥−15 dB and quiet operator gain 0.1 defeat this rule in bench tests |
+| E1 microphone acoustic gate, `e7078edc` | 0/20 stray final mic words outside operator intervals; phrase recall 7/7, 6/7, 4/5 | Fixed rule alone loses quiet local words; v9 adds measured local-voice evidence (F2 fixtures). Physical echo cancellation remains unmeasured |
 | Stress on `56513e30` | 600 s digital silence finalized 2.621 s after Stop with no batch calls; 604 s many-speaker fixture finalized in 68.397 s; injected 503 physical attempts matched error/retry counters | Silence still opened system W3 on that SHA; `130f3d39` adds voiced-only system W3; final-SHA real stress rerun pending pane 6.4 |
 
 The E1 cost model for a 302 s meeting with its observed lane activity is
@@ -354,3 +619,15 @@ All campaign evidence paths in this section resolve under
 and passed 37 subtests (27 warnings); frontend Vitest passed **313/313** across
 28 files; frontend TypeScript typecheck passed. The three command logs are
 `evidence/P63/final-{backend,frontend,typecheck}-0b9deed5.log`.
+
+R5B-C2 measured both authorities independently: unassigned/born/reassigned seam replies
+5/5; aliased stray0/reply4/4 and two distinct two-word replies0. Recorded100 pairs and
+45 archived cells preserve H text/times/counts and kept labels, with no new restored-only
+identity on that population. Truth error .0907/.1217 unchanged; the two truth-verified
+restores retain correct labels. An injected entire12-word speaker omission on the930s
+chunk schedule restores12/12 under its published live name with unchanged encoder calls.
+The indexed identity bridge adds about0.13s on a36,000-word two-hour lane. No new embedding
+or provider call. If live identity was wrong, nearest kept final evidence can follow a
+clean-up split locally; a completely omitted voice with a wrong live ID remains wrong.
+See `prototypes/gemini-live/mic-speaker-echo/c2/NOTES.md` and R5B-C2 evidence for complete
+prototype/product gates, ambiguity controls, row-level stress audit and stated limits.

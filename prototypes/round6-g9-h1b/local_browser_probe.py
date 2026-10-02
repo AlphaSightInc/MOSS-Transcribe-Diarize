@@ -117,7 +117,7 @@ async def run(root, chrome_binary=None, timeout_evidence=None):
                     evidence["reload_does_not_call_provider"] = len(calls) == 2
                     cursor = await app.state.phase2_store._connection.execute("SELECT state,document_json,provenance_json FROM llm_artifacts")
                     rows = await cursor.fetchall(); await cursor.close()
-                    evidence["two_durable_results_no_provider_metadata"] = len(rows) == 2 and all(row["state"] == "current" and set(json.loads(row["provenance_json"])) == {"attempt_id", "source_version", "artifact_version", "error_code"} for row in rows)
+                    evidence["two_durable_results_no_provider_metadata"] = len(rows) == 2 and all(row["state"] == "current" and set(json.loads(row["provenance_json"])) == {"attempt_id", "source_version", "artifact_version", "error_code", "speaker_names"} for row in rows)
                     # A second G9 scenario: actual browser -> same-origin app -> HTTP fake
                     # upstream. No network interception or mutation of staged host config.
                     page = pages[0]

@@ -84,7 +84,10 @@ def test_attempt_concurrency_cancel_version_restart_and_private_persistence(tmp_
             with pytest.raises(AccountRevoked): await summary.update(fifth["attempt_id"], "generating")
             cursor = await store._connection.execute("SELECT provenance_json FROM llm_artifacts")
             metadata = json.loads((await cursor.fetchone())[0])
-            assert set(metadata) == {"attempt_id", "source_version", "artifact_version", "error_code"}
+            # No provider setting is stored; the speaker names are the transcript's own (round 5).
+            assert set(metadata) == {"attempt_id", "source_version", "artifact_version", "error_code",
+                                     "speaker_names"}
+            assert metadata["speaker_names"] == {"Alex": "Alex"}
             await cursor.close()
         finally:
             await store.close()

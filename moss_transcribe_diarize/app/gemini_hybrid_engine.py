@@ -13,6 +13,7 @@ from scipy.optimize import linear_sum_assignment
 
 from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRelabel, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
+from .gemini_coverage import WitnessWord, drop_restated, source_partitions, relabel_witnesses
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .live_provider_bundle import LiveSpeakerJournalObservation
@@ -230,6 +231,8 @@ class GeminiHybridEngine:
         self._future: Future | None = None
         self._accepted = 0
         self._committed = 0
+        self._witness_words: list[GeminiWord | WitnessWord] = []
+        self._witness_previous: tuple[WitnessWord, ...] = ()
         self._rolling_frontier = 0
         self._last_rolling_turn: GeminiSegment | None = None
         self._speakerless_rows: list[GeminiSegment] = []
@@ -254,7 +257,12 @@ class GeminiHybridEngine:
         if not text.strip():
             return
         with self._lock:
-            if self._closed or end_sample <= self._committed:
+            if self._closed:
+                return
+            if end_sample <= self._committed:
+                if final:
+                    self.publish(GeminiPreview(end_sample, (),
+                        finished_turns=((self.source_lane, start_sample),)))
                 return
             row = GeminiWord(text.strip(), "spk:?", start_sample, end_sample)
             if final:
@@ -270,13 +278,15 @@ class GeminiHybridEngine:
             end = min(self._accepted, max(self._committed, end_sample))
             if end <= self._committed:
                 return
-            preview = ordered_segments(
-                tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
-                                    w.text, source_lane=self.source_lane)
-                      for w in self._fast_words if w.end_sample > self._committed),
-                start_sample=self._committed, end_sample=end,
-            )
-            self.publish(GeminiPreview(end, preview))
+            origins = tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
+                                          w.text, source_lane=self.source_lane)
+                            for w in self._fast_words if w.end_sample > self._committed)
+            preview = ordered_segments(origins, start_sample=self._committed, end_sample=end)
+            # Joined/removed source rows do not have an unambiguous original turn identity.
+            if len(preview) != len(origins) or any(a.text != b.text for a, b in zip(preview, origins)):
+                origins = ()
+            finished = tuple((self.source_lane, w.start_sample) for w in self._live_finals)
+            self.publish(GeminiPreview(end, preview, origins, ((self.source_lane, end),), finished))
 
     def push_audio(self, start_sample: int, pcm16: bytes) -> None:
         with self._lock:
@@ -457,6 +467,23 @@ class GeminiHybridEngine:
                 return
             old = self._rolling_frontier
             if frontier > old:
+                if gate_words:
+                    committed = [w for w in absolute if old < w.end_sample <= frontier]
+                    if self.source_lane in ("system", "microphone"):
+                        context = ()
+                        partitions = {w.speaker: f"source-{frontier}-{w.speaker}" for w in absolute}
+                        if self.source_lane == "microphone":
+                            self._witness_words, partitions, context = source_partitions(
+                                self._witness_words, self._witness_previous, absolute, frontier)
+                        committed = [WitnessWord(
+                            w.text, mapping[w.speaker] if mapping[w.speaker] is not None
+                            else f"unassigned-{frontier}-{w.speaker}", w.start_sample, w.end_sample,
+                            partitions[w.speaker]) for w in committed]
+                    self._witness_words = drop_restated(self._witness_words, committed, old)
+                    if self.source_lane == "microphone":
+                        heard = {(w.text,w.start_sample,w.end_sample) for w in context}
+                        self._witness_previous = tuple(w for w in self._witness_words
+                            if (w.text,w.start_sample,w.end_sample) in heard or old < w.end_sample <= frontier)
                 if frontier > self._committed:
                     self.publish(GeminiBase(frontier, ()))
                     self._committed = frontier
@@ -498,6 +525,7 @@ class GeminiHybridEngine:
                 if overlap > 0:
                     revised = GeminiSegment(row.start_sample, row.end_sample, row.text,
                                             speaker, row.source_lane)
+                    self._witness_words = relabel_witnesses(self._witness_words, (revised,))
                     self.publish(GeminiRelabel(row.start_sample, row.end_sample, (revised,)))
                 else:
                     remaining.append(row)
@@ -505,6 +533,7 @@ class GeminiHybridEngine:
             if frontier > old:
                 self._speakerless_rows.extend(row for row in rows if row.speaker is None)
             for update in relabels:
+                self._witness_words = relabel_witnesses(self._witness_words, update.segments)
                 self.publish(update)
 
     async def drain_tail(self, deadline: float) -> bool:
@@ -573,6 +602,9 @@ class GeminiHybridEngine:
         self._executor.shutdown(wait=True)
         if self._streaming_words:
             await self.word_source.finish()
+        setter = getattr(self.terminal, "set_witness_words", None)
+        if callable(setter):
+            setter(self._witness_words)
         rows = await asyncio.to_thread(self.terminal.transcribe, tape)
         self.terminal_coverage_gaps = tuple(
             (self.source_lane, start, end)

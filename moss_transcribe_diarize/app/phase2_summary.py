@@ -47,6 +47,24 @@ def transcript_words(document) -> int:
     return sum(len(_WORD.findall(str(row["text"]))) for row in document["segments"])
 
 
+def speaker_names(document) -> dict[str, str]:
+    """The name each speaker id carries in the transcript handed to a summary generator.
+
+    A summary is prose that mentions people by these names. A later rename changes the transcript
+    but never regenerates the summary (issue #15), so the names are kept with it, by speaker id,
+    and the browser shows each mention under the name that id carries now. A row without a
+    speaker id (saved before ids existed, or live speech nobody is attributed to) is identified
+    by its speaker token, as naming identifies it.
+    """
+    names = {}
+    for row in document["segments"]:
+        name = row.get("speaker")
+        speaker = row.get("speaker_entity_id", name)
+        if isinstance(name, str) and name.strip() and isinstance(speaker, str):
+            names[speaker] = name
+    return names
+
+
 class SummaryConflict(ValueError):
     pass
 
@@ -120,6 +138,8 @@ class MeetingSummaries:
     async def _write(self, value):
         now = _now_ms()
         metadata = {k: value[k] for k in ("attempt_id", "source_version", "artifact_version", "error_code")}
+        if "speaker_names" in value:  # absent on a summary saved before round 5; it reads as stored
+            metadata["speaker_names"] = value["speaker_names"]
         await self.store._connection.execute(
             """INSERT INTO llm_artifacts VALUES (?,?,'final_summary','final_summary',?,?,?,?,?)
             ON CONFLICT(account_id,meeting_id,artifact_id) DO UPDATE SET
@@ -148,7 +168,7 @@ class MeetingSummaries:
                 raise SummaryConflict("A summary attempt is already active. Cancel it before retrying.")
             value = {"state": "queued", "document": None, "attempt_id": secrets.token_urlsafe(18),
                      "source_version": source_version, "artifact_version": 1 if previous is None else previous["artifact_version"] + 1,
-                     "error_code": None}
+                     "error_code": None, "speaker_names": speaker_names(document)}
             await self._write(value)
             return value, readable_transcript(document)
 
@@ -324,6 +344,7 @@ def attach_summary_routes(app, require_account, generator=None):
             return {"summary": result, "source": {
                 "committed_samples": snapshot.session.committed_samples,
                 "text_revision_version": snapshot.session.text_revision_version},
+                "speaker_names": speaker_names(document),
                 "generated_at_ms": _now_ms(), "usage": usage}
         finally:
             request.app.state.summary_inflight.discard(claim_key)

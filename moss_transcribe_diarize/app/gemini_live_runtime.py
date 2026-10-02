@@ -14,6 +14,7 @@ import re
 import tempfile
 import threading
 import time
+import unicodedata
 import uuid
 import wave
 from collections import deque
@@ -131,6 +132,9 @@ class GeminiSegment:
 class GeminiPreview:
     end_sample: int
     segments: tuple[GeminiSegment, ...]
+    origins: tuple[GeminiSegment, ...] = ()
+    lane_end_samples: tuple[tuple[str | None, int], ...] = ()
+    finished_turns: tuple[tuple[str | None, int], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -304,6 +308,142 @@ class ScriptedGeminiEngine:
 
 
 @dataclass(slots=True)
+class _PreviewTurnSnapshot:
+    pending: deque[tuple[int, tuple[str, ...]]] = field(default_factory=lambda: deque(maxlen=64))
+    snapshot: tuple[int, tuple[str, ...]] | None = None
+    lost_through: int = -1
+
+
+class _PreviewSnapshots:
+    def __init__(self):
+        self.turns = {}
+        self.clocks = {}
+        self.frontiers = {}
+        self.max_pending = 0
+        self.overflows = 0
+
+    def advance(self, solid):
+        # Confirmation follows currently visible solid, including replaceable fallback rows.
+        lanes = set(self.frontiers) | {r.source_lane for r in solid}
+        for lane in lanes:
+            through = max((r.end_sample for r in solid if r.source_lane == lane), default=0)
+            if through < self.frontiers.get(lane, 0):
+                for key in list(self.turns):
+                    if key[0] == lane:
+                        del self.turns[key]
+            self.frontiers[lane] = through
+            for key, turn in self.turns.items():
+                if key[0] != lane:
+                    continue
+                eligible = [p for p in turn.pending if p[0] <= through]
+                if eligible:
+                    turn.snapshot = eligible[-1]
+                elif turn.snapshot is not None and turn.lost_through > turn.snapshot[0]:
+                    turn.snapshot = None
+                turn.pending = deque((p for p in turn.pending if p[0] > through), maxlen=64)
+
+    def publication(self, origins, clocks, finished=()):
+        # Stale rows republished by the other lane are not new source publications.
+        finished = set(finished)
+        for lane, clock in clocks:
+            if clock <= self.clocks.get(lane, -1):
+                continue
+            self.clocks[lane] = clock
+            rows = [r for r in origins if r.source_lane == lane]
+            keys = {(lane, r.start_sample) for r in rows}
+            for key in list(self.turns):
+                if key[0] == lane and key not in keys:
+                    del self.turns[key]
+            for row in rows:
+                key = (lane, row.start_sample)
+                if sum(r.start_sample == row.start_sample for r in rows) != 1:
+                    self.turns.pop(key, None)
+                    continue
+                if key in finished and key not in self.turns:
+                    continue
+                turn = self.turns.setdefault(key, _PreviewTurnSnapshot())
+                units = tuple(u for u, _, _ in _preview_units(row.text))
+                through = self.frontiers.get(lane, 0)
+                if clock <= through:
+                    turn.snapshot = clock, units
+                else:
+                    if len(turn.pending) == turn.pending.maxlen:
+                        # A stalled frontier cannot grow history without bound; lost history abstains.
+                        turn.lost_through = turn.pending[0][0]
+                        self.overflows += 1
+                    turn.pending.append((clock, units))
+                    self.max_pending = max(self.max_pending, len(turn.pending))
+
+    def cuts(self, segments, origins):
+        cuts = []
+        for row in segments:
+            matches = [r for r in origins if r.source_lane == row.source_lane
+                       and r.text == row.text and r.start_sample <= row.start_sample
+                       and r.end_sample >= row.end_sample]
+            if len(matches) != 1:
+                cuts.append(0)
+                continue
+            origin = matches[0]
+            if sum(r.source_lane == origin.source_lane and r.start_sample == origin.start_sample
+                   for r in origins) != 1:
+                cuts.append(0)
+                continue
+            turn = self.turns.get((row.source_lane, origin.start_sample))
+            snapshot = turn.snapshot if turn is not None else None
+            if snapshot is None or snapshot[0] > self.frontiers.get(row.source_lane, 0):
+                cuts.append(0)
+                continue
+            units = [u for u, _, _ in _preview_units(row.text)]
+            cuts.append(next((i for i, (a, b) in enumerate(zip(snapshot[1], units)) if a != b),
+                             min(len(snapshot[1]), len(units))))
+        return cuts
+
+    def finish(self, keys):
+        for key in keys:
+            self.turns.pop(key, None)
+
+    def reset(self, lane):
+        # Keep the clock watermark: cached rows from the old socket cannot revive it.
+        for key in list(self.turns):
+            if key[0] == lane:
+                del self.turns[key]
+
+    def clear(self):
+        self.turns.clear()
+        self.clocks.clear()
+        self.frontiers.clear()
+
+
+def _apply_preview_time_cuts(segments, text_rows, cuts):
+    """Leave the text rule byte-identical; remove only a longer witnessed snapshot prefix."""
+    shown, at = [], 0
+    for row, cut in zip(segments, cuts):
+        text_row = None
+        if at < len(text_rows):
+            current = text_rows[at]
+            if ((current.start_sample, current.end_sample, current.source_lane) ==
+                    (row.start_sample, row.end_sample, row.source_lane)
+                    and row.text.endswith(current.text)):
+                text_row = current
+                at += 1
+        if text_row is None:
+            continue
+        if not cut:
+            shown.append(text_row)
+            continue
+        spans = _preview_units(row.text)
+        boundary = len(row.text) - len(text_row.text)
+        text_cut = sum(end <= boundary for _, _, end in spans)
+        if cut <= text_cut:
+            shown.append(text_row)
+            continue
+        text = row.text[spans[cut-1][2]:].lstrip(' \t\r\n,.;:!?，。；：！？、')
+        if text:
+            shown.append(replace(row, text=text))
+    return tuple(shown)
+
+
+@dataclass(slots=True)
 class _GeminiState:
     session_id: str
     session: LiveSession
@@ -326,6 +466,12 @@ class _GeminiState:
     clamped_words: int = 0
     dropped_words: int = 0
     repaired_words: int = 0
+    mic_words_from_provider: int = 0
+    mic_words_kept_by_local_voice_level: int = 0
+    mic_words_kept_unanchored_by_local_voice: int = 0
+    mic_echo_return_db: float | None = None
+    mic_local_voice_seconds: float = 0.0
+    diagnostics_emitted: bool = False
     mic_words_dropped_by_acoustic_gate: int = 0
     mic_words_dropped_by_text_guard: int = 0
     mic_echo_dropped_by_voice: int = 0
@@ -343,9 +489,14 @@ class _GeminiState:
     coverage_retries: int = 0
     coverage_preview_fallbacks: int = 0
     terminal_coverage_fallbacks: int = 0
+    witness_restored_words: int = 0
     degraded_path_activations: int = 0
     window_lag_samples: list[int] = field(default_factory=list)
     preview_lag_samples: list[int] = field(default_factory=list)
+    preview_cuts: list[tuple[str | None, int, list[str]]] = field(default_factory=list)
+    preview_snapshots: _PreviewSnapshots = field(default_factory=_PreviewSnapshots)
+    preview_counters: dict[str, dict[str, int]] = field(default_factory=dict)
+    preview_snapshot_errors: int = 0
     rolling_frontier: int = 0
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
@@ -527,11 +678,27 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             session = state.session
             try:
                 if isinstance(update, GeminiPreview):
+                    if update.finished_turns and not update.segments and not update.lane_end_samples:
+                        state.preview_snapshots.finish(update.finished_turns)
+                        return
                     epoch, generation, start = session.begin_provisional()
                     if update.end_sample < start:
                         return
-                    segments = _trim_committed_preview(
-                        update.segments, session.snapshot().effective_transcript)
+                    solid = session.snapshot().effective_transcript
+                    text_rows = _trim_committed_preview(update.segments, solid, state.preview_cuts)
+                    snapshots = state.preview_snapshots
+                    try:
+                        snapshots.advance(solid)
+                        clocks_before = dict(snapshots.clocks)
+                        snapshots.publication(update.origins, update.lane_end_samples, update.finished_turns)
+                        time_cuts = snapshots.cuts(update.segments, update.origins)
+                        segments = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
+                        snapshots.finish(update.finished_turns)
+                        _preview_diagnostics(state, update, text_rows, segments, clocks_before)
+                    except Exception:
+                        segments = text_rows
+                        snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     transcript = _unlabelled_transcript(segments, start)
                     spans = tuple(span for lane in dict.fromkeys(
                         row.source_lane or "system" for row in segments)
@@ -552,13 +719,16 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 elif isinstance(update, GeminiBase):
                     if update.degraded:
                         state.degraded_path_activations += 1
+                    segments = (_trim_committed_preview(
+                        update.segments, session.snapshot().effective_transcript,
+                        state.preview_cuts, degraded=True) if update.degraded else update.segments)
                     start = session.snapshot().committed_samples
                     span = session.freeze_until(update.through_sample, reason="gemini_base")
-                    transcript = _unlabelled_transcript(update.segments, start)
+                    transcript = _unlabelled_transcript(segments, start)
                     if transcript:
                         # The lag fallback's preview words keep their lane, so later previews
                         # trim against them and rolling replaces them per lane.
-                        lanes = tuple(row.source_lane for row in update.segments)
+                        lanes = tuple(row.source_lane for row in segments)
                         outcome = session.submit_unlabeled_canonical(
                             span_id=span.id, epoch=span.epoch, start_sample=start,
                             end_sample=update.through_sample, transcript=transcript,
@@ -571,6 +741,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         )
                     if not outcome.submitted:
                         raise ValueError(f"base commit refused: {outcome.refusal}")
+                    try:
+                        state.preview_snapshots.advance(session.snapshot().effective_transcript)
+                    except Exception:
+                        state.preview_snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     kind = "canonical_published"
                 elif isinstance(update, GeminiRolling):
                     _register_speakers(session, update.segments)
@@ -584,6 +759,19 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     ))
                     if not outcome.applied:
                         raise ValueError(f"rolling update refused: {outcome.refusal}")
+                    # A rolling replacement can remove the solid copy backing a cut.
+                    solid = session.snapshot().effective_transcript
+                    removed = [row for row in snapshot.effective_transcript
+                               if row.authority == "provisional" and row not in solid]
+                    state.preview_cuts[:] = [
+                        (lane, end, prefix) for lane, end, prefix in state.preview_cuts
+                        if not any(row.source_lane == lane and row.start_sample < end
+                                   for row in removed)]
+                    try:
+                        state.preview_snapshots.advance(solid)
+                    except Exception:
+                        state.preview_snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     kind = "text_revision_applied"
                     state.rolling_frontier = max(state.rolling_frontier, update.end_sample)
                     state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
@@ -648,6 +836,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         clamped_words: int = 0,
         dropped_words: int = 0,
         repaired_words: int = 0,
+        mic_words_from_provider: int = 0,
+        mic_words_kept_by_local_voice_level: int = 0,
+        mic_words_kept_unanchored_by_local_voice: int = 0,
+        mic_echo_return_db: float | None = None,
+        mic_local_voice_seconds: float | None = None,
         acoustic_gate_dropped_words: int = 0,
         text_guard_dropped_words: int = 0,
         mic_echo_dropped_by_voice: int = 0,
@@ -666,6 +859,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         coverage_retry: int = 0,
         coverage_preview_fallbacks: int = 0,
         terminal_coverage_fallbacks: int = 0,
+        witness_restored_words: int = 0,
     ) -> None:
         """Record one provider request attempt, with operational metadata only."""
 
@@ -675,7 +869,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if any(not isinstance(value, int) or value < 0
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
                              preview_stall_restarts, coverage_retry, coverage_preview_fallbacks,
-                             terminal_coverage_fallbacks,
+                             terminal_coverage_fallbacks, witness_restored_words,
+                             mic_words_from_provider, mic_words_kept_by_local_voice_level,
+                             mic_words_kept_unanchored_by_local_voice,
                              acoustic_gate_dropped_words, text_guard_dropped_words,
                              mic_echo_dropped_by_voice, unanchored_window_dropped_words,
                              unanchored_lane_withheld_words, veto_fired)):
@@ -683,11 +879,20 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if any(not math.isfinite(value) or value < 0 for value in
                (audio_seconds_sent, cost_usd, metered_output_usd, output_cost_estimate_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
+        if mic_echo_return_db is not None and not math.isfinite(mic_echo_return_db):
+            raise ValueError("microphone echo return must be finite.")
+        if mic_local_voice_seconds is not None and (not math.isfinite(mic_local_voice_seconds)
+                                                   or mic_local_voice_seconds < 0):
+            raise ValueError("microphone local voice seconds must be finite and nonnegative.")
         if (not isinstance(count_call, bool) or not isinstance(chunked, bool)
                 or cost_basis not in {"provider_usage", "list_price_estimate"}):
             raise ValueError("engine call count and cost basis must be operational metadata.")
         with self._lock:
             state = self._get(session_id)
+            if count_call and error_code is None and kind in {
+                    "live_preview", "system_live_preview", "microphone_live_preview"}:
+                state.preview_snapshots.reset(
+                    None if kind == "live_preview" else kind.partition("_")[0])
             if count_call:
                 state.calls_by_kind[kind] = state.calls_by_kind.get(kind, 0) + 1
             for counters, code in ((state.errors_by_code, error_code),
@@ -697,6 +902,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.clamped_words += clamped_words
             state.dropped_words += dropped_words
             state.repaired_words += repaired_words
+            state.mic_words_from_provider += mic_words_from_provider
+            state.mic_words_kept_by_local_voice_level += mic_words_kept_by_local_voice_level
+            state.mic_words_kept_unanchored_by_local_voice += mic_words_kept_unanchored_by_local_voice
+            if mic_echo_return_db is not None:
+                state.mic_echo_return_db = mic_echo_return_db
+            if mic_local_voice_seconds is not None:
+                state.mic_local_voice_seconds = mic_local_voice_seconds
             state.mic_words_dropped_by_acoustic_gate += acoustic_gate_dropped_words
             state.mic_words_dropped_by_text_guard += text_guard_dropped_words
             state.mic_echo_dropped_by_voice += mic_echo_dropped_by_voice
@@ -709,6 +921,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.coverage_retries += coverage_retry
             state.coverage_preview_fallbacks += coverage_preview_fallbacks
             state.terminal_coverage_fallbacks += terminal_coverage_fallbacks
+            state.witness_restored_words += witness_restored_words
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
             state.metered_output_usd += metered_output_usd
@@ -728,12 +941,18 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "metered_output_usd": 0.0,
                     "output_cost_estimate_usd": 0.0,
                     "skipped_window_ticks": 0})
+                totals.setdefault("mic_words_from_provider", 0)
+                totals.setdefault("mic_words_kept_by_local_voice_level", 0)
+                totals.setdefault("mic_words_kept_unanchored_by_local_voice", 0)
+                totals.setdefault("mic_echo_return_db", None)
+                totals.setdefault("mic_local_voice_seconds", 0.0)
                 totals.setdefault("mic_words_dropped_unanchored", 0)
                 totals.setdefault("mic_words_withheld_unanchored_lane", 0)
                 totals.setdefault("preview_stall_restarts", 0)
                 totals.setdefault("coverage_retries", 0)
                 totals.setdefault("coverage_preview_fallbacks", 0)
                 totals.setdefault("terminal_coverage_fallbacks", 0)
+                totals.setdefault("witness_restored_words", 0)
                 if count_call:
                     calls = totals["calls_by_kind"]
                     calls[lane_kind] = calls.get(lane_kind, 0) + 1
@@ -745,6 +964,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["timing_anomalies"]["clamped"] += clamped_words
                 totals["timing_anomalies"]["dropped"] += dropped_words
                 totals["repaired_words"] += repaired_words
+                totals["mic_words_from_provider"] += mic_words_from_provider
+                totals["mic_words_kept_by_local_voice_level"] += mic_words_kept_by_local_voice_level
+                totals["mic_words_kept_unanchored_by_local_voice"] += mic_words_kept_unanchored_by_local_voice
+                if mic_echo_return_db is not None:
+                    totals["mic_echo_return_db"] = mic_echo_return_db
+                if mic_local_voice_seconds is not None:
+                    totals["mic_local_voice_seconds"] = mic_local_voice_seconds
                 totals["mic_words_dropped_by_acoustic_gate"] += acoustic_gate_dropped_words
                 totals["mic_words_dropped_by_text_guard"] += text_guard_dropped_words
                 totals["mic_echo_dropped_by_voice"] += mic_echo_dropped_by_voice
@@ -761,6 +987,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["coverage_retries"] += coverage_retry
                 totals["coverage_preview_fallbacks"] += coverage_preview_fallbacks
                 totals["terminal_coverage_fallbacks"] += terminal_coverage_fallbacks
+                totals["witness_restored_words"] += witness_restored_words
 
     def engine_diagnostics(self, session_id: str) -> dict[str, object]:
         """Copy one meeting's content-free provider totals for QA and operator harnesses."""
@@ -773,12 +1000,21 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "tentative_embed_p50_ms": None, "tentative_embed_p95_ms": None,
                     "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}
                    | self._tentative_call(state, "diagnostics", default={})),
+                "preview": {lane: dict(values) for lane, values in state.preview_counters.items()},
+                "preview_snapshot_max_pending": state.preview_snapshots.max_pending,
+                "preview_snapshot_history_overflows": state.preview_snapshots.overflows,
+                "preview_snapshot_errors": state.preview_snapshot_errors,
                 "tentative_errors": state.tentative_errors,
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),
                 "timing_anomalies": {"clamped": state.clamped_words, "dropped": state.dropped_words},
                 "repaired_words": state.repaired_words,
+                "mic_words_from_provider": state.mic_words_from_provider,
+                "mic_words_kept_by_local_voice_level": state.mic_words_kept_by_local_voice_level,
+                "mic_words_kept_unanchored_by_local_voice": state.mic_words_kept_unanchored_by_local_voice,
+                "mic_echo_return_db": state.mic_echo_return_db,
+                "mic_local_voice_seconds": state.mic_local_voice_seconds,
                 "mic_words_dropped_by_acoustic_gate": state.mic_words_dropped_by_acoustic_gate,
                 "mic_words_dropped_by_text_guard": state.mic_words_dropped_by_text_guard,
                 "mic_echo_dropped_by_voice": state.mic_echo_dropped_by_voice,
@@ -798,6 +1034,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "coverage_retries": state.coverage_retries,
                 "coverage_preview_fallbacks": state.coverage_preview_fallbacks,
                 "terminal_coverage_fallbacks": state.terminal_coverage_fallbacks,
+                "witness_restored_words": state.witness_restored_words,
                 "degraded_path_activations": state.degraded_path_activations,
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
@@ -950,6 +1187,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         await self._absorb_orphan_speakers(state)
         await state.session.stop(1.0)
         with self._lock:
+            state.preview_cuts.clear()
+            state.preview_snapshots.clear()
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
@@ -1252,6 +1491,30 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         (rolling caches, provider client and so the meeting's key, lane tapes, Live sockets)
         is closed and dropped here on every ending, not only the ones that ran the final pass.
         """
+        if not state.diagnostics_emitted:
+            from datetime import datetime, timezone
+            from .phase2_operator import emit_operator_event, OPERATOR_EVENT_SCHEMA
+
+            def numbers(value):
+                if isinstance(value, dict):
+                    return {key: filtered for key, item in value.items()
+                            if (filtered := numbers(item)) is not None}
+                return value if type(value) in (int, float) else None
+
+            diagnostics = self.engine_diagnostics(state.session_id)
+            diagnostics.pop("engine_settings", None)
+            event = {
+                "schema": OPERATOR_EVENT_SCHEMA, "sequence": state.next_event_seq,
+                "occurred_at_utc": datetime.now(timezone.utc).isoformat(),
+                "kind": "meeting_lifecycle", "code": "meeting_engine_diagnostics",
+                "severity": "info", "terminal": True, "retryable": False,
+                "occurrence_count": 1,
+                "context": {"meeting_id": state.session_id,
+                            "engine_diagnostics": numbers(diagnostics)},
+            }
+            emit_operator_event(event)
+            state.diagnostics_emitted = True
+        state.preview_snapshots.clear()
         engine, state.engine = state.engine, None
         close = getattr(engine, "close", None)
         if callable(close):
@@ -1290,11 +1553,64 @@ def _unlabelled_transcript(segments: Sequence[GeminiSegment], start_sample: int)
 _PREVIEW_NUMBERS = {word: str(index) for index, word in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve thirteen "
     "fourteen fifteen sixteen seventeen eighteen nineteen twenty".split())}
-_PREVIEW_WORD = re.compile(r"[^\W_\d]+|\d+")
+_CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
+
+
+def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before):
+    def counts(rows):
+        out = {}
+        for row in rows:
+            lane = row.source_lane or "system"
+            out[lane] = out.get(lane, 0) + len(_preview_units(row.text))
+        return out
+
+    raw, text, shown = map(counts, (update.segments, text_rows, shown_rows))
+    lanes = set(raw) | set(shown) | {lane or "system" for lane, _ in update.lane_end_samples}
+    clocks = {lane or "system": end for lane, end in update.lane_end_samples}
+    for lane in lanes:
+        totals = state.preview_counters.setdefault(lane, {
+            "lane_publications": 0, "units_published": 0, "text_hidden_units": 0,
+            "time_hidden_units": 0, "shown_units_max": 0})
+        source = next((key for key, _ in update.lane_end_samples
+                       if (key or "system") == lane), lane)
+        advanced = lane in clocks and clocks[lane] > clocks_before.get(source, -1)
+        if advanced:
+            totals["lane_publications"] += 1
+            totals["units_published"] += raw.get(lane, 0)
+        text_hidden = raw.get(lane, 0) - text.get(lane, 0)
+        time_hidden = text.get(lane, 0) - shown.get(lane, 0)
+        totals["text_hidden_units"] += text_hidden
+        totals["time_hidden_units"] += time_hidden
+        totals["shown_units_max"] = max(totals["shown_units_max"], shown.get(lane, 0))
+        totals.update(raw_units_last=raw.get(lane, 0), shown_units_last=shown.get(lane, 0),
+                      text_hidden_last=text_hidden,
+                      time_hidden_last=time_hidden, lane_end_sample=clocks.get(lane, 0),
+                      confirmed_sample=state.preview_snapshots.frontiers.get(source, 0))
+
+
+def _preview_units(text: str) -> list[tuple[str, int, int]]:
+    """Comparable units with their text spans: a CJK character each, other letter/digit runs whole."""
+    units = []
+    for match in re.finditer(r"[^\W_\d]+|\d+", text):
+        token, at, i = match.group(), match.start(), 0
+        while i < len(token):
+            j = i + 1
+            if not unicodedata.name(token[i], "").startswith(_CJK):
+                while j < len(token) and not unicodedata.name(token[j], "").startswith(_CJK):
+                    j += 1
+            unit = token[i:j].casefold()
+            units.append((_PREVIEW_NUMBERS.get(unit, unit), at + i, at + j))
+            i = j
+    return units
+
+
+def _unit_weight(unit: str) -> int:
+    return 3 if len(unit) == 1 and unicodedata.name(unit, "").startswith(_CJK) else 5
 
 
 def _trim_committed_preview(
-    segments: Sequence[GeminiSegment], committed: Sequence[EffectiveTranscriptSegment]
+    segments: Sequence[GeminiSegment], committed: Sequence[EffectiveTranscriptSegment],
+    cuts: list[tuple[str | None, int, list[str]]] | None = None, *, degraded: bool = False,
 ) -> tuple[GeminiSegment, ...]:
     """Remove each W3 chunk's head that the reader already sees in the same capture lane.
 
@@ -1304,32 +1620,51 @@ def _trim_committed_preview(
     repeated head is never longer than the preview itself; recorded W3 chunks run 40-100
     words, past any fixed window.
     """
-    lane_words: dict[str | None, int] = {}
-    for segment in segments:
-        lane_words[segment.source_lane] = (
-            lane_words.get(segment.source_lane, 0) + len(_PREVIEW_WORD.findall(segment.text)))
-    kept: list[GeminiSegment] = []
-    for segment in segments:
+    spans_of = [_preview_units(segment.text) for segment in segments]
+    lane_units: dict[str | None, int] = {}
+    for segment, spans in zip(segments, spans_of):
+        lane_units[segment.source_lane] = lane_units.get(segment.source_lane, 0) + len(spans)
+    kept: list[tuple[GeminiSegment, list[str]]] = []
+    cuts_of: list[int] = []
+    for segment, spans in zip(segments, spans_of):
         lane = segment.source_lane
-        limit = max(60, lane_words[lane] * 5 // 4 + 8)
-        parts = [row.text for row in reversed(kept) if row.source_lane == lane]
-        count = sum(len(_PREVIEW_WORD.findall(text)) for text in parts)
+        limit = max(60, lane_units[lane] * 5 // 4 + 8)
+        parts = [units for row, units in reversed(kept) if row.source_lane == lane]
+        count = sum(len(part) for part in parts)
         for row in reversed(committed):
             if count >= limit:
                 break
             if row.source_lane == lane:
-                parts.append(row.text)
-                count += len(_PREVIEW_WORD.findall(row.text))
-        tail = [_PREVIEW_NUMBERS.get(word, word)
-                for word in _PREVIEW_WORD.findall(" ".join(reversed(parts)).casefold())][-limit:]
-        matches = list(_PREVIEW_WORD.finditer(segment.text.casefold()))
-        cut = _repeated_head(tail, [_PREVIEW_NUMBERS.get(match.group(), match.group())
-                                    for match in matches])
-        text = (segment.text[matches[cut - 1].end():].lstrip(" \t\r\n,.;:!?")
-                if cut else segment.text)
+                parts.append([unit for unit, _, _ in _preview_units(row.text)])
+                count += len(parts[-1])
+        tail = [unit for part in reversed(parts) for unit in part][-limit:]
+        cut = _repeated_head(tail, [unit for unit, _, _ in spans])
+        cuts_of.append(cut)
+        text = (segment.text[spans[cut - 1][2]:].lstrip(" \t\r\n,.;:!?，。；：！？、") if cut else segment.text)
         if text:
-            kept.append(replace(segment, text=text))
-    return tuple(kept)
+            kept.append((replace(segment, text=text), [unit for unit, _, _ in spans[cut:]]))
+    if cuts is not None:
+        # Keep a witnessed cut only while its prefix and overlapping extent still agree.
+        # Do not align the shortened suffix: a genuine later chorus can match the old tail.
+        remembered, shown = [], []
+        for segment, spans, cut in zip(segments, spans_of, cuts_of):
+            units = [unit for unit, _, _ in spans]
+            prior = [(end, prefix) for lane, end, prefix in cuts
+                     if lane == segment.source_lane and segment.start_sample < end
+                     and (degraded or segment.end_sample >= end)
+                     and units[:len(prefix)] == prefix]
+            cut = max([cut] + [len(prefix) for _, prefix in prior])
+            text = (segment.text[spans[cut - 1][2]:].lstrip(" \t\r\n,.;:!?，。；：！？、")
+                    if cut else segment.text)
+            if text:
+                shown.append(replace(segment, text=text))
+            end = max([segment.end_sample] + [end for end, _ in prior])
+            # A degraded base clips the row clock; its full input is now solid, but
+            # only a previously observed preview extent supports carrying that cut.
+            remembered.append((segment.source_lane, end, units if degraded else units[:cut]))
+        cuts[:] = remembered
+        return tuple(shown)
+    return tuple(row for row, _ in kept)
 
 
 def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
@@ -1337,18 +1672,19 @@ def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
 
     Two models transcribe the same audio slightly differently ("6"/"six", frontier fusions
     such as "thelocal"), so a repeat is a run of matching blocks joined across gaps of at
-    most 8 words on either side and >= 5 words long. It starts within the chunk's first 8
-    words -- a stray early match of a common head word is skipped, not allowed to break the
-    run -- and reaches within 8 words of the end of what is shown, or covers the whole chunk
+    most 8 units on either side and evidence of at least five words (nine CJK characters).
+    It starts within the chunk's first 8 units -- a stray early match of a common head word
+    is skipped, not allowed to break the run -- and reaches within 8 units of the end of
+    what is shown, or covers the whole chunk
     (an older chunk repeated whole). Everything before its end is removed, so >= 60 % of
-    those words must be matched, the unmatched head included. Scattered common words ("and",
+    those units must be matched, the unmatched head included. Scattered common words ("and",
     "the") also match and must not trim new speech: they are not dense, and a run never ends
-    on a lone word after a gap (the "the" of "in the world" seven words past a fused
+    on a lone unit after a gap (the "the" of "in the world" seven words past a fused
     "thevery" is chance, not repetition).
 
     The preview also drops or fuses whole phrases ("Only Murders" for "only eight were going
-    to work? We should have I"), so where the preview side skips at most one word the shown
-    side may skip up to 16, into a block of >= 2 words. Measured on 19 recorded W3 streams
+    to work? We should have I"), so where the preview side skips at most one unit the shown
+    side may skip up to 16, into a block of >= 2 units. Measured on 19 recorded W3 streams
     against the committed words of the same audio, such omissions run up to 12 words; a
     lone word after the skip, or an unbounded skip, joins chance matches and drops fresh
     words on the $0 replay.
@@ -1373,7 +1709,9 @@ def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
             run.pop()
         end = run[-1].b + run[-1].size
         matched = sum(block.size for block in run)
-        if (matched >= 5 and matched >= 0.6 * end
+        evidence = sum(_unit_weight(unit) for block in run
+                       for unit in words[block.b:block.b + block.size])
+        if (evidence >= 25 and matched >= 0.6 * end
                 and (run[-1].a + run[-1].size >= len(tail) - 8 or end >= len(words) - 1)):
             return end
     return 0
