@@ -591,7 +591,7 @@ export function ControlPanel() {
               : phase === "viewing" ? null
               : <button type="button" className="record-btn" data-action="start" disabled={starting || noSource}
                   title={noSource ? NO_SOURCE_TOOLTIP : undefined}
-                  onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start Recording"}</button>}
+                  onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start Transcribing"}</button>}
 
             {statusLine ? <p className="capture-status" role="status">{statusLine}</p> : null}
 
@@ -639,7 +639,7 @@ export function ControlPanel() {
         <form key={mode} data-file-upload="form" className="controls-mode-form" onSubmit={event => { if (mode === "url" && !url.startsWith("https://")) event.preventDefault(); }}>
           <section className="control-section">
             <button type="submit" className="record-btn" data-action="start" disabled={!uploadReady}>
-              <PlayIcon />{mode === "file" ? "Start File Transcription" : "Start YouTube Transcription"}</button>
+              <PlayIcon />Start Transcribing</button>
           </section>
           <section className="control-section">
             {mode === "file" ? <><label className="label" htmlFor="meeting-files">Files</label>

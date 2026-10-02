@@ -42,7 +42,7 @@ describe("Account application shell", () => {
     expect(root.querySelector('.mode-tabs [aria-pressed="true"]')?.textContent).toBe("Live");
     expect([...root.querySelectorAll(".capture-sources label.check-row")].map(row =>
       [row.textContent, row.querySelector("input")?.checked])).toEqual([["System Sound Output", true], ["Microphone", true]]);
-    expect(root.querySelector<HTMLButtonElement>('.record-btn[data-action="start"]')?.textContent).toBe("Start Recording");
+    expect(root.querySelector<HTMLButtonElement>('.record-btn[data-action="start"]')?.textContent).toBe("Start Transcribing");
     expect(root.querySelector('[aria-label="Listening with"]')).toBeNull();
     expect(root.querySelectorAll('[aria-label="Meeting views"] [role="tab"]')).toHaveLength(2);
     expect(root.querySelector('input[type="password"]')).toBeNull();

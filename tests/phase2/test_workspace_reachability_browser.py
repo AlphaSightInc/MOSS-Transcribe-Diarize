@@ -480,7 +480,7 @@ async def _exercise_two_browsers(
         await second.wait(card)
         reload_read_only = await second.evaluate(
             "document.querySelector('[data-capture-phase=\"idle\"]') !== null && "
-            "[...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'Start Recording')"
+            "[...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'Start Transcribing')"
         )
         reattach_stored = await second.evaluate("sessionStorage.getItem('lt:session:reattach')")
         return {

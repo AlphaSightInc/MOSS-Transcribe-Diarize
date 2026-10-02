@@ -45,7 +45,7 @@ def execute_submission_script(workspace_html: str) -> dict[str, object]:
                 {'name': 'one.wav', 'mimeType': 'audio/wav', 'buffer': b'one'},
                 {'name': 'two.wav', 'mimeType': 'audio/wav', 'buffer': b'two'},
             ])
-            page.get_by_role('button', name='Start File Transcription', exact=True).click()
+            page.get_by_role('button', name='Start Transcribing', exact=True).click()
             results = page.locator('[data-file-upload="results"]')
             expect(results.locator('li')).to_have_count(2)
             # Q6: rows keep only a failure with its reason and the "Open meeting" action.
@@ -55,10 +55,10 @@ def execute_submission_script(workspace_html: str) -> dict[str, object]:
             page.get_by_role('button', name='YouTube', exact=True).click()
             url = page.locator('input[name="urls"]')
             url.fill('https://media.test/http-failure')
-            page.get_by_role('button', name='Start YouTube Transcription', exact=True).click()
+            page.get_by_role('button', name='Start Transcribing', exact=True).click()
             expect(page.locator('[data-file-upload="results"]')).to_contain_text('Not accepted: Unsupported media URL')
             url.fill('https://media.test/good')
-            page.get_by_role('button', name='Start YouTube Transcription', exact=True).click()
+            page.get_by_role('button', name='Start Transcribing', exact=True).click()
             expect(page.get_by_role('button', name='Open meeting for https://media.test/good')).to_have_count(1)
             expect(page.locator('[data-file-upload="results"]')).not_to_contain_text('Not accepted')
             return {'calls': calls, 'created': page.evaluate('window.created'),

@@ -189,7 +189,7 @@ def test_summary_entry_does_not_cover_upload_or_navigation(width, height):
                     0, min(summary['y'] + summary['height'], other['y'] + other['height']) - max(summary['y'], other['y']))
 
             page.get_by_role('button', name='File', exact=True).click()
-            upload = page.get_by_role('button', name='Start File Transcription').bounding_box()
+            upload = page.get_by_role('button', name='Start Transcribing').bounding_box()
             nav = page.get_by_role('navigation', name='Workspace').bounding_box()
             assert overlap(upload) == 0
             assert overlap(nav) == 0
