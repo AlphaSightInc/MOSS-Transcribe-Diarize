@@ -165,3 +165,107 @@ def test_microphone_restored_words_pass_the_terminal_gates():
         gate.system_words.words_through(30*S), system_pcm16=system)
     assert [x.text for x in output] == ['elaborate', 'on', 'that?']
     assert len(restored) == 1
+
+
+@pytest.mark.parametrize('next_label', ['window-A', 'window-B'])
+def test_microphone_frontier_reply_restores_across_request_labels(next_label):
+    mic, system = _local_fixture(((11.8, 15.8),))
+    gate = _local_gate(system, [])
+    anchor = _local_phrase(' '.join(['genuine']*26), 11.8, 14.4, 'window-A')
+    reply = _local_phrase(start=14.6, end=15.6, label='window-A')
+    class Cleanup:
+        def diarize(self, *args, **kwargs): return GeminiWords(anchor)
+    terminal = TerminalTranscriber(Cleanup(), source_lane='microphone', word_gate=gate.webrtc_gate,
+        word_filter=lambda words: gate.filter_terminal(mic, words, (), system_pcm16=system),
+        witness_filter=lambda cleanup, kept, witness, skip: gate.restore_witnessed_words(
+            mic, cleanup, kept, witness, (), system_pcm16=system, skip=skip))
+    published = []
+    engine = GeminiHybridEngine(published.append, word_source=object(),
+        window_scheduler=FixedWindowScheduler(), registry=OverlapRegistry(),
+        diarizer=Cleanup(), terminal=terminal, word_gate=gate, source_lane='microphone')
+    engine._publish_window(0, 15*S, mic, anchor+reply[:2])
+    next_words = tuple(GeminiWord(x.text, next_label, x.start_sample, x.end_sample) for x in anchor+reply)
+    engine._publish_window(0, 30*S, mic, next_words)
+    assert {r.speaker for update in published for r in getattr(update, 'segments', ())} == {'speaker-0001'}
+    class VoiceTape:
+        sample_count = len(mic)//2
+        def read(self, *, start_sample=0, end_sample=None):
+            return mic[2*start_sample:None if end_sample is None else 2*end_sample]
+    try:
+        asyncio.run(engine.finish(VoiceTape()))
+        assert [x.text for x in terminal.last_words if x.text != 'genuine'] == [x.text for x in reply]
+    finally:
+        engine.close()
+
+
+@pytest.mark.parametrize('seconds,word_count', [(30, 5), (45, 24)])
+def test_microphone_witness_admission_preserves_provider_counters_and_anchor(seconds, word_count):
+    mic, system = _local_fixture(((8, 12.1),), seconds=seconds)
+    counts = []
+    gate = _local_gate(system, counts)
+    words = _local_phrase(' '.join(['local']*word_count), 8.4, 12 if word_count == 24 else 9.2)
+    live = gate.filter(mic, words)
+    # Candidate admission must not create an anchor even for a long witnessed turn.
+    gate.local_speech_seen = False
+    kept = gate.filter_terminal(mic, (), (), system_pcm16=system)
+    before = [dict(row) for row in counts]
+    rescue = gate._local_level_kept, gate._local_unanchored_kept, gate.lane_withheld_words
+    output, restored = gate.restore_witnessed_words(mic, (), kept, live, (), system_pcm16=system)
+    assert len(output) == word_count and len(restored) == 1
+    assert counts == before
+    assert (gate._local_level_kept, gate._local_unanchored_kept, gate.lane_withheld_words) == rescue
+    assert not gate.local_speech_seen
+
+
+def test_microphone_witness_pass_scans_voice_once_and_bounds_embedding_audio():
+    from moss_transcribe_diarize.app.gemini_final_policy import WebRtcWordGate
+    mic, system = _local_fixture(((8, 12.1), (68, 72.1), (128, 132.1)), seconds=180)
+    gate = _local_gate(system, [])
+    class CountingVad:
+        frames = 0
+        def is_speech(self, pcm, rate):
+            self.frames += 1
+            return True
+    vad = CountingVad()
+    gate.webrtc_gate = WebRtcWordGate(vad)
+    embedded = []
+    def embed(pcm, start, words):
+        embedded.append((len(pcm), start, tuple(words)))
+        return {}
+    gate.embedding_source = embed
+    remote = _local_phrase(' '.join(['remote']*24), 1, 4, 'tab')
+    witnesses = sum((_local_phrase(' '.join(['local']*24), start, start+3.6)
+                     for start in (8.4, 68.4, 128.4)), ())
+    cleanup = tuple(w('neighbour', start, start+.1, 'final') for start in (5, 65, 125))
+    output, restored = gate.restore_witnessed_words(mic, cleanup, cleanup, witnesses, remote, system_pcm16=system)
+    assert len(output) == 75 and len(restored) == 3
+    assert vad.frames == 180*100
+    assert sum(words == remote for _, _, words in embedded) == 1
+    assert all(size <= 4*S*2 for size, _, words in embedded if words != remote)
+    before = vad.frames, len(embedded)
+    assert gate.restore_witnessed_words(mic, (), (), (), remote, system_pcm16=system) == ((), [])
+    assert (vad.frames, len(embedded)) == before
+
+
+def test_microphone_witness_reuses_saved_contexts_and_system_vectors():
+    mic, system = _local_fixture(((11.8, 15.8),))
+    gate = _local_gate(system, [])
+    anchor = _local_phrase(' '.join(['genuine']*26), 11.8, 14.4)
+    reply = _local_phrase(start=14.6, end=15.6)
+    remote = _local_phrase('remote tab turn', 1, 4, 'tab')
+    scans, embedded = [], []
+    frames = gate.local_voice._frames
+    def scan(*args):
+        scans.append(len(args[0]))
+        return frames(*args)
+    def embed(pcm, start, words):
+        embedded.append(tuple(words))
+        return {}
+    gate.local_voice._frames = scan
+    gate.embedding_source = embed
+    kept = gate.filter_terminal(mic, anchor, remote, system_pcm16=system)
+    before = len(scans)
+    output, restored = gate.restore_witnessed_words(mic, anchor, kept, reply, remote, system_pcm16=system)
+    assert len(output) == 31 and len(restored) == 1
+    assert len(scans) == before+1  # The reply also needs the next context; the first is reused.
+    assert embedded.count(remote) == 1

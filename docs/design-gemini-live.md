@@ -83,7 +83,8 @@ After final identity labels (or the chunk stitcher), H finds consecutive live wo
 provider holes: at most 0.1 s covered per word, not fully covered, and at least 0.15 s
 uncovered across the run. Zero-length words count as 0.1 s. Equal adjacent edge words
 (including the same numeral written two ways) are removed. The existing 10 s fallback
-owns its intervals; H skips them. On the system lane restored words copy the nearer
+owns its intervals; H skips them. An empty clean-up answer saves the live rows as
+committed; rule H's independent admission does not apply to them. On the system lane restored words copy the nearer
 final neighbour's label, then pass the existing word gates. Clean-up words retain
 their text, times and labels. `witness_restored_words` counts inserted words without
 adding a provider request; it appears in the numeric operator diagnostics.
@@ -120,9 +121,9 @@ The saved and Stop-tail passes compute the same frame facts in 30 s contexts eve
 15 s, only computing contexts overlapping the candidate words. Withholding still counts
 a Stop tail as covered, rather than failed recovery.
 
-For clean-up witness restoration (WP-C), call
-`LocalVoiceEvidence.is_local_run(mic_pcm16, words, offset_sample=0, whole_lane=True)`
-with **one restore candidate run alone**, after clean-up words were gated. Its word
+For clean-up witness restoration (WP-C), `LocalVoiceEvidence` judges **one restore
+candidate run alone**, after clean-up words were gated. During admission its words
+use one candidate label, independent of request-local namespaces. Its word
 samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
 independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
 its speaker. An anchored lane never waives this evidence requirement.
@@ -130,7 +131,10 @@ Hole discovery uses the ungated provider timeline: gate removal is not an omissi
 Each candidate passes voice activity, independent local-run evidence, and the existing
 microphone guards; only surviving local runs still weighing 15 are restored. The nearer
 kept clean-up neighbour supplies the label (earlier wins a tie); without one, the lane's
-local speaker does. Other restored runs never serve as clean-up neighbours.
+local speaker does. Other restored runs never serve as clean-up neighbours. Witness
+voice activity is scanned once; saved-pass 30 s local-frame facts and system vectors
+are reused. Microphone embeddings read only the candidate's audio span. Re-admission
+does not increment provider or local-rescue counters or change the lane anchor.
 
 Measured H prototype: lost name tokens 115 → 4 across 100 pairs; doubled adjacent units
 0; 236/250 names retained in 25 system engine cells. BC composition preserves F2's

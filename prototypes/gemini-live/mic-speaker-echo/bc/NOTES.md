@@ -228,3 +228,54 @@ Values below are prototype -> BC, W off and on identical. Extra microphone words
 branch cut from merged WP-B. Phase 1 stops at `Stage: BC DONE — waiting for lead`. Physical acceptance, new provider
 behavior and product-code reproduction of this prototype belong to later phases. Review the source-summary
 custody deviation and inherited system `I I` witnesses above; neither is silently removed from this result.
+
+
+## R5B-FIX2 seam and bounded-work amendment (2026-10-01)
+
+**Question / primitives.** A live reply crosses a commit frontier. Its provider labels belong to different
+requests; admission owns one isolated candidate, not either namespace. Shared frame facts are audio facts;
+local/voice/text guards still own independent candidate decisions. Final kept-neighbour identity is separate.
+**Invariants.** Same speech/text/times admits equally across label changes; no restored echo/noise; no joining
+candidates; no candidate provider/rescue counter or lane-anchor mutation; fallback skips unchanged.
+**Unknowns.** Injected/recorded replay does not measure fresh providers or physical echo cancellation.
+**Falsifiers / tools.** Actual rolling-to-terminal seam below 5/5, any negative restored, a frozen-cell loss,
+or 120 candidates taking >10 s rejects the rule. Immutable review probes and recorded BC populations discriminate
+these failures; no provider calls. Evidence: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/R5B-FIX2/`.
+
+D1 **Choose one candidate label during admission**, retaining original witness text/times and assigning the final
+kept-neighbour label only afterwards. Both prototypes (continuous published witness identity; one candidate label)
+restore the seam 5/5 versus baseline 0/5 when labels change, 5/5 when unchanged. Each preserves all 24 isolated
+controls and restores 0 in 56 negative conditions from 28 recorded samples (908 words), anchored off/on.
+Existing four subprocess engine injections also remain unchanged (these were baseline-product composition controls,
+not propagation of the process-local prototype patch): replies 5/5 at 10/20 dB below tab; inventions/noise 0.
+The candidate rule changes only H's admission namespace; it leaves live identity custody untouched.
+
+D2 **Share computation, never evidence denominators.** One mode-1 scan supplies voiced words for all candidates.
+Cache exact 30 s/15 s mode-3 frame arrays by context within the saved pass, reusing clean-up contexts; calculate
+missing contexts once. Reuse saved-pass system vectors (otherwise compute once lazily). Embed microphone words
+from their own bounded audio span with absolute offset preserved. Pure local-word selection and the existing
+level/voice/text guards run independently per candidate, with no terminal provider/rescue report or lane-anchor update.
+The 80% rule, sustained 0.4 s stretch, 0.6 s joins, 15 text weight and neighbour labeling are unchanged.
+
+Measured two-hour public-speech probe: baseline 120 candidates **108.0758 s**, 86,400,000 mode-1 frames, 360/360
+restored words; final prototype **1.6382 s**, 720,000 frames, 360/360. Empty **0.000085 s**, zero frames.
+Prototype terminal/regression population **45 passed**. Production regression seeds: changed-label frontier through
+rolling+finish; short/long candidate counters and anchor; single voice scan plus bounded mic embedding arguments;
+reused saved local context and system vectors. Five fail on unchanged product; the unchanged-label seam is a passing
+positive control. No existing test meaning changes. Throwaway sources/receipts retained only in FIX2 evidence;
+the measured implementation is absorbed into the product and the existing measurement bench.
+
+D3 **Retain fallback boundary (lead decision).** An empty clean-up answer saves committed live rows; H skips their
+owned intervals and does not independently re-admit them. R2-F2 is deliberately unchanged.
+
+
+Product verification after FIX2: **PASS**, exact BC text/times on 45 F3 +19 F2 +63 level cells;
+100 H pairs: lost names 4, doubled adjacent units 0; F2 live/Stop/saved 206/291/310 of343;
+system names236/250; 56 negative conditions0 restored; 24 isolated controls +4 whole-engine injections pass.
+All131 engine receipts name this worktree's production modules and replayed provider answers ($0).
+Product cost120:1.632433s /720,000 mode-1 frames /360 words; empty0.000091s; rejected120:0.847814s /0 words.
+Targeted103 passed, including55 prior WP-C +6 new/control cases. Full backend:2804 passed,9 skipped,
+2 xfailed,37 subtests passed,423.66s; no browser failure. Five regression cases fail before/pass after;
+unchanged-label positive control passes both. See FIX2 `probe-summary.json`, `test-before-after.md`,
+`verdict.json`, `source-custody.json`, and `full-backend.log`. Inherited sweep echo-proxy flags remain,
+with zero final microphone text/time differences; physical echo cancellation remains unmeasured.

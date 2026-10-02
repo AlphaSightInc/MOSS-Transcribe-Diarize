@@ -401,7 +401,7 @@ class LocalVoiceEvidence:
         return mic_voice & (~near | (mic_rms >= best*10**(-15/20)))
 
     def _audio(self, mic_pcm16: bytes, words: Sequence[GeminiWord], offset_sample: int,
-               whole_lane: bool):
+               whole_lane: bool, frame_cache=None):
         import numpy as np
         frame = LIVE_SAMPLE_RATE // 100
         n = len(mic_pcm16)//2//frame
@@ -421,8 +421,14 @@ class LocalVoiceEvidence:
         for end in ends:
             lo = max(0, end-context)
             if end > first and done < last:
-                part = self._frames(mic_pcm16[lo*frame*2:end*frame*2],
-                                    self.system_read(lo*frame, end*frame))
+                key = (lo, end)
+                if frame_cache is not None and key in frame_cache:
+                    part = frame_cache[key]
+                else:
+                    part = self._frames(mic_pcm16[lo*frame*2:end*frame*2],
+                                        self.system_read(lo*frame, end*frame))
+                    if frame_cache is not None:
+                        frame_cache[key] = part
                 flags[done:end] = part[done-lo:end-lo]
             done = end
         return flags
@@ -445,11 +451,11 @@ class LocalVoiceEvidence:
         return runs
 
     def local_words(self, mic_pcm16: bytes, words: Sequence[GeminiWord], *,
-                    offset_sample: int = 0, whole_lane: bool = False) -> dict[int, int]:
+                    offset_sample: int = 0, whole_lane: bool = False, frame_cache=None) -> dict[int, int]:
         import numpy as np
         if not words:
             return {}
-        flags = self._audio(mic_pcm16, words, offset_sample, whole_lane)
+        flags = self._audio(mic_pcm16, words, offset_sample, whole_lane, frame_cache)
         stretches, start, last = [], None, None
         for index in np.flatnonzero(flags):
             if start is None:
@@ -512,6 +518,8 @@ class MicrophoneWordGate:
         self.embedding_source = embedding_source
         self.local_speech_seen = False
         self.lane_withheld_words = 0
+        self._terminal_frame_cache = {}
+        self._terminal_system_vectors = None
 
     def _record(self, before: int, acoustic: int, after_voice: int,
                 after_text: int, unanchored: int = 0, lane_withheld: int = 0) -> None:
@@ -553,13 +561,18 @@ class MicrophoneWordGate:
         passed = {id(w) for w in today}
         return tuple(w for w in kept if id(w) in passed or (id(w) in local and id(w) in phrase_only))
 
-    def _evidenced(self, kept, local):
+    @staticmethod
+    def _local_kept(kept, local):
         by_run = {}
         for word in kept:
             if id(word) in local:
                 by_run.setdefault(local[id(word)], []).append(word)
         ids = {id(w) for run in by_run.values() if _local_text_weight(run) >= 15 for w in run}
         rescued = tuple(w for w in kept if id(w) in ids)
+        return rescued
+
+    def _evidenced(self, kept, local):
+        rescued = self._local_kept(kept, local)
         self._local_unanchored_kept = len(rescued)
         return rescued
 
@@ -598,13 +611,17 @@ class MicrophoneWordGate:
                         system_words: Sequence[GeminiWord], *,
                         system_pcm16: bytes | None = None) -> tuple[GeminiWord, ...]:
         # TerminalTranscriber has already applied the mic WebRTC word gate.
-        local = (self.local_voice.local_words(mic_pcm16, words, whole_lane=True)
+        self._terminal_frame_cache = {}
+        self._terminal_system_vectors = None
+        local = (self.local_voice.local_words(
+            mic_pcm16, words, whole_lane=True, frame_cache=self._terminal_frame_cache)
                  if self.local_voice is not None else {})
         acoustic = self._level(mic_pcm16, words, 0, local)
         kept = acoustic
         if self.voice_guard is not None and kept and system_pcm16 is not None:
             mic_vectors = self.embedding_source(mic_pcm16, 0, kept)
             system_vectors = self.embedding_source(system_pcm16, 0, system_words)
+            self._terminal_system_vectors = (tuple(system_words), system_vectors)
             kept = self.voice_guard.filter_terminal(
                 kept, mic_vectors, system_words, system_vectors)
             after_voice = len(kept)
@@ -633,17 +650,41 @@ class MicrophoneWordGate:
         output, restored = list(kept), []
         if self.local_voice is None:
             return tuple(output), restored
-        for run, samples in uncovered_runs(cleanup, witness, skip=skip):
-            if samples < MIN_RUN_SAMPLES:
+        frame_cache, self._terminal_frame_cache = self._terminal_frame_cache, {}
+        previous_system, self._terminal_system_vectors = self._terminal_system_vectors, None
+        # Request-local speaker namespaces do not divide one independently judged candidate.
+        candidates = [(tuple(GeminiWord(w.text, "candidate", w.start_sample, w.end_sample)
+                             for w in run), samples)
+                      for run, samples in uncovered_runs(cleanup, witness, skip=skip)
+                      if samples >= MIN_RUN_SAMPLES]
+        if not candidates:
+            return tuple(output), restored
+        # Share voice activity only: local/voice/text admission still judges each candidate alone.
+        voiced_ids = {id(w) for w in self.webrtc_gate.filter(
+            mic_pcm16, tuple(w for run, _ in candidates for w in run))}
+        system_vectors = (previous_system[1] if previous_system is not None
+                          and previous_system[0] == tuple(system_words) else None)
+        for run, samples in candidates:
+            voiced = tuple(w for w in run if id(w) in voiced_ids)
+            local = self.local_voice.local_words(
+                mic_pcm16, voiced, whole_lane=True, frame_cache=frame_cache)
+            if not voiced or len(local) < .8*len(voiced):
                 continue
-            voiced = tuple(self.webrtc_gate.filter(mic_pcm16, run))
-            if not self.local_voice.is_local_run(mic_pcm16, voiced, whole_lane=True):
-                continue
-            local = self.local_voice.local_words(mic_pcm16, voiced, whole_lane=True)
-            admitted = self._evidenced(voiced, local)
-            admitted = self.filter_terminal(mic_pcm16, admitted, system_words,
-                                            system_pcm16=system_pcm16)
-            admitted = self._evidenced(admitted, local)
+            admitted = self._local_kept(voiced, local)
+            today = (self.acoustic_gate.filter(mic_pcm16, admitted)
+                     if self.acoustic_gate is not None else admitted)
+            ids = {id(w) for w in today}
+            admitted = tuple(w for w in admitted if id(w) in ids or id(w) in local)
+            if self.voice_guard is not None and admitted:
+                a, b = min(w.start_sample for w in admitted), max(w.end_sample for w in admitted)
+                mic_vectors = self.embedding_source(mic_pcm16[a*2:b*2], a, admitted)
+                if system_vectors is None:
+                    system_vectors = self.embedding_source(system_pcm16, 0, system_words)
+                admitted = self.voice_guard.filter_terminal(admitted, mic_vectors, system_words, system_vectors)
+                admitted = self._text(admitted, system_words, mic_vectors, local)
+            else:
+                admitted = TextEchoGuard().filter(admitted, system_words)
+            admitted = self._local_kept(admitted, local)
             if not admitted:
                 continue
             a, b = admitted[0].start_sample, max(_span(w)[1] for w in admitted)
