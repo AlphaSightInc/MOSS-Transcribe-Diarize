@@ -142,18 +142,30 @@ candidate run alone**, after clean-up words were gated. A committed witness carr
 two independent authorities: its **source partition** for admission evidence and its
 **published live identity** for display/name continuity. Source partitions retain the
 provider's request-local grouping, even when the identity registry aliases labels.
-Consecutive requests continue a source partition only when they re-hear already
-committed words with the same text and both endpoints within the provider's 0.1 s step.
+Consecutive requests continue a source partition only when they re-hear at least two
+distinct committed words, matching at least two distinct new words with the same text
+and both endpoints within the provider's 0.1 s step. Occurrences use text/start/end;
+duplicate matches to one occurrence do not count twice. A lone common-word coincidence
+cannot continue a partition or move an old witness into a new group.
 Equal raw labels or published IDs alone never establish continuity.
 
 A new label matching two earlier partitions gets a fresh partition; the earlier groups
 stay separate. Two new labels matching one earlier partition get separate new partitions;
 only earlier words positively matching exactly one new label move into that partition.
+All raw matches participate in ambiguity checks: a weak competing label or partition
+still prevents whole-group continuation. Only qualifying two-word edges authorize
+continuation or matched-word transfers; weaker edges stay separate.
 Unmatched or ambiguous words stay separate. Thus a corrected seam prefix can accompany
 its suffix without pooling two voices. Without correspondence a short reply crossing a
 frontier may remain withheld. Published `GeminiRelabel` rows update witness identity,
 never the source partition. Different source partitions retain independent local-run
 text-weight evidence; two words from each cannot combine to meet the 15-weight bar.
+Each partition/run owns its 80% denominator: rejected groups neither lend evidence nor
+veto an eligible reply in the same provider hole. Only eligible local words proceed to
+the remaining guards and the surviving per-run weight-15 check. A one-word re-heard seam
+prefix cannot establish correspondence; each separated piece must qualify on its own.
+The measured five-word English control saves its four-word suffix and withholds its
+one-word prefix. Two-word-prefix seams remain 5/5 across identity/label changes.
 Their samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
 independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
 its speaker. An anchored lane never waives this evidence requirement.

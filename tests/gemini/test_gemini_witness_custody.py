@@ -133,3 +133,92 @@ def test_restored_name_bridges_same_live_person_instead_of_closest_other_speaker
     terminal.transcribe(Tape(bytes(24*S)))
     own, other, name = terminal.last_words
     assert name.speaker == own.speaker and name.speaker != other.speaker
+
+
+@pytest.mark.parametrize('collision', ['within_step', 'same_time'])
+def test_single_common_word_cannot_pool_two_people_short_replies(collision):
+    mic, tab = _local_fixture(((11.8, 15.8),), echo=100)
+    anchor = _local_phrase(' '.join(['genuine']*26), 11.8, 14.4, 'anchor-X')
+    first = (GeminiWord('Thanks', 'A', round(14.6*S), round(14.8*S)),
+             GeminiWord('okay', 'A', round(14.8*S), round(14.9*S)))
+    second = _local_phrase('sounds good', 15, 15.4, 'B')
+    context = GeminiWord('okay', 'B', round((14.9 if collision == 'within_step' else 14.8)*S),
+                         round((15 if collision == 'within_step' else 14.9)*S))
+    engine, terminal, _ = engine_for(mic, tab, anchor, lambda *args: {
+        'anchor-X': ((1., 0.), 2.6), 'A': ((0., 1.), .3), 'B': ((-.6, .8), .5)})
+    try:
+        engine._publish_window(0, 15*S, mic[:30*S], anchor+first)
+        engine._publish_window(0, 30*S, mic, anchor+(context,)+second)
+        witnesses = [w for w in engine._witness_words if w.start_sample > 14.5*S]
+        assert len({w.source_partition for w in witnesses}) == 2
+        asyncio.run(engine.finish(Tape(mic)))
+        assert not [w for w in terminal.last_words if w.start_sample > 14.5*S]
+    finally:
+        engine.close()
+
+
+@pytest.mark.parametrize('context_text', ['okay', 'yes'])
+def test_rejected_partition_cannot_lend_or_veto_genuine_reply(context_text):
+    mic, tab = _local_fixture(((11.4, 14), (14.6, 15.8)), echo=56)
+    anchor = _local_phrase(' '.join(['genuine']*26), 11.4, 14, 'A')
+    unrelated = (GeminiWord('remote', 'A', round(14.3*S), round(14.5*S)),
+                 GeminiWord('okay', 'A', round(14.8*S), round(14.9*S)))
+    reply = _local_phrase('Can you elaborate please?', 15, 15.8, 'B')
+    engine, terminal, _ = engine_for(mic, tab, anchor, lambda *args: {
+        'A': ((1., 0.), 2.9), 'B': ((-.6, .8), .8)})
+    try:
+        engine._publish_window(0, 15*S, mic[:30*S], anchor+unrelated)
+        engine._publish_window(0, 30*S, mic, (GeminiWord(context_text, 'B', round(14.9*S), 15*S),)+reply)
+        asyncio.run(engine.finish(Tape(mic)))
+        assert [w.text for w in terminal.last_words if w.start_sample > 14.2*S] == [w.text for w in reply]
+    finally:
+        engine.close()
+
+
+def test_correspondence_needs_two_distinct_occurrences_in_both_requests():
+    from moss_transcribe_diarize.app.gemini_coverage import WitnessWord, source_partitions
+    old = [WitnessWord('okay', 'published', 100, 200, 'prior')]
+    new = [GeminiWord('okay', 'B', 100, 200), GeminiWord('okay', 'B', 101, 201)]
+    updated, mapping, context = source_partitions(old, old, new, 1000)
+    assert mapping['B'] != 'prior' and updated == old and not context
+    old = [WitnessWord('okay', 'published', 100, 200, 'prior'),
+           WitnessWord('okay', 'published', 101, 201, 'prior')]
+    new = [GeminiWord('okay', 'B', 100, 200)]
+    updated, mapping, context = source_partitions(old, old, new, 1000)
+    assert mapping['B'] != 'prior' and updated == old and not context
+
+
+def test_one_word_reheard_prefix_keeps_only_independently_eligible_suffix():
+    mic, tab = _local_fixture(((11.8, 15.8),), echo=100)
+    anchor = _local_phrase(' '.join(['genuine']*26), 11.8, 14.4, 'anchor-A')
+    reply = _local_phrase('Can you elaborate on that?', 14.7, 15.7, 'reply-B')
+    engine, terminal, _ = engine_for(mic, tab, anchor, lambda *args: {'anchor-A': ((1., 0.), 2.6)})
+    try:
+        engine._publish_window(0, 15*S, mic[:30*S], anchor+reply[:1])
+        engine._publish_window(0, 30*S, mic, anchor+reply)
+        asyncio.run(engine.finish(Tape(mic)))
+        assert [w.text for w in terminal.last_words if w.start_sample > 14.5*S] == [w.text for w in reply[1:]]
+    finally:
+        engine.close()
+
+
+def test_weak_competing_label_still_blocks_whole_partition_continuation():
+    from moss_transcribe_diarize.app.gemini_coverage import WitnessWord, source_partitions
+    old = [WitnessWord('Can', 'published', S, S+3200, 'prior'),
+           WitnessWord('you', 'published', 2*S, 2*S+3200, 'prior'),
+           WitnessWord('remote', 'published', 3*S, 3*S+3200, 'prior')]
+    new = [GeminiWord(w.text, 'B' if w.text == 'remote' else 'A', w.start_sample, w.end_sample) for w in old]
+    updated, mapping, _ = source_partitions(old, old, new, 4*S)
+    assert mapping['A'] != 'prior'
+    assert [w.source_partition for w in updated] == [mapping['A'], mapping['A'], 'prior']
+    assert mapping['B'] not in ('prior', mapping['A'])
+
+
+def test_weak_competing_partition_still_blocks_merging_old_groups():
+    from moss_transcribe_diarize.app.gemini_coverage import WitnessWord, source_partitions
+    old = [WitnessWord('Can', 'published', S, S+3200, 'pA'),
+           WitnessWord('you', 'published', 2*S, 2*S+3200, 'pA'),
+           WitnessWord('remote', 'published', 3*S, 3*S+3200, 'pB')]
+    new = [GeminiWord(w.text, 'merged', w.start_sample, w.end_sample) for w in old]
+    updated, mapping, _ = source_partitions(old, old, new, 4*S)
+    assert mapping['merged'] not in ('pA', 'pB') and updated == old

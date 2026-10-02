@@ -667,7 +667,8 @@ class MicrophoneWordGate:
             voiced = tuple(w for w in run if id(w) in voiced_ids)
             local = self.local_voice.local_words(
                 mic_pcm16, voiced, whole_lane=True, frame_cache=frame_cache)
-            if not voiced or len(local) < .8*len(voiced):
+            # local_words owns each source run's 80% denominator, never the whole hole.
+            if not local:
                 continue
             admitted = self._local_kept(voiced, local)
             today = (self.acoustic_gate.filter(mic_pcm16, admitted)
