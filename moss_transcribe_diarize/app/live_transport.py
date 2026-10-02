@@ -544,11 +544,15 @@ def attach_live_routes(
                 cursor = min((item.frame.capture_timestamp_ns for item in v2_session.retained_frames()), default=0)
             anchor = now if writer.clock_anchor_ns is None else writer.clock_anchor_ns
             capture_now = max(last_end, cursor, now - anchor)
-            interruption = {"start_sample": mixer.mixed_sample_at(last_end, mixed_samples, origin_ns=cursor),
-                            "end_sample": None}
+            interruption = None
+            if mixed_samples or any(lane["next_sequence"] for lane in lanes.values()):
+                interruption = {"start_sample": mixer.mixed_sample_at(last_end, mixed_samples, origin_ns=cursor),
+                                "end_sample": None}
             renewed = helper_failures.resume(session_id)
             if renewed is None:
                 raise CaptureConflict("resume_lease_expired")
+            if interruption is not None:
+                mixer.preserve_resume_origin(cursor)
             writer.instance_id = instance
             writer.resumed = True
             helper_presence.replace_instance(session_id, instance)
@@ -556,7 +560,8 @@ def attach_live_routes(
             writer.gap_anchor_samples = mixed_samples
             writer.first_lanes = set(LiveLane)
             writer.interruption = interruption
-            writer.interruption_index = await adapter.record_interruption(authority, interruption)
+            writer.interruption_index = (None if interruption is None else
+                await adapter.record_interruption(authority, interruption))
             writer.last_request = pair
             writer.response = {
                 "session_id": session_id, "instance_id": instance,
@@ -565,7 +570,7 @@ def attach_live_routes(
                 "lease_remaining_ns": renewed.deadline_monotonic_ns - now,
                 "heartbeat_next_sequence": 0 if presence is None else presence.sequence + 1,
                 "heartbeat_next_monotonic_ns": 0 if presence is None else presence.sent_monotonic_ns + 1,
-                "interruption": dict(interruption),
+                "interruption": None if interruption is None else dict(interruption),
             }
             return writer.response
         except ValueError as exc:

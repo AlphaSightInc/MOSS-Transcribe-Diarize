@@ -108,6 +108,12 @@ class LiveCompatibilityMixer:
         with self._lock:
             return self._cursor_ns
 
+    def preserve_resume_origin(self, capture_timestamp_ns: int) -> None:
+        """Keep an accepted unmixed prefix when resumed peer audio arrives later."""
+        with self._lock:
+            if self._cursor_ns is None:
+                self._cursor_ns = capture_timestamp_ns
+
     def mixed_sample_at(self, capture_timestamp_ns: int, mixed_samples: int, *, origin_ns: int = 0) -> int:
         """Translate capture time through the current mixed-clock anchor."""
         with self._lock:

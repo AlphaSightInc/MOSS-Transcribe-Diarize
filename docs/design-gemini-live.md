@@ -800,7 +800,7 @@ writer still heartbeats. User requests may take over immediately. A per-Meeting
 guard serializes the
 handshake and all capture mutations; compare-and-swap yields one winner. The
 response supplies authoritative clocks/cursors. Idempotent retry returns the same
-state without renewing twice. **U2** every handoff records mixed-clock interruption
+state without renewing twice. **U2** handoffs after accepted audio record mixed-clock interruption
 metadata separately from speech; mixer zero-fill preserves elapsed missing time.
 Closed `capture_interruptions` plus `sample_rate` persist through
 Stop/refinement/reload/History in the snapshot `session` and saved document top
@@ -841,3 +841,34 @@ entries are removed beside v2 capture release/expiry, including Stop, Abort and
 lease expiry. Offline ASGI tests hold one body mid-upload while the other lane
 and heartbeat finish, and reject late old-writer/terminal bodies without
 recreating presence. Full-suite and red/green receipts: P74-RS-STATUS.md.
+
+Lead **R4**: resume before any audio was accepted is a late start, not an
+interruption. When mixed samples and every lane's accepted sequence are zero,
+resume leaves interruption metadata absent; the first accepted frame establishes
+the normal mixer origin. A lane frame accepted before the first mix still counts
+as prior audio. Writer replacement, fencing and lease renewal are unchanged.
+When prior audio is still unmixed, successful resume preserves its retained
+origin in the existing mixer cursor before a resumed peer can move startup
+forward. Ordinary startup and zero-prefix late start retain their existing origin
+selection; no new mixer clock or buffer is added.
+
+P74-RS-FIX1's unchanged reviewer reproduction saved a 0–5 s interruption over
+0–0.5 s speech in a 0.5 s MP3. The process-local R4 prototype removes that
+metadata while preserving the exact archive and speech bounds. Original
+system-frame early-resume and open-interval Stop controls pass. An additional
+microphone-only prefix with resumed system delivery first exposes an existing
+origin loss: a 0.5 s archive with interruption 0.5–5.5 s. The R4-only candidate
+retained this failure. Preserving the accepted origin fixes the same frozen
+control: a 6 s archive, unchanged interruption and all five controls green in
+the prototype. This narrow correction satisfies R4's any-accepted-lane boundary.
+Receipts:
+`evidence/P74/RS-FIX1/` and `status/P74-RS-FIX1-STATUS.md` under the user's
+moss-gemini folder. Provider, browser and physical-device behavior unmeasured.
+
+FIX1 verification: five prototype controls pass; all 64 route/mixer tests pass.
+Full backend: 2961 passed, 9 skipped, 2 xfailed, 37 subtests passed in 445.96 s.
+All six product gap cells retain exact 13/38/98/127/168 s archives, silent
+interiors, 125 s refusal, 472000/960000-sample peak retention and 30 s live
+catch-up. Final receipts: `RS-FIX1/targeted-final.txt`,
+`RS-FIX1/full-backend-final.txt`, and
+`resume/RS-product-20261002-152501/matrix.json` under P74 evidence.

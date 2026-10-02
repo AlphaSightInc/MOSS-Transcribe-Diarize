@@ -362,6 +362,75 @@ def test_early_resume_translates_nonzero_capture_origin_before_first_mix(live):
     assert doc['capture_interruptions'] == [{'start_sample': 8000, 'end_sample': 88000}]
 
 
+def test_resume_before_any_accepted_frame_is_late_start(live):
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    clock.now += 5 * bench.NS
+    response = resume(client, base, automatic=True)
+    assert response.status_code == 200, response.text
+    state = response.json()
+    assert state['mixed_samples'] == 0
+    assert all(cursor['next_sequence'] == 0 for cursor in state['lanes'].values())
+    new = {'X-Moss-Capture-Instance': 'new'}
+    for lane in ('system', 'microphone'):
+        cursor = state['lanes'][lane]
+        assert client.post(base + '/frames', headers=new,
+            json=bench.frame(lane, 0, 5, cursor['resume_device_epoch'], True)).status_code == 200
+    assert client.post(base + '/stop', json={'deadline': 20}, headers=new).status_code == 200
+    meeting = bench.wait_meeting(client, sid, 'completed')
+    document = meeting['transcript']
+    assert document.get('capture_interruptions', []) == []
+    assert client.get(base + '/snapshot').json()['snapshot']['session'].get('capture_interruptions', []) == []
+    assert state['interruption'] is None
+    assert [(row['start'], row['end']) for row in document['segments']] == [(0, .5)]
+    archives = list((st.resume_evidence_root / 'meetings').glob('**/audio.mp3'))
+    assert len(archives) == 1
+    pcm = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(archives[0]),
+        '-f', 's16le', '-ac', '1', '-ar', str(bench.RATE), '-'])
+    assert len(pcm) // 2 == bench.RATE // 2
+    assert engines[0].audio_blocks == [[0, bench.RATE // 2]]
+
+
+@pytest.mark.parametrize('original_lane', ['system', 'microphone'])
+def test_resume_with_one_accepted_lane_before_first_mix_keeps_gap(live, original_lane):
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    clock.now += 500_000_000
+    assert client.post(base + '/frames', json=bench.frame(original_lane, 0, 7), headers=old).status_code == 200
+    clock.now += 5 * bench.NS
+    state = resume(client, base, automatic=True).json()
+    assert state['mixed_samples'] == 0
+    assert state['interruption'] == {'start_sample': 8000, 'end_sample': None}
+    new = {'X-Moss-Capture-Instance': 'new'}
+    for lane in ('system', 'microphone'):
+        cursor = state['lanes'][lane]
+        assert client.post(base + '/frames', headers=new,
+            json=bench.frame(lane, cursor['next_sequence'], 12.5, cursor['resume_device_epoch'], True)).status_code == 200
+    assert client.post(base + '/stop', json={'deadline': 20}, headers=new).status_code == 200
+    document = bench.wait_meeting(client, sid, 'completed')['transcript']
+    assert document['capture_interruptions'] == [{'start_sample': 8000, 'end_sample': 88000}]
+    archives = list((st.resume_evidence_root / 'meetings').glob('**/audio.mp3'))
+    assert len(archives) == 1
+    pcm = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(archives[0]),
+        '-f', 's16le', '-ac', '1', '-ar', str(bench.RATE), '-'])
+    assert len(pcm) // 2 == 6 * bench.RATE
+
+
+def test_resume_then_stop_without_new_audio_omits_open_gap(live):
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    prefix(live)
+    clock.now += 5 * bench.NS
+    state = resume(client, base, automatic=True).json()
+    assert state['interruption'] == {'start_sample': 4 * bench.RATE, 'end_sample': None}
+    assert client.post(base + '/stop', json={'deadline': 20},
+        headers={'X-Moss-Capture-Instance': 'new'}).status_code == 200
+    document = bench.wait_meeting(client, sid, 'completed')['transcript']
+    assert document['capture_interruptions'] == []
+    archives = list((st.resume_evidence_root / 'meetings').glob('**/audio.mp3'))
+    assert len(archives) == 1
+    pcm = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(archives[0]),
+        '-f', 's16le', '-ac', '1', '-ar', str(bench.RATE), '-'])
+    assert len(pcm) // 2 == 4 * bench.RATE
+
+
 def test_headerless_stale_bundle_never_resumes_normal_meeting(tmp_path):
     app, cookies, engines = bench.build_app(tmp_path / 'stale')
     with TestClient(app, base_url='https://moss.test') as client:
