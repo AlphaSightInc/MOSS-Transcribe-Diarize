@@ -338,7 +338,7 @@ class _PreviewSnapshots:
                 eligible = [p for p in turn.pending if p[0] <= through]
                 if eligible:
                     turn.snapshot = eligible[-1]
-                elif turn.lost_through >= through:
+                elif turn.snapshot is not None and turn.lost_through > turn.snapshot[0]:
                     turn.snapshot = None
                 turn.pending = deque((p for p in turn.pending if p[0] > through), maxlen=64)
 
@@ -496,6 +496,7 @@ class _GeminiState:
     preview_cuts: list[tuple[str | None, int, list[str]]] = field(default_factory=list)
     preview_snapshots: _PreviewSnapshots = field(default_factory=_PreviewSnapshots)
     preview_counters: dict[str, dict[str, int]] = field(default_factory=dict)
+    preview_snapshot_errors: int = 0
     rolling_frontier: int = 0
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
@@ -686,13 +687,18 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     solid = session.snapshot().effective_transcript
                     text_rows = _trim_committed_preview(update.segments, solid, state.preview_cuts)
                     snapshots = state.preview_snapshots
-                    snapshots.advance(solid)
-                    clocks_before = dict(snapshots.clocks)
-                    snapshots.publication(update.origins, update.lane_end_samples, update.finished_turns)
-                    time_cuts = snapshots.cuts(update.segments, update.origins)
-                    segments = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
-                    snapshots.finish(update.finished_turns)
-                    _preview_diagnostics(state, update, text_rows, segments, clocks_before)
+                    try:
+                        snapshots.advance(solid)
+                        clocks_before = dict(snapshots.clocks)
+                        snapshots.publication(update.origins, update.lane_end_samples, update.finished_turns)
+                        time_cuts = snapshots.cuts(update.segments, update.origins)
+                        segments = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
+                        snapshots.finish(update.finished_turns)
+                        _preview_diagnostics(state, update, text_rows, segments, clocks_before)
+                    except Exception:
+                        segments = text_rows
+                        snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     transcript = _unlabelled_transcript(segments, start)
                     spans = tuple(span for lane in dict.fromkeys(
                         row.source_lane or "system" for row in segments)
@@ -735,7 +741,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         )
                     if not outcome.submitted:
                         raise ValueError(f"base commit refused: {outcome.refusal}")
-                    state.preview_snapshots.advance(session.snapshot().effective_transcript)
+                    try:
+                        state.preview_snapshots.advance(session.snapshot().effective_transcript)
+                    except Exception:
+                        state.preview_snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     kind = "canonical_published"
                 elif isinstance(update, GeminiRolling):
                     _register_speakers(session, update.segments)
@@ -757,7 +767,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         (lane, end, prefix) for lane, end, prefix in state.preview_cuts
                         if not any(row.source_lane == lane and row.start_sample < end
                                    for row in removed)]
-                    state.preview_snapshots.advance(solid)
+                    try:
+                        state.preview_snapshots.advance(solid)
+                    except Exception:
+                        state.preview_snapshots.clear()
+                        state.preview_snapshot_errors += 1
                     kind = "text_revision_applied"
                     state.rolling_frontier = max(state.rolling_frontier, update.end_sample)
                     state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
@@ -989,6 +1003,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "preview": {lane: dict(values) for lane, values in state.preview_counters.items()},
                 "preview_snapshot_max_pending": state.preview_snapshots.max_pending,
                 "preview_snapshot_history_overflows": state.preview_snapshots.overflows,
+                "preview_snapshot_errors": state.preview_snapshot_errors,
                 "tentative_errors": state.tentative_errors,
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),

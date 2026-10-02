@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import pytest
 
 from moss_transcribe_diarize.app import gemini_live_runtime as rt
+from moss_transcribe_diarize.app.gemini_lane_engine import LaneGeminiEngine
+from moss_transcribe_diarize.app.live_session import AudioFrame
 from test_gemini_preview_duplication import _runtime, _commit, COMMITTED, FRESH, R
 
 
@@ -29,6 +31,123 @@ def establish(runtime, old=COMMITTED, *, lane='system', solid=None):
     words=old.split()
     _commit(runtime,solid if solid is not None else ' '.join(words[:15]+words[37:]),
             through_s=15,lane=lane)
+
+
+def _overflow_lane_fallback(tmp_path, publications):
+    runtime=_runtime(tmp_path/'runtime',lanes=True)
+
+    class Idle:
+        def push_audio(self,*args): pass
+        def close(self): pass
+
+    engine=LaneGeminiEngine(publish=lambda u:runtime.publish_update('one',u),
+                           system_factory=lambda _:Idle(),microphone_factory=lambda _:Idle(),
+                           tape_root=tmp_path/'lanes')
+    engine._accepted=60*R
+    engine._base_committed=15*R
+    for tape in engine._tapes.values():
+        tape.append(0,bytes(60*R*2))
+
+    def pub(text,clock):
+        clock=int(clock*R)
+        origin=rt.GeminiSegment(0,clock,text,source_lane='system')
+        engine._on_update('system',rt.GeminiPreview(clock,(
+            rt.GeminiSegment(engine._base_committed,clock,text,source_lane='system'),),
+            (origin,),(('system',clock),)))
+
+    try:
+        # Match the reviewer's asynchronous source/accepted-audio fallback path.
+        pub('alpha beta gamma delta epsilon',14)
+        preview(runtime,'alpha beta gamma delta epsilon',14)
+        _commit(runtime,'unrelated older confirmed speech',through_s=15)
+        for i in range(publications):
+            pub('zeta eta theta iota kappa revision '+str(i),20+i*.25)
+        pcm=bytes((R//8)*2)
+        runtime.accept_frame('one',AudioFrame(60,pcm,R//8,
+                             lane_pcm=(('system',pcm),('microphone',pcm))))
+        engine.push_audio(60*R,pcm,(('system',pcm),('microphone',pcm)))
+        assert runtime._sessions['one'].preview_snapshots.frontiers['system']==20*R+R//8
+        pub('alpha beta gamma delta epsilon fresh tail',37)
+    finally:
+        engine.close()
+    return runtime
+
+
+@pytest.mark.parametrize('publications',[65,64])
+def test_overflow_fallback_never_uses_snapshot_superseded_by_lost_publication(tmp_path,publications):
+    runtime=_overflow_lane_fallback(tmp_path,publications)
+    shown=' '.join(r['text'] for r in runtime.snapshot('one').session.provisional.segments)
+    assert shown=='alpha beta gamma delta epsilon fresh tail'
+    values=runtime.engine_diagnostics('one')['preview']['system']
+    assert values['time_hidden_last']==0 and values['text_hidden_last']==0
+    assert runtime._sessions['one'].preview_snapshots.max_pending<=64
+
+
+def test_overflow_cut_resumes_and_persists_on_retained_eligible_publication(tmp_path):
+    runtime=_overflow_lane_fallback(tmp_path,65)
+    assert ' '.join(r['text'] for r in runtime.snapshot('one').session.provisional.segments)==(
+        'alpha beta gamma delta epsilon fresh tail')
+    runtime.publish_update('one',rt.GeminiBase(36*R,()))
+    runtime.publish_update('one',rt.GeminiRolling(15*R,36*R,(
+        rt.GeminiSegment(15*R,36*R,'unrelated replacement speech','speaker-0001','system'),),
+        revision_lanes=('system',)))
+    raw='zeta eta theta iota kappa revision 64 fresh tail'
+    assert preview(runtime,raw,38)=='fresh tail'
+    assert preview(runtime,raw,39)=='fresh tail'
+    assert runtime._sessions['one'].preview_snapshots.turns[('system',0)].snapshot[0]==36*R
+
+
+@pytest.mark.parametrize('step',['advance','publication','cuts','apply','diagnostics'])
+def test_snapshot_preview_fault_falls_back_and_later_previews_publish(tmp_path,monkeypatch,step):
+    runtime=_runtime(tmp_path)
+    establish(runtime)
+    state=runtime._sessions['one']
+    raw=COMMITTED+' '+FRESH
+    row=rt.GeminiSegment(15*R,20*R,raw,source_lane='system')
+    expected=' '.join(r.text for r in rt._trim_committed_preview(
+        (row,),runtime.snapshot('one').session.effective_transcript,list(state.preview_cuts)))
+
+    def explode(*args):
+        raise RuntimeError('injected optional snapshot fault')
+
+    with monkeypatch.context() as patch:
+        if step in ('apply','diagnostics'):
+            patch.setattr(rt,'_apply_preview_time_cuts' if step=='apply' else '_preview_diagnostics',explode)
+        else:
+            patch.setattr(state.preview_snapshots,step,explode)
+        assert preview(runtime,raw,20)==expected
+    assert state.terminal_failure is None
+    assert runtime.snapshot('one').session.status=='active'
+    assert not state.preview_snapshots.turns
+    assert not state.preview_snapshots.clocks and not state.preview_snapshots.frontiers
+    assert runtime.engine_diagnostics('one')['preview_snapshot_errors']==1
+    assert preview(runtime,raw,21)==expected
+    assert runtime.engine_diagnostics('one')['preview_snapshot_errors']==1
+
+
+@pytest.mark.parametrize('commit_kind',['base','rolling'])
+def test_snapshot_advance_fault_after_commit_keeps_meeting_live(tmp_path,monkeypatch,commit_kind):
+    runtime=_runtime(tmp_path)
+    establish(runtime)
+    state=runtime._sessions['one']
+    row=rt.GeminiSegment(15*R,20*R,'new confirmed speech',source_lane='system')
+    update=(rt.GeminiBase(20*R,(row,)) if commit_kind=='base' else
+            rt.GeminiRolling(15*R,20*R,(row,),revision_lanes=('system',)))
+    if commit_kind=='rolling':
+        runtime.publish_update('one',rt.GeminiBase(20*R,()))
+
+    def explode(*args):
+        raise RuntimeError('injected optional advance fault')
+
+    with monkeypatch.context() as patch:
+        patch.setattr(state.preview_snapshots,'advance',explode)
+        runtime.publish_update('one',update)
+    assert state.terminal_failure is None and runtime.snapshot('one').session.status=='active'
+    assert any(r.text=='new confirmed speech' for r in runtime.snapshot('one').session.effective_transcript)
+    assert not state.preview_snapshots.turns
+    assert not state.preview_snapshots.clocks and not state.preview_snapshots.frontiers
+    assert runtime.engine_diagnostics('one')['preview_snapshot_errors']==1
+    assert preview(runtime,'later fresh words',25)=='later fresh words'
 
 
 @pytest.mark.parametrize('lane',['system','microphone'])

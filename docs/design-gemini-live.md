@@ -286,10 +286,16 @@ ambiguous origins and text changed by lane filtering abstain. Prefix rewrites sh
 the cut; a unit count alone cannot justify removing rewritten words. Pending history
 holds at most 64 publications per active turn plus one snapshot. If a stalled frontier
 needs history discarded at that bound, the time rule abstains until retained history is
-eligible. Source/socket restart clears that lane's snapshots and keeps its clock
+eligible; a dropped newer publication cannot leave an older snapshot in force. Once
+a retained eligible publication supersedes the dropped history, its cut remains valid.
+Source/socket restart clears that lane's snapshots and keeps its clock
 watermark against stale cached rows. Finals clear their turn, even when already covered
 and therefore forwarded only as metadata; Stop and meeting release clear all snapshot
 text. The text rules' separate remembered cuts and their invalidation stay unchanged.
+The time rule is optional: a fault in preview snapshot processing publishes the
+already-computed text-rule rows, clears snapshot state and increments numeric
+`preview_snapshot_errors`. Snapshot advance faults after base/rolling commits likewise
+clear/count/continue. The meeting remains active; later previews can publish normally.
 
 Recorded product replay matches the prototype on 366 Mandarin, 575 English and 64 R5-D
 publications. Mandarin changes 23 calls, removing 46 additional old unit-publications;

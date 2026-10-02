@@ -34,7 +34,7 @@ class PreviewSnapshots:
                 eligible = [p for p in turn.pending if p[0] <= through]
                 if eligible:
                     turn.snapshot = eligible[-1]
-                elif turn.lost_through >= through:
+                elif turn.snapshot is not None and turn.lost_through > turn.snapshot[0]:
                     turn.snapshot = None
                 turn.pending = deque((p for p in turn.pending if p[0] > through), maxlen=64)
 
