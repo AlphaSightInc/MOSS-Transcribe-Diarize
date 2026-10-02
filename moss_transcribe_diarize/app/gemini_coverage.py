@@ -8,6 +8,7 @@ from itertools import accumulate
 import unicodedata
 from typing import Sequence
 
+from .gemini_live_runtime import _preview_units
 from .live_span_bounds import LIVE_SAMPLE_RATE
 
 
@@ -42,6 +43,8 @@ def missing_witness_intervals(
 
 STEP = LIVE_SAMPLE_RATE // 10
 MIN_RUN_SAMPLES = STEP * 3 // 2
+SHIFT_NEIGHBOUR_SAMPLES = LIVE_SAMPLE_RATE
+SHIFT_NEIGHBOUR_UNITS = 12
 
 
 def _span(word) -> tuple[int, int]:
@@ -85,6 +88,32 @@ def one_owner(witness: Sequence, frontiers: Sequence[int]) -> list:
                 or (p.end_sample > word.start_sample - STEP and _same(p.text, word.text))))]
         kept.append(word)
     return kept
+
+
+def _already_beside(run, words, spans, starts) -> bool:
+    """A whole run repeated just beside its hole is a time shift, not an omission."""
+    units = [unit for word, _ in run for unit, _, _ in _preview_units(word.text)]
+    if not units or len(units) > SHIFT_NEIGHBOUR_UNITS:
+        return False
+    a, b = _span(run[0][0])[0], _span(run[-1][0])[1]
+    left = []
+    for i in range(bisect_right(starts, a + STEP) - 1, -1, -1):
+        if spans[i][1] < a - SHIFT_NEIGHBOUR_SAMPLES:
+            break
+        if spans[i][1] <= a + STEP:
+            left[:0] = [unit for unit, _, _ in _preview_units(words[i].text)]
+            if len(left) >= SHIFT_NEIGHBOUR_UNITS:
+                break
+    right = []
+    for i in range(bisect_left(starts, b - STEP), len(words)):
+        if spans[i][0] > b + SHIFT_NEIGHBOUR_SAMPLES:
+            break
+        right.extend(unit for unit, _, _ in _preview_units(words[i].text))
+        if len(right) >= SHIFT_NEIGHBOUR_UNITS:
+            break
+    left, right = left[-SHIFT_NEIGHBOUR_UNITS:], right[:SHIFT_NEIGHBOUR_UNITS]
+    return any(len(edge) == len(units) and all(_same(x, y) for x, y in zip(units, edge))
+               for edge in (left[-len(units):], right[:len(units)]))
 
 
 def uncovered_runs(words: Sequence, witness: Sequence, *,
@@ -141,7 +170,8 @@ def uncovered_runs(words: Sequence, witness: Sequence, *,
             run.pop()
         while run and beside(run[0][0], False):
             run.pop(0)
-    return [([w for w, _ in run], sum(n for _, n in run)) for run in runs if run]
+    return [([w for w, _ in run], sum(n for _, n in run)) for run in runs
+            if run and not _already_beside(run, by_start, spans, firsts)]
 
 
 def restore_witnessed_words(words: Sequence, witness: Sequence, *, min_run_samples: int = MIN_RUN_SAMPLES,

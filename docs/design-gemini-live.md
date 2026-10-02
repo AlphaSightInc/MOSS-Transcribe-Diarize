@@ -82,7 +82,18 @@ earlier truncated copy. Stop-tail recovery and File/URL runs do not supply these
 After final identity labels (or the chunk stitcher), H finds consecutive live words in
 provider holes: at most 0.1 s covered per word, not fully covered, and at least 0.15 s
 uncovered across the run. Zero-length words count as 0.1 s. Equal adjacent edge words
-(including the same numeral written two ways) are removed. The existing 10 s fallback
+(including the same numeral written two ways) are removed. H2 also withholds a whole
+candidate run whose comparable units already form the adjacent clean-up suffix or
+prefix: clean-up word ends/starts within 1 s of the candidate boundary, at most 12
+units on either side, allowing the existing 0.1 s overlap. Chinese word grouping and
+numeral spelling do not change equality. This shared discovery check runs before
+either lane admits a restore; it never rewrites clean-up words or trims part of a run.
+It removes nearby timing-shift duplicates, but can withhold a genuine omitted repetition.
+Recorded H100 and 127 engine cells lose no words; four deliberate repetition fixtures
+lose 8 candidate words. Shifts beyond the bounds and partly shifted runs remain limits.
+See `prototypes/gemini-live/mic-speaker-echo/h2/NOTES.md` for measurements and explicit
+stress-export reconstructions (original pre-restore word provenance unavailable).
+The existing 10 s fallback
 owns its intervals; H skips them. An empty clean-up answer saves the live rows as
 committed; rule H's independent admission does not apply to them. On the system lane,
 committed witnesses retain their published live identity. Each restored word takes the
