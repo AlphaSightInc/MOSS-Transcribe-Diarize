@@ -126,3 +126,30 @@ Full backend command from R5B-COMMON: 2945 passed, 9 skipped, 2 xfailed,
 37 subtests passed in 437.80 s. No existing test expectation changed.
 Final product matrix: `evidence/P74/resume/RS-product-20261002-141816/matrix.json`;
 full suite: `evidence/P74/resume/RS-full-backend.txt`.
+
+## Lead amendments R1–R3 (2026-10-02)
+
+Structural question: can a reloaded page wait for the old writer without stealing
+an active writer, and can the browser consume an honest gap without treating it
+as speech? Minimum primitives: accepted heartbeat age, one writer, mixed-clock
+closed intervals. Invariants: refusals never renew the lease; open intervals are
+not published; only the browser renders/export lines; recognition and summary
+consume speech alone. Unknowns: physical devices, provider behavior and browser
+8 s retry implementation remain RC qualification. Falsifier: missing retry delay,
+premature takeover, misplaced/open metadata, or gap metadata in summary input.
+Tool decision: controlled-clock route tests distinguish these failures without
+wall-clock waits; product archive replay and full backend detect timeline and
+compatibility regressions. No new algorithm or threshold: implement lead rulings.
+
+Amendment regressions on `ed89d899`: 11 fail, 17 pass. The red receipt is
+`evidence/P74/resume/RS-rulings-red-ed89d899.txt`. Server export endpoint and both
+renderers removed; export assertions dropped. Historical receipts above retain
+the original candidate's schema and scope; current evidence is in P74-RS-STATUS.
+
+Amended product verdict: PASS. Targeted 28 passed in 13.31 s; full backend
+2946 passed, 9 skipped, 2 xfailed, 27 warnings, 37 subtests passed in 420.86 s.
+All six cells pass in `RS-product-20261002-143505/matrix.json`; accepted gaps
+retain one exact-duration MP3, zero interior PCM and closed mixed-clock metadata
+with sample_rate 16000. Final receipts: `RS-rulings-targeted.txt`,
+`RS-rulings-product-output.txt`, `RS-rulings-full-backend.txt`. No browser,
+provider or host qualification added. Original pre-P74 tests unchanged.

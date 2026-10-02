@@ -85,7 +85,8 @@ def product():
                   and cell["frames_accepted_after_resume"] == continuation * 4
                   and cell["archives"] == ["audio.mp3"] and cell["same_engine"]
                   and all(e["status"] == 409 for e in cell["events"] if e["action"].startswith("old "))
-                  and cell["meeting"]["transcript"]["interruptions"] == [
+                  and cell["meeting"]["transcript"]["sample_rate"] == run.RATE
+                  and cell["meeting"]["transcript"]["capture_interruptions"] == [
                       {"start_sample": run.N * run.RATE, "end_sample": (run.N + gap) * run.RATE}])
         checks[f"gap{gap}-continue{continuation}"] = ok
         print(json.dumps(cell, indent=2), flush=True)
