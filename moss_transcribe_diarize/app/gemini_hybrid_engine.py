@@ -13,7 +13,7 @@ from scipy.optimize import linear_sum_assignment
 
 from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRelabel, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
-from .gemini_coverage import drop_restated
+from .gemini_coverage import WitnessWord, drop_restated, source_partitions, relabel_witnesses
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .live_provider_bundle import LiveSpeakerJournalObservation
@@ -231,7 +231,8 @@ class GeminiHybridEngine:
         self._future: Future | None = None
         self._accepted = 0
         self._committed = 0
-        self._witness_words: list[GeminiWord] = []
+        self._witness_words: list[GeminiWord | WitnessWord] = []
+        self._witness_previous: tuple[WitnessWord, ...] = ()
         self._rolling_frontier = 0
         self._last_rolling_turn: GeminiSegment | None = None
         self._speakerless_rows: list[GeminiSegment] = []
@@ -461,12 +462,21 @@ class GeminiHybridEngine:
             if frontier > old:
                 if gate_words:
                     committed = [w for w in absolute if old < w.end_sample <= frontier]
-                    if self.source_lane == "microphone":
-                        committed = [GeminiWord(
+                    if self.source_lane in ("system", "microphone"):
+                        context = ()
+                        partitions = {w.speaker: f"source-{frontier}-{w.speaker}" for w in absolute}
+                        if self.source_lane == "microphone":
+                            self._witness_words, partitions, context = source_partitions(
+                                self._witness_words, self._witness_previous, absolute, frontier)
+                        committed = [WitnessWord(
                             w.text, mapping[w.speaker] if mapping[w.speaker] is not None
-                            else f"unassigned-{frontier}-{w.speaker}", w.start_sample, w.end_sample)
-                            for w in committed]
+                            else f"unassigned-{frontier}-{w.speaker}", w.start_sample, w.end_sample,
+                            partitions[w.speaker]) for w in committed]
                     self._witness_words = drop_restated(self._witness_words, committed, old)
+                    if self.source_lane == "microphone":
+                        heard = {(w.text,w.start_sample,w.end_sample) for w in context}
+                        self._witness_previous = tuple(w for w in self._witness_words
+                            if (w.text,w.start_sample,w.end_sample) in heard or old < w.end_sample <= frontier)
                 if frontier > self._committed:
                     self.publish(GeminiBase(frontier, ()))
                     self._committed = frontier
@@ -508,6 +518,7 @@ class GeminiHybridEngine:
                 if overlap > 0:
                     revised = GeminiSegment(row.start_sample, row.end_sample, row.text,
                                             speaker, row.source_lane)
+                    self._witness_words = relabel_witnesses(self._witness_words, (revised,))
                     self.publish(GeminiRelabel(row.start_sample, row.end_sample, (revised,)))
                 else:
                     remaining.append(row)
@@ -515,6 +526,7 @@ class GeminiHybridEngine:
             if frontier > old:
                 self._speakerless_rows.extend(row for row in rows if row.speaker is None)
             for update in relabels:
+                self._witness_words = relabel_witnesses(self._witness_words, update.segments)
                 self.publish(update)
 
     async def drain_tail(self, deadline: float) -> bool:

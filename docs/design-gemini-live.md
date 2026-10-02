@@ -84,8 +84,13 @@ provider holes: at most 0.1 s covered per word, not fully covered, and at least 
 uncovered across the run. Zero-length words count as 0.1 s. Equal adjacent edge words
 (including the same numeral written two ways) are removed. The existing 10 s fallback
 owns its intervals; H skips them. An empty clean-up answer saves the live rows as
-committed; rule H's independent admission does not apply to them. On the system lane restored words copy the nearer
-final neighbour's label, then pass the existing word gates. Clean-up words retain
+committed; rule H's independent admission does not apply to them. On the system lane,
+committed witnesses retain their published live identity. Each restored word takes the
+nearest kept final word's label among words overlapping witnesses of that same live
+identity. A live identity absent from every kept final word gets its own final label;
+the existing final-to-live name mapping can preserve its live name. Unassigned witnesses
+retain H's nearer-neighbour label. No restored word supplies bridge evidence. This runs
+after the stitcher/identity policy and before existing word gates. Clean-up words retain
 their text, times and labels. `witness_restored_words` counts inserted words without
 adding a provider request; it appears in the numeric operator diagnostics.
 
@@ -122,18 +127,30 @@ The saved and Stop-tail passes compute the same frame facts in 30 s contexts eve
 a Stop tail as covered, rather than failed recovery.
 
 For clean-up witness restoration (WP-C), `LocalVoiceEvidence` judges **one restore
-candidate run alone**, after clean-up words were gated. Microphone witnesses carry
-the lane-continuous identity used at rolling publication, so request-local namespaces
-do not split one published speaker. Different published speakers within a hole keep
-separate local-run text-weight evidence; two words from each of two speakers cannot
-combine to meet the 15-weight bar. Words with no published identity keep their
-request-local partitions scoped to their commit frontier. Its word
-samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
+candidate run alone**, after clean-up words were gated. A committed witness carries
+two independent authorities: its **source partition** for admission evidence and its
+**published live identity** for display/name continuity. Source partitions retain the
+provider's request-local grouping, even when the identity registry aliases labels.
+Consecutive requests continue a source partition only when they re-hear already
+committed words with the same text and both endpoints within the provider's 0.1 s step.
+Equal raw labels or published IDs alone never establish continuity.
+
+A new label matching two earlier partitions gets a fresh partition; the earlier groups
+stay separate. Two new labels matching one earlier partition get separate new partitions;
+only earlier words positively matching exactly one new label move into that partition.
+Unmatched or ambiguous words stay separate. Thus a corrected seam prefix can accompany
+its suffix without pooling two voices. Without correspondence a short reply crossing a
+frontier may remain withheld. Published `GeminiRelabel` rows update witness identity,
+never the source partition. Different source partitions retain independent local-run
+text-weight evidence; two words from each cannot combine to meet the 15-weight bar.
+Their samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
 independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
 its speaker. An anchored lane never waives this evidence requirement.
 Hole discovery uses the ungated provider timeline: gate removal is not an omission.
 Each candidate passes voice activity, independent local-run evidence, and the existing
-microphone guards; only surviving local runs still weighing 15 are restored. The nearer
+microphone guards; only surviving local runs still weighing 15 are restored. Microphone
+final labeling retains the measured kept-neighbour policy, independent of its source
+partition and uncertain published identity. The nearer
 kept clean-up neighbour supplies the label (earlier wins a tie); without one, the lane's
 local speaker does. Other restored runs never serve as clean-up neighbours. Witness
 voice activity is scanned once; saved-pass 30 s local-frame facts and system vectors
@@ -481,3 +498,15 @@ All campaign evidence paths in this section resolve under
 and passed 37 subtests (27 warnings); frontend Vitest passed **313/313** across
 28 files; frontend TypeScript typecheck passed. The three command logs are
 `evidence/P63/final-{backend,frontend,typecheck}-0b9deed5.log`.
+
+R5B-C2 measured both authorities independently: unassigned/born/reassigned seam replies
+5/5; aliased stray0/reply4/4 and two distinct two-word replies0. Recorded100 pairs and
+45 archived cells preserve H text/times/counts and kept labels, with no new restored-only
+identity on that population. Truth error .0907/.1217 unchanged; the two truth-verified
+restores retain correct labels. An injected entire12-word speaker omission on the930s
+chunk schedule restores12/12 under its published live name with unchanged encoder calls.
+The indexed identity bridge adds about0.13s on a36,000-word two-hour lane. No new embedding
+or provider call. If live identity was wrong, nearest kept final evidence can follow a
+clean-up split locally; a completely omitted voice with a wrong live ID remains wrong.
+See `prototypes/gemini-live/mic-speaker-echo/c2/NOTES.md` and R5B-C2 evidence for complete
+prototype/product gates, ambiguity controls, row-level stress audit and stated limits.
