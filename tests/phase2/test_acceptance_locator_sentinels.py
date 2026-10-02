@@ -45,7 +45,10 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             assert opener.count() == 1
             summary_tab = page.get_by_role('tab', name='Summary', exact=True)
             expect(summary_tab).to_have_count(1)
-            opener.click()
+            # Finish the initial read before publishing the newer summary event below.
+            with page.expect_response(lambda response: urlsplit(response.url).path == '/api/meetings/audit-meeting/summary') as initial_summary:
+                opener.click()
+            initial_summary.value.finished()
             summary_tab.click()
             expect(page.get_by_label('Summary', exact=True)).to_be_visible()
             refresh = page.get_by_label('Summary', exact=True).get_by_role('button', name='Refresh')
