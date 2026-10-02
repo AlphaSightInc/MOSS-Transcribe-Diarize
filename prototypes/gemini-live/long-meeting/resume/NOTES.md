@@ -153,3 +153,35 @@ retain one exact-duration MP3, zero interior PCM and closed mixed-clock metadata
 with sample_rate 16000. Final receipts: `RS-rulings-targeted.txt`,
 `RS-rulings-product-output.txt`, `RS-rulings-full-backend.txt`. No browser,
 provider or host qualification added. Original pre-P74 tests unchanged.
+
+## Lead L1: upload independence and writer lifetime
+
+Question: can one incomplete request body block the other lane or heartbeat,
+and does page-writer state end with capture? Primitives: origin authority,
+parsed request, atomic fenced mutation, capture lifetime. Invariants: authority
+before body; no body read/parse under the capture guard; fence checked at mutation;
+terminal capture removes writer state without reopening it. Unknowns: real network
+latency remains unmeasured. Falsifier: lane B/heartbeat cannot finish while lane A
+is paused mid-body, or writer survives Stop/Abort/expiry. Tool decision: an ASGI
+stream gate holds the real request body before completing JSON; controlled-clock
+terminal tests check the existing release/expire owners. Reproduce red before
+changing code, then full backend for Stop/auth/terminal regressions.
+
+L1 verdict: PASS. Eight new upload/cleanup/replacement cases red on `f40524f7`
+(`RS-L1-red-f40524f7.txt`); three delayed-heartbeat cases also red on that
+candidate (`RS-L1-delayed-heartbeat-red-f40524f7.txt`). All eleven pass after the
+fix; targeted including existing Stop/auth/lease cases: 58 passed in 18.39 s.
+Lane A stays paused mid-body while lane B and heartbeat both return 200 within
+1 s, before lane A is released. A replacement during upload fences the old
+frame without accepting it. Stop/Abort/expiry remove the writer entry, and a
+late heartbeat returns 409 without recreating presence or a lease.
+
+Body parsing now follows origin authorization and precedes the writer guard;
+frame publication follows guard release. Writer cleanup uses the existing v2
+registry release/expire paths, not a new lifecycle owner. Full backend:
+2957 passed, 9 skipped, 2 xfailed, 27 warnings, 37 subtests passed in 423.90 s
+(`RS-L1-full-backend.txt`). G1: all six archive cells PASS, unchanged exact
+13/38/98/127/168 s completed archives, zero interior gap PCM; 125 s refused.
+Final matrix: `RS-product-20261002-145310/matrix.json`; stdout:
+`RS-L1-product-output.txt`. Provider/browser/host behavior remains unmeasured.
+No existing pre-P74 test expectation changed. No debug instrumentation remains.
