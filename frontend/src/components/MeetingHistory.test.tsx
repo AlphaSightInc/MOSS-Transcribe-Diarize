@@ -12,7 +12,7 @@ import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionM
 import { sessionStartedAt, sessionStopRequested } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
-import { resetUiState, selectedSummaryMeeting } from "../state/ui";
+import { historyPanelCollapsed, historyView, resetUiState, selectedSummaryMeeting } from "../state/ui";
 import { defaultAppSettings, saveAppSettings } from "../lib/settings";
 
 // These fixtures script history requests; model discovery is covered in FinalSummary.test.tsx.
@@ -60,6 +60,106 @@ describe("MeetingHistory", () => {
     resetUiState();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("confirms one session inline, supports Cancel/Escape and empties the opened transcript", async () => {
+    const saved = meeting();
+    const deletion = deferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === "DELETE") return deletion.promise;
+      if (url.endsWith("/summary")) return response({ summary: null });
+      return response(url === "/api/meetings" ? { meetings: [saved] } : saved);
+    }));
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
+    await vi.waitFor(() => expect(root.querySelector('[aria-label="Delete session"]')).not.toBeNull());
+    const trash = () => root.querySelector<HTMLButtonElement>('[aria-label="Delete session"]')!;
+    act(() => trash().click());
+    expect(root.textContent).toContain("Delete this session? Its transcript, audio and summary are removed.");
+    expect(root.querySelector("dialog")).toBeNull();
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-cancel]')!.click());
+    expect(root.querySelector('[data-delete-confirm]')).toBeNull();
+    await vi.waitFor(() => expect(document.activeElement).toBe(trash()));
+    act(() => trash().click());
+    act(() => { root.querySelector('[data-delete-confirm]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    expect(root.querySelector('[data-delete-confirm]')).toBeNull();
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-a"]')!.click());
+    await vi.waitFor(() => expect(transcript.value).toHaveLength(1));
+    act(() => trash().click());
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-submit]')!.click());
+    await vi.waitFor(() => expect(root.querySelector('[data-meeting-card]')).toBeNull());
+    await act(async () => deletion.resolve(response(null, 204)));
+    await vi.waitFor(() => expect(sessionId.value).toBeNull());
+    expect(transcript.value).toHaveLength(0);
+    expect(selectedSummaryMeeting.value).toBeNull();
+    expect(root.querySelector("#tr-body")?.textContent).not.toContain("first words");
+  });
+
+  it("restores a failed optimistic delete and displays the server reason", async () => {
+    const deletion = deferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === "DELETE" ? deletion.promise : response({ meetings: [meeting()] })));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[aria-label="Delete session"]')).not.toBeNull());
+    act(() => root.querySelector<HTMLButtonElement>('[aria-label="Delete session"]')!.click());
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-submit]')!.click());
+    await vi.waitFor(() => expect(root.querySelector('[data-meeting-card]')).toBeNull());
+    await act(async () => deletion.resolve(response({ detail: "Disk unavailable." }, 503)));
+    await vi.waitFor(() => expect(root.querySelector('[data-meeting-card]')).not.toBeNull());
+    expect(root.querySelector('[role="alert"]')?.textContent).toBe("Disk unavailable.");
+  });
+
+  it("protects live and File/URL jobs and confirms the real total including search-hidden sessions", async () => {
+    const running = meeting({ id: "running", title: "Running", status: "active", mode: "file" });
+    const hidden = meeting({ id: "hidden", title: "Hidden" });
+    const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "DELETE"
+      ? response({ deleted: 1, kept: [{ meeting_id: "running", reason: "Stop recording first." }] })
+      : response({ meetings: [running, hidden] }));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelectorAll('[aria-label="Delete session"]')).toHaveLength(2));
+    const button = root.querySelector<HTMLButtonElement>('[data-meeting-card="running"] [aria-label="Delete session"]')!;
+    expect(button.disabled).toBe(true);
+    expect(button.title).toBe("Stop recording first.");
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-all]')!.click());
+    expect(root.textContent).toContain("Delete all 2 sessions?");
+    expect(root.textContent).not.toContain("including sessions hidden");
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-cancel]')!.click());
+    const search = root.querySelector<HTMLInputElement>('[aria-label="Search meetings"]')!;
+    act(() => { search.value = "Running"; search.dispatchEvent(new Event("input", { bubbles: true })); });
+    act(() => root.querySelector<HTMLButtonElement>('[data-delete-all]')!.click());
+    expect(root.textContent).toContain("Delete all 2 sessions?");
+    expect(root.textContent).toContain("(including sessions hidden by the search)");
+    expect(root.textContent).toContain("Saved voiceprints are kept. This cannot be undone.");
+    expect(root.querySelector('[data-delete-submit]')?.textContent).toBe("Delete All 2 Sessions");
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-delete-submit]')!.click());
+    await vi.waitFor(() => expect(root.textContent).toContain("1 session is still recording and was kept."));
+    expect(root.querySelector('[data-meeting-card="running"]')).not.toBeNull();
+    expect(fetcher.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
+  });
+
+  it("disables Delete All for empty history and refreshes when the panel opens", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response({ meetings: [] }));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('[data-delete-all]')?.disabled).toBe(true));
+    expect(root.textContent).not.toContain("Refresh");
+    act(() => { historyPanelCollapsed.value = true; });
+    act(() => { historyPanelCollapsed.value = false; });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    act(() => { historyView.value = "voiceprints"; });
+    act(() => { historyView.value = "sessions"; });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(3));
+  });
+
+  it.each([
+    { mode: "live" as const, status: "active" as const, refinement_state: "none" as const },
+    { mode: "file" as const, status: "active" as const, refinement_state: "none" as const },
+    { mode: "live" as const, status: "completed" as const, refinement_state: "running" as const }
+  ])("disables deletion while work is running: $mode $refinement_state", async running => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ meetings: [meeting(running)] })));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[aria-label="Delete session"]')).not.toBeNull());
+    expect(root.querySelector<HTMLButtonElement>('[aria-label="Delete session"]')!.disabled).toBe(true);
   });
 
   it.each([
@@ -274,7 +374,7 @@ describe("MeetingHistory", () => {
     // The state lives on the control, as with Export Save.
     expect(root.querySelector<HTMLButtonElement>("[data-audio-download-pending]")?.textContent).toBe("Improving…");
     expect(root.querySelector<HTMLButtonElement>("[data-audio-download-pending]")?.disabled).toBe(true);
-    expect(root.querySelector<HTMLButtonElement>(".history-action-btn")?.disabled).toBe(false);
+    expect(root.querySelector<HTMLButtonElement>(".history-card-actions .history-action-btn")?.disabled).toBe(false);
   });
 
   it("brings an explicitly opened import into view but leaves background refresh in place", async () => {
@@ -560,7 +660,7 @@ describe("MeetingHistory", () => {
     });
     await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="shared"]')).not.toBeNull());
     await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="shared"]')?.click());
-    act(() => root.querySelector<HTMLButtonElement>('[data-meeting-card="shared"] .history-action-btn')?.click());
+    act(() => root.querySelector<HTMLButtonElement>('[data-meeting-card="shared"] .history-card-actions .history-action-btn')?.click());
     const title = root.querySelector<HTMLInputElement>('[aria-label="Meeting title"]');
     if (!title) throw new Error("missing title field");
     title.value = "  Owner title  ";
@@ -572,15 +672,13 @@ describe("MeetingHistory", () => {
     expect(sessionTitle.value).toBe("Owner title");
 
     await act(async () => {
-      [...root.querySelectorAll<HTMLButtonElement>("button")]
-        .find((button) => button.textContent === "Refresh")?.click();
+      document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
     });
     await vi.waitFor(() => expect(root.textContent).toContain("Other client title"));
     expect(sessionTitle.value).toBe("Other client title");
 
     await act(async () => {
-      [...root.querySelectorAll<HTMLButtonElement>("button")]
-        .find((button) => button.textContent === "Refresh")?.click();
+      document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
     });
     await vi.waitFor(() => expect(root.textContent).toContain("No meetings yet."));
     expect(root.querySelector('[aria-pressed="true"]')).toBeNull();
@@ -718,7 +816,7 @@ describe("MeetingHistory", () => {
     });
     expect(root.textContent).toContain("Owner title");
     expect(root.textContent).not.toContain("Original");
-    expect(root.textContent).toContain("Refresh");
+    expect(root.textContent).toContain("Delete All");
     expect(root.textContent).not.toContain("Refreshing…");
   });
 

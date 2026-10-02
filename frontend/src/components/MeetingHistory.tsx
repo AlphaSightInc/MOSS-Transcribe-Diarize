@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import {
+  deleteMeeting,
+  deleteAllMeetings,
   listMeetings,
   openMeeting,
   renameMeeting,
@@ -46,6 +48,12 @@ export function MeetingHistory() {
   const [renameTarget, setRenameTarget] = useState<Meeting | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [renaming, setRenaming] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const deletionPending = useRef(false);
+  const deleteCancelRef = useRef<HTMLButtonElement | null>(null);
+  const deleteFocusTarget = useRef<string | null>(null);
   const selectedRef = useRef<Meeting | null>(null);
   const refreshGenerationRef = useRef(0);
   const summaryRegenerated = useRef(new Set<string>());
@@ -64,6 +72,7 @@ export function MeetingHistory() {
   };
 
   const refresh = async () => {
+    if (deletionPending.current) return;
     const generation = ++refreshGenerationRef.current;
     setLoading(true);
     setError(null);
@@ -97,7 +106,6 @@ export function MeetingHistory() {
   };
 
   useEffect(() => {
-    void refresh();
     const handleRefresh = () => void refresh();
     document.addEventListener(MEETING_HISTORY_REFRESH_EVENT, handleRefresh);
     return () => {
@@ -105,6 +113,104 @@ export function MeetingHistory() {
       selectedSummaryMeeting.value = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!historyPanelCollapsed.value && historyView.value === "sessions") void refresh();
+  }, [historyPanelCollapsed.value, historyView.value]);
+
+  useLayoutEffect(() => {
+    if (deleteTarget) {
+      deleteCancelRef.current?.focus();
+    } else if (deleteFocusTarget.current) {
+      const card = [...document.querySelectorAll<HTMLElement>("[data-meeting-card]")]
+        .find(node => node.dataset.meetingCard === deleteFocusTarget.current);
+      const button = card?.querySelector<HTMLButtonElement>('[aria-label="Delete session"]')
+        ?? document.querySelector<HTMLButtonElement>("[data-delete-all]");
+      button?.focus();
+      deleteFocusTarget.current = null;
+    }
+  }, [deleteTarget]);
+
+  const cancelDelete = () => {
+    if (deleting) return;
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = (target: string) => {
+    deleteFocusTarget.current = target;
+    setDeleteTarget(target);
+    setNotice(null);
+  };
+
+  const submitDelete = async () => {
+    if (!deleteTarget || deletionPending.current) return;
+    const before = meetings;
+    const all = deleteTarget === "all";
+    const id = deleteTarget;
+    deletionPending.current = true;
+    setDeleting(true);
+    setError(null);
+    setNotice(null);
+    refreshGenerationRef.current += 1;
+    setLoading(false);
+    setMeetings(before.filter(meeting => all ? runningSession(meeting) : meeting.id !== id));
+    try {
+      const kept = all ? (await deleteAllMeetings()).kept : (await deleteMeeting(id), []);
+      const keptIds = new Set(kept.map(item => item.meeting_id));
+      const removed = new Set(before.filter(meeting => all ? !keptIds.has(meeting.id) : meeting.id === id).map(meeting => meeting.id));
+      setMeetings(before.filter(meeting => !removed.has(meeting.id)));
+      if (selectedRef.current && removed.has(selectedRef.current.id)) replaceSelection(null);
+      if (sessionId.value && removed.has(sessionId.value)) {
+        resetSessionState();
+        sessionTitle.value = "";
+        sessionStartedAt.value = null;
+      }
+      if (kept.length) {
+        const recording = kept.filter(item => item.reason === "Stop recording first.").length;
+        setNotice([
+          ...(recording ? [recording === 1 ? "1 session is still recording and was kept." : `${recording} sessions are still recording and were kept.`] : []),
+          ...kept.filter(item => item.reason !== "Stop recording first.").map(item => item.reason)
+        ].join(" "));
+      }
+      setDeleteTarget(null);
+    } catch (cause) {
+      setMeetings(before);
+      // Bulk deletion may have removed earlier sessions before a disk failure.
+      if (all) {
+        try {
+          const next = await listMeetings();
+          setMeetings(next);
+          if (sessionId.value && before.some(meeting => meeting.id === sessionId.value) &&
+              !next.some(meeting => meeting.id === sessionId.value)) {
+            replaceSelection(null);
+            resetSessionState();
+            sessionTitle.value = "";
+            sessionStartedAt.value = null;
+          }
+        } catch { /* Keep the cards and the deletion reason until the next refresh. */ }
+      }
+      setError(errorMessage(cause));
+      setDeleteTarget(null);
+    } finally {
+      refreshGenerationRef.current += 1;
+      deletionPending.current = false;
+      setDeleting(false);
+    }
+  };
+
+  const deleteConfirmation = (all: boolean) => (
+    <div className="history-delete-confirm" data-delete-confirm role="group" aria-label={all ? "Delete all sessions confirmation" : "Delete session confirmation"}
+      onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); cancelDelete(); } }}>
+      <p>{all
+        ? `Delete all ${meetings.length} sessions?${query.trim() ? " (including sessions hidden by the search)" : ""} Every transcript, audio file and summary in this workspace is removed. Saved voiceprints are kept. This cannot be undone.`
+        : "Delete this session? Its transcript, audio and summary are removed."}</p>
+      <div className="history-card-actions">
+        <button type="button" className="history-action-btn is-danger is-delete-primary" data-delete-submit disabled={deleting}
+          onClick={() => void submitDelete()}>{all ? `Delete All ${meetings.length} Sessions` : "Delete"}</button>
+        <button ref={deleteCancelRef} type="button" className="history-action-btn" data-delete-cancel disabled={deleting} onClick={cancelDelete}>Cancel</button>
+      </div>
+    </div>
+  );
 
   const refiningIds = meetings.filter(meeting => meeting.refinement_state === "running")
     .map(meeting => meeting.id).join("\n");
@@ -119,8 +225,9 @@ export function MeetingHistory() {
       try {
         await Promise.all(ids.map(async id => {
           try {
+            const generation = refreshGenerationRef.current;
             const next = await openMeeting(id);
-            if (disposed) return;
+            if (disposed || deletionPending.current || generation !== refreshGenerationRef.current) return;
             const previous = selectedRef.current?.id === id
               ? selectedRef.current : meetings.find(meeting => meeting.id === id);
             if (previous && previous.refinement_state === next.refinement_state &&
@@ -172,6 +279,7 @@ export function MeetingHistory() {
 
 
   const selectMeeting = async (meetingId: string) => {
+    if (deletionPending.current) return;
     if (
       sessionStatus.value === "active" &&
       sessionMode.value === "live" &&
@@ -273,15 +381,18 @@ export function MeetingHistory() {
           </label>
           <button
             type="button"
-            className="history-toolbar-btn"
-            disabled={loading}
-            onClick={() => void refresh()}
+            className="history-toolbar-btn is-danger"
+            data-delete-all
+            disabled={loading || deleting || meetings.length === 0}
+            onClick={() => confirmDelete("all")}
           >
-            {loading ? "Refreshing…" : "Refresh"}
+            Delete All
           </button>
         </div> : null}
 
         {historyView.value === "sessions" ? <>
+        {deleteTarget === "all" ? deleteConfirmation(true) : null}
+        {notice ? <p className="history-state-card" role="status">{notice}</p> : null}
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
         {!loading && meetings.length === 0 ? (
           <p className="history-state-card">No meetings yet.</p>
@@ -301,6 +412,7 @@ export function MeetingHistory() {
                     data-meeting-card={meeting.id}
                     key={meeting.id}
                   >
+                    {deleteTarget === meeting.id ? deleteConfirmation(false) : <>
                     <button
                       type="button"
                       className="history-card-hitbox"
@@ -319,6 +431,13 @@ export function MeetingHistory() {
                         </span>
                         {formatMeetingDuration(meeting) ? <span className="history-duration-chip">{formatMeetingDuration(meeting)}</span> : null}
                       </span>
+                    </button>
+                    <button type="button" className="history-action-btn history-delete-icon is-danger"
+                      aria-label="Delete session" title={runningSession(meeting) ? (meeting.refinement_state === "running" ? "Wait for transcript clean-up to finish." : "Stop recording first.") : "Delete session"}
+                      disabled={runningSession(meeting) || deleting} onClick={() => confirmDelete(meeting.id)}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+                      </svg>
                     </button>
                     <div className="history-card-actions">
                       <button
@@ -347,6 +466,7 @@ export function MeetingHistory() {
                         </span>
                       ) : null}
                     </div>
+                    </>}
                   </article>
                 ))}
               </div>
@@ -472,4 +592,8 @@ function statusLabel(status: MeetingStatus): string {
 
 function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : "Meeting history request failed.";
+}
+
+function runningSession(meeting: Meeting): boolean {
+  return meeting.status === "active" || meeting.refinement_state === "running";
 }

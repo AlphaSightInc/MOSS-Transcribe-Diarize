@@ -468,7 +468,7 @@ async def _exercise_two_browsers(
         )
         await first.wait(renamed)
         await second.evaluate(
-            "document.querySelector('.history-panel-actions button').click()"
+            "document.dispatchEvent(new Event('moss:refresh-meeting-history'))"
         )
         await second.wait(renamed)
 

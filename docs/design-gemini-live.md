@@ -739,3 +739,20 @@ or new timeout is needed. The fetch audit also identifies an inactive SummaryPan
 error every 5s can exhaust a fresh page in 22h45m20s. Healthy summary replies are consumed; this slower residual is
 reported separately and is not fixed or qualified by the capture candidate. Real-duration physical capture, other browser versions, and provider throughput remain
 unmeasured by this bench.
+
+## History session deletion (P74-UI3)
+
+A session is the deletion unit; a saved voiceprint is independent account data. History offers a per-card trash
+button with inline Delete/Cancel confirmation and replaces manual Refresh with Delete All. Opening Sessions or
+expanding History refreshes automatically; Stop/import/history events still refresh. Delete All counts the whole
+workspace, including search-hidden sessions. Successful deletion clears an open transcript and summary selection;
+a failed request restores cards and displays the server reason.
+
+Account-owned `DELETE /api/meetings/{id}` returns 204 (missing/foreign 404); `DELETE /api/meetings` reports deleted
+count and kept sessions. Active capture, File/YouTube work and post-Stop transcript clean-up cannot be deleted (409).
+Within the store's write transaction, deletion removes canonical final/partial/staged MP3, mixed PCM and retained
+File/YouTube staging, detaches `voiceprint_samples.source_meeting_id`, then removes transcript, speakers, outcome,
+LLM artifacts, audio metadata and meeting rows. Saved vectors and voiceprint IDs are unchanged and still match.
+Filesystem cleanup failure retains database rows for retry; already removed files cannot be rolled back.
+
+Evidence: `prototypes/gemini-live/long-meeting/ui3/NOTES.md`, regression tests and the zero-provider real-Chrome run.

@@ -12,7 +12,7 @@ import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, AsyncIterator, Mapping
+from typing import Any, AsyncIterator, Callable, Mapping
 
 from starlette.requests import Request
 
@@ -1112,6 +1112,38 @@ class Phase2Store:
             raise KeyError(meeting_id)
         return _meeting_from_row(row)
 
+    async def _delete_meeting(
+        self, account_id: str, authority_generation: int, meeting_id: str,
+        *, running_reason: Callable[[], str | None], cleanup: Callable[[], None],
+    ) -> None:
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """SELECT m.status FROM meetings m JOIN accounts a USING(account_id)
+                WHERE m.account_id=? AND m.meeting_id=? AND a.enabled=1
+                    AND a.authority_generation=?""",
+                (account_id, meeting_id, authority_generation),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+            if row is None:
+                raise KeyError(meeting_id)
+            reason = "Stop recording first." if row["status"] == "active" else running_reason()
+            if reason:
+                raise MeetingNotSettled(reason)
+            # Files cannot roll back with SQLite. Keep the rows if cleanup fails,
+            # so the operator sees the reason and can retry the same session.
+            await asyncio.to_thread(cleanup)
+            await self._connection.execute(
+                """UPDATE voiceprint_samples SET source_meeting_id=NULL
+                WHERE account_id=? AND source_meeting_id=?""", (account_id, meeting_id),
+            )
+            for table in ("meeting_transcripts", "meeting_speakers", "meeting_outcomes",
+                          "llm_artifacts", "meeting_audio", "meetings"):
+                await self._connection.execute(
+                    f"DELETE FROM {table} WHERE account_id=? AND meeting_id=?",
+                    (account_id, meeting_id),
+                )
+
     async def _rename_meeting(
         self,
         account_id: str,
@@ -1702,6 +1734,15 @@ class AccountWorkspace:
             self._account.account_id,
             self._account.authority_generation,
             meeting_id,
+        )
+
+    async def delete_meeting(
+        self, meeting_id: str, *, running_reason: Callable[[], str | None],
+        cleanup: Callable[[], None],
+    ) -> None:
+        await self._store._delete_meeting(
+            self._account.account_id, self._account.authority_generation, meeting_id,
+            running_reason=running_reason, cleanup=cleanup,
         )
 
 
@@ -2464,6 +2505,58 @@ def create_phase2_app(
         workspace = request.app.state.phase2_store.workspace(account)
         meetings = await workspace.list_meetings()
         return {"meetings": [meeting_response(meeting) for meeting in meetings]}
+
+    async def remove_meeting(workspace: AccountWorkspace, meeting_id: str) -> None:
+        def running_reason() -> str | None:
+            if phase2_live is not None and phase2_live.refinement_running(meeting_id):
+                return "Wait for transcript clean-up to finish."
+            if file_tasks is not None and file_tasks.stage(meeting_id) is not None:
+                return "Stop recording first."
+            return None
+
+        def cleanup() -> None:
+            account_id = workspace.owner_key[0]
+            audio_archive.discard_unrecorded(account_id, meeting_id)
+            live_audio_stages.discard(account_id, meeting_id)
+            if file_tasks is not None:
+                owner_dir = file_tasks.retained_root / account_id / meeting_id
+                if owner_dir.exists():
+                    import shutil
+                    shutil.rmtree(owner_dir)
+
+        try:
+            await workspace.delete_meeting(meeting_id, running_reason=running_reason, cleanup=cleanup)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Meeting not found.") from None
+        except MeetingNotSettled as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except (OSError, MeetingAudioCleanupError):
+            raise HTTPException(status_code=503, detail="Session audio could not be removed. Please try again.") from None
+
+    @app.delete("/api/meetings/{meeting_id}", status_code=204)
+    async def delete_meeting(meeting_id: str, request: Request):
+        account = await require_account(request)
+        await remove_meeting(request.app.state.phase2_store.workspace(account), meeting_id)
+        return Response(status_code=204)
+
+    @app.delete("/api/meetings")
+    async def delete_all_meetings(request: Request):
+        account = await require_account(request)
+        workspace = request.app.state.phase2_store.workspace(account)
+        deleted = 0
+        kept = []
+        for meeting in await workspace.list_meetings():
+            try:
+                await remove_meeting(workspace, meeting.meeting_id)
+            except HTTPException as exc:
+                if exc.status_code == 404:
+                    continue  # Another sign-in session already deleted it.
+                if exc.status_code != 409:
+                    raise
+                kept.append({"meeting_id": meeting.meeting_id, "reason": exc.detail})
+            else:
+                deleted += 1
+        return {"deleted": deleted, "kept": kept}
 
     @app.post("/api/meetings/file/admission", status_code=204)
     async def preflight_file_meeting(request: Request):
