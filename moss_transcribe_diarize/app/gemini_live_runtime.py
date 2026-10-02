@@ -312,6 +312,7 @@ class _PreviewTurnSnapshot:
     pending: deque[tuple[int, tuple[str, ...]]] = field(default_factory=lambda: deque(maxlen=64))
     snapshot: tuple[int, tuple[str, ...]] | None = None
     lost_through: int = -1
+    floor: int = 0
 
 
 class _PreviewSnapshots:
@@ -401,6 +402,35 @@ class _PreviewSnapshots:
     def finish(self, keys):
         for key in keys:
             self.turns.pop(key, None)
+
+    def floor_cuts(self, segments, origins, today_rows):
+        # D16: retain the count despite rewrites, only within a valid original turn.
+        cuts, at = [], 0
+        for row in segments:
+            units = _preview_units(row.text)
+            cut = len(units)
+            if at < len(today_rows):
+                current = today_rows[at]
+                if ((current.start_sample, current.end_sample, current.source_lane) ==
+                        (row.start_sample, row.end_sample, row.source_lane)
+                        and row.text.endswith(current.text)):
+                    cut -= len(_preview_units(current.text))
+                    at += 1
+            matches = [r for r in origins if r.source_lane == row.source_lane
+                       and r.text == row.text and r.start_sample <= row.start_sample
+                       and r.end_sample >= row.end_sample]
+            if len(matches) == 1:
+                origin = matches[0]
+                key = (row.source_lane, origin.start_sample)
+                turn = self.turns.get(key)
+                if turn is not None and sum(
+                        (r.source_lane, r.start_sample) == key for r in origins) == 1:
+                    if len(units) < turn.floor:
+                        turn.floor = 0
+                    cut = max(cut, turn.floor)
+                    turn.floor = cut
+            cuts.append(cut)
+        return cuts
 
     def reset(self, lane):
         # Keep the clock watermark: cached rows from the old socket cannot revive it.
@@ -692,9 +722,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         clocks_before = dict(snapshots.clocks)
                         snapshots.publication(update.origins, update.lane_end_samples, update.finished_turns)
                         time_cuts = snapshots.cuts(update.segments, update.origins)
-                        segments = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
+                        today_rows = _apply_preview_time_cuts(update.segments, text_rows, time_cuts)
+                        floor_cuts = snapshots.floor_cuts(update.segments, update.origins, today_rows)
+                        segments = _apply_preview_time_cuts(update.segments, today_rows, floor_cuts)
                         snapshots.finish(update.finished_turns)
-                        _preview_diagnostics(state, update, text_rows, segments, clocks_before)
+                        _preview_diagnostics(state, update, text_rows, segments, clocks_before, today_rows)
                     except Exception:
                         segments = text_rows
                         snapshots.clear()
@@ -1556,7 +1588,7 @@ _PREVIEW_NUMBERS = {word: str(index) for index, word in enumerate(
 _CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
 
 
-def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before):
+def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before, today_rows=None):
     def counts(rows):
         out = {}
         for row in rows:
@@ -1564,13 +1596,15 @@ def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before):
             out[lane] = out.get(lane, 0) + len(_preview_units(row.text))
         return out
 
-    raw, text, shown = map(counts, (update.segments, text_rows, shown_rows))
+    raw, text, today, shown = map(counts, (
+        update.segments, text_rows, shown_rows if today_rows is None else today_rows, shown_rows))
     lanes = set(raw) | set(shown) | {lane or "system" for lane, _ in update.lane_end_samples}
     clocks = {lane or "system": end for lane, end in update.lane_end_samples}
     for lane in lanes:
         totals = state.preview_counters.setdefault(lane, {
             "lane_publications": 0, "units_published": 0, "text_hidden_units": 0,
-            "time_hidden_units": 0, "shown_units_max": 0})
+            "time_hidden_units": 0, "floor_hidden_units": 0, "floor_publications": 0,
+            "shown_units_max": 0})
         source = next((key for key, _ in update.lane_end_samples
                        if (key or "system") == lane), lane)
         advanced = lane in clocks and clocks[lane] > clocks_before.get(source, -1)
@@ -1578,9 +1612,12 @@ def _preview_diagnostics(state, update, text_rows, shown_rows, clocks_before):
             totals["lane_publications"] += 1
             totals["units_published"] += raw.get(lane, 0)
         text_hidden = raw.get(lane, 0) - text.get(lane, 0)
-        time_hidden = text.get(lane, 0) - shown.get(lane, 0)
+        time_hidden = text.get(lane, 0) - today.get(lane, 0)
+        floor_hidden = today.get(lane, 0) - shown.get(lane, 0)
         totals["text_hidden_units"] += text_hidden
         totals["time_hidden_units"] += time_hidden
+        totals["floor_hidden_units"] += floor_hidden
+        totals["floor_publications"] += int(floor_hidden > 0)
         totals["shown_units_max"] = max(totals["shown_units_max"], shown.get(lane, 0))
         totals.update(raw_units_last=raw.get(lane, 0), shown_units_last=shown.get(lane, 0),
                       text_hidden_last=text_hidden,

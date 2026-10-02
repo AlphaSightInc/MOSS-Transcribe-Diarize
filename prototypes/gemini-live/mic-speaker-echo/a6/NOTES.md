@@ -1,5 +1,52 @@
 # R5B-A5 — offline diagnosis and rejected/qualified candidates
 
+## R5B-A6 verdict update — C1 shipped by user decision D16
+
+**D16 O2 (2026-10-02) supersedes the historical recommendation below:** enable the
+frozen C1 rule, then test real-world effectiveness. C1's measured15-unit fresh-loss
+control is an **ACCEPTED LIMIT**, not a gate. All A5 measurements and original
+negative verdicts below remain unchanged. D16 relaxes additional fresh-grey-loss
+only for C1; it does not turn count into time ownership or qualify C2.
+
+Product keeps N in `_PreviewTurnSnapshot`, applies max(today's cut,N) inside the
+snapshot fallback boundary, and shares its existing lifecycle/retreat clearing.
+Shrink below N discards it; ambiguous original identities abstain. Numeric per-lane
+`floor_hidden_units` and `floor_publications` travel in existing operator diagnostics.
+See `docs/design-gemini-live.md` for the rule and accepted trade.
+
+Product gates and receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/R5B-A6/`.
+From worktree root, use the shared `../MOSS-Transcribe-Diarize-wt-r5-f1.venv/bin/python`
+with `PYTHONDONTWRITEBYTECODE=1` to run that folder's `product_check.py`,
+`retained_check.py`, and `cost_check.py`. These redirect writes to R5B-A6; original
+A5 receipts are read-only. Stress replay uses the product floor step on the same
+conditional row identities/counts; unknown hidden prefixes are count placeholders,
+never claimed recovered words. Complete pipeline replay uses actual product callbacks.
+
+| Gate | Frozen prototype | Product |
+|---|---|---|
+| G1 complete A4 publications |366/575/64; only Mandarin69s cut144->145 |exact parity; every difference listed in product-check.json |
+| G2 c6s published repair |18868.27->1730.19 unit-seconds;36/478 changes |exact parity |
+| G2 old c6 |73988.68;0/868 changes |exact parity |
+| D16 known-clock control |cut45->60;15 fresh units hidden |accepted-limit regression pins15 |
+
+All15 new regression cases fail with the unchanged8f232636 product callback and
+pass on C1; targeted preview/runtime suite169 passed. Existing tests unchanged.
+The additional operator-event regression verifies numeric floor counters survive
+the existing event projection without transcript content.
+G3 retained checks:2749/2749 F1/A2 calls,5/5 A5 transitions and all recorded
+degraded/stress text/fresh/re-shown metrics unchanged; FIX7 overflow65/64 and
+fault-fallback probes pass in the targeted suite.
+G4 fixed two-hour bench (1440 solid rows,200 measured publications): original
+prototype0.635ms; current C0 bench0.667ms; product including floor0.880ms mean,
+0.975ms p95; mean<=1ms PASS. This is synthetic cost, not physical-device timing.
+G5 full backend:2912 passed,9 skipped,2 xfailed,37 subtests passed,27 warnings
+in401.04s; exit0. Command from worktree root:
+`MOSS_TEST_REAL_SQLITE=1 PYTHONDONTWRITEBYTECODE=1
+../MOSS-Transcribe-Diarize-wt-r5-f1.venv/bin/python -m pytest -q -p no:cacheprovider tests`.
+Receipt: R5B-A6/full-backend.log. Product/test implementation and all gates complete;
+local commit only, with the required Co-Authored-By trailer.
+No provider calls/spend, frontend change, deployment or fresh acoustic claim.
+
 ## Six-part contract, frozen before measurements
 
 1. Structural question: why does a confirmed prefix reappear when an ongoing preview changes, and can a minimum retained cut prevent it without removing speech newer than confirmation?
