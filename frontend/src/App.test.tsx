@@ -28,7 +28,7 @@ describe("Account application shell", () => {
     sessionMode.value = "file";
     render(<App />, root);
     expect(root.querySelector(".session-title")?.textContent).toBe("Customer review");
-    expect(root.querySelector(".session-chip")?.textContent).toBe("File / URL");
+    expect(root.querySelector(".session-chip")?.textContent).toBe("File / YouTube");
   });
 
   it("renders one Account Live surface without a second authority or File job UI", () => {

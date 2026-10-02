@@ -34,7 +34,7 @@ def test_header_and_pane_dimensions_survive_demo_changes(viewport):
             page.get_by_role('region', name='Meeting history', exact=True).locator('[data-open-meeting="demo-file"]').click()
             expect(page.locator('#tr-body')).to_contain_text('Demo words')
             expect(page.locator('.topbar .session-title')).to_have_text(meeting.title)
-            expect(page.locator('.topbar .session-chip')).to_have_text('File / URL')
+            expect(page.locator('.topbar .session-chip')).to_have_text('File / YouTube')
             assert page.locator('#transcript-panel').bounding_box()['y'] < viewport['height']
             assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
             # Measure the app in a fixed viewport, independent of the account shell.

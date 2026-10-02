@@ -71,7 +71,7 @@ describe("MeetingHistory", () => {
     await act(async () => render(<MeetingHistory />, root));
     const reason = selected.failure_reason || selected.notice!;
     await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent).toBe("No transcript"));
-    expect(root.querySelector(".history-card-meta")?.textContent?.endsWith(selected.status === "failed" ? "Failed" : "File / URL")).toBe(true);
+    expect(root.querySelector(".history-card-meta")?.textContent?.endsWith(selected.status === "failed" ? "Failed" : "File / YouTube")).toBe(true);
     await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
     await vi.waitFor(() => expect(sessionId.value).toBe(selected.id));
     expect(root.textContent).not.toContain(reason);

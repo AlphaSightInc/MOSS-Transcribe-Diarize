@@ -32,7 +32,7 @@ export function App() {
         <div className="session-meta" aria-live="polite" style={{ flexWrap: "nowrap", minWidth: 0 }}>
           <span className="session-title" title={sessionTitle.value || PRODUCT_NAME}>{sessionTitle.value || PRODUCT_NAME}</span>
           <span className="session-dot" aria-hidden="true" />
-          <span className="session-chip">{sessionMode.value === "live" ? "Live" : "File / URL"}</span>
+          <span className="session-chip">{sessionMode.value === "live" ? "Live" : "File / YouTube"}</span>
         </div>
 
         <div className="top-right"><SettingsDialog /></div>

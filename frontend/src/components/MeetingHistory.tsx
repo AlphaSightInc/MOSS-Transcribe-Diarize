@@ -463,7 +463,7 @@ function meetingPreview(meeting: Meeting): string {
 }
 
 function modeLabel(mode: Meeting["mode"]): string {
-  return mode === "live" ? "Live" : "File / URL";
+  return mode === "live" ? "Live" : "File / YouTube";
 }
 
 function statusLabel(status: MeetingStatus): string {

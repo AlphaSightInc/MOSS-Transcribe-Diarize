@@ -87,7 +87,7 @@ export function bindFileUpload(): () => void {
     const files = Array.from(form.querySelector<HTMLInputElement>('input[name="file"]')!.files ?? []);
     const urls = form.querySelector<HTMLTextAreaElement | HTMLInputElement>('[name="urls"]')!.value
       .split(/\r?\n/).map(value => value.trim()).filter(Boolean);
-    if (!files.length && !urls.length) { status.textContent = "Choose a file or enter a URL."; return; }
+    if (!files.length && !urls.length) { status.textContent = "Choose a file or enter a YouTube link."; return; }
     const current = ++generation;
     clearTimers(); results.replaceChildren(); status.textContent = ""; submit.disabled = true;
     const transcription = transcriptionWire(loadAppSettings()); // I-2, read at submit time.

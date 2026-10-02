@@ -565,7 +565,7 @@ class Harness:
         box=await self.page.locator('#transcript-panel').bounding_box()
         visible=await self.page.locator('.session-meta').is_visible()
         geometry=await self.page.locator('.session-meta').bounding_box()
-        return {'header_visible':visible,'header_box':geometry,'ok':visible and expected==title and mode==('Live' if meeting['mode']=='live' else 'File / URL') and box['y']>=-2 and box['y']<self.page.viewport_size['height'],
+        return {'header_visible':visible,'header_box':geometry,'ok':visible and expected==title and mode==('Live' if meeting['mode']=='live' else 'File / YouTube') and box['y']>=-2 and box['y']<self.page.viewport_size['height'],
                 'title_matches':expected==title,'mode':mode,'panel_box':box,'selected':ident}
 
     async def phone(self):
