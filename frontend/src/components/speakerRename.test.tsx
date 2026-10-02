@@ -170,10 +170,9 @@ it("reassigns only a selected settled passage to a new recording-local person", 
   expect(document.activeElement).toBe(action);
   act(() => action.click());
   expect(root.querySelector("#passage-speaker-title")?.textContent).toBe("Reassign passage");
-  const radios = root.querySelectorAll<HTMLInputElement>('dialog input[type="radio"]');
-  act(() => radios[1].click());
+  openNewSpeaker();
   act(() => {
-    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
     input.value = "Blair";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
@@ -216,7 +215,7 @@ it("keeps adjacent unknown passages as separate correction targets", async () =>
   expect(root.querySelector('[data-reassign-passage="unknown-two"]')).not.toBeNull();
   act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="unknown-two"]')!.click());
   act(() => {
-    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
     input.value = "Blair";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
@@ -300,10 +299,9 @@ it("closes an A correction opened during delayed B Open and never sends A passag
   );
   act(() => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-b"]')!.click());
   act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="seg_0001"]')!.click());
-  const radios = root.querySelectorAll<HTMLInputElement>('dialog input[type="radio"]');
-  act(() => radios[1].click());
+  openNewSpeaker();
   act(() => {
-    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
     input.value = "Casey";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
@@ -357,10 +355,9 @@ it.each(["correction-first", "open-first", "open-first-error"] as const)(
     await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="meeting-b"]')).not.toBeNull());
     act(() => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-b"]')!.click());
     act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="seg_0001"]')!.click());
-    const radios = root.querySelectorAll<HTMLInputElement>('dialog input[type="radio"]');
-    act(() => radios[1].click());
+    openNewSpeaker();
     act(() => {
-      const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+      const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
       input.value = "Casey";
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
@@ -409,8 +406,11 @@ it.each(["S00", "UNKNOWN"])("never offers persisted unknown id %s as an existing
   });
 
   act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="known"]')!.click());
-  const options = [...root.querySelectorAll<HTMLOptionElement>('dialog select option')];
-  expect(options.map(option => option.value)).not.toContain(unknownId);
+  const control = root.querySelector<HTMLButtonElement>('[role="combobox"]')!;
+  if (control.getAttribute('aria-expanded') !== 'true') act(() => control.click());
+  const options = [...root.querySelectorAll<HTMLElement>('dialog [role="option"]')];
+  expect(options).toHaveLength(1);
+  expect(options.map(option => option.dataset.speakerId)).not.toContain(unknownId);
   expect(options.map(option => option.textContent)).not.toContain("Speaker TBD");
 });
 
@@ -502,3 +502,86 @@ function deferred<T>() {
   });
   return { promise, resolve };
 }
+
+function openNewSpeaker() {
+  const control = root.querySelector<HTMLButtonElement>('dialog [role="combobox"]')!;
+  if (control.getAttribute("aria-expanded") !== "true") act(() => control.click());
+  act(() => root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!.focus());
+}
+
+async function openCorrection(others = true) {
+  await act(async () => {
+    sessionId.value = "m"; sessionStatus.value = "closed";
+    replaceTranscript([
+      {segment_id:"one",start:0,end:1,text:"Selected",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"},
+      ...(others ? [
+        {segment_id:"two",start:1,end:2,text:"Second",speaker:"person-b",speaker_entity_id:"person-b",display_name:"Blair",state:"final" as const},
+        {segment_id:"three",start:2,end:3,text:"Third",speaker:"person-c",speaker_entity_id:"person-c",display_name:"Casey",state:"final" as const}
+      ] : [])
+    ]);
+    render(<TranscriptPane />, root);
+  });
+  const pencil = root.querySelector<HTMLButtonElement>('[data-reassign-passage="one"]')!;
+  pencil.focus(); act(() => pencil.click()); return pencil;
+}
+
+function press(element: Element, key: string) {
+  act(() => { element.dispatchEvent(new KeyboardEvent("keydown", {key, bubbles:true, cancelable:true})); });
+}
+
+it("uses one dropdown without radios, excludes the current speaker and saves an existing id", async () => {
+  const fetch = vi.fn(async (_url, init) => {
+    if (!init) return Response.json({summary:null});
+    expect(JSON.parse(init.body)).toEqual({segment_ids:["one"], speaker_id:"person-c"});
+    return Response.json({meeting_id:"m",segment_ids:["one"],speaker_id:"person-c",label:"Casey",transcript_version:2,needs_review:false});
+  });
+  vi.stubGlobal("fetch", fetch); await openCorrection();
+  expect(root.querySelectorAll('dialog input[type="radio"]')).toHaveLength(0);
+  expect(root.querySelectorAll('dialog [role="combobox"]')).toHaveLength(1);
+  expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(true);
+  act(() => root.querySelector<HTMLButtonElement>('[role="combobox"]')!.click());
+  const options = [...root.querySelectorAll<HTMLElement>('[role="option"]')];
+  expect(options.map(option => option.textContent?.trim() || option.querySelector('input')?.getAttribute('placeholder'))).toEqual(["Blair", "Casey", "New speaker"]);
+  expect(options.slice(0,2).every(option => option.querySelector('.legend-chip-dot'))).toBe(true);
+  act(() => options[1].click());
+  expect(root.querySelector('[role="listbox"]')).toBeNull();
+  expect(root.querySelector('[role="combobox"]')!.textContent).toContain("Casey");
+  expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(false);
+  await act(async () => { root.querySelector('dialog form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})); });
+  await vi.waitFor(() => expect(root.querySelector('dialog')).toBeNull());
+  expect(fetch.mock.calls.filter(call => call[1]?.method === "PUT")).toHaveLength(1);
+});
+
+it("types a new name in the list, rejects whitespace and confirms with Enter without saving", async () => {
+  const fetch = vi.fn(); vi.stubGlobal("fetch", fetch); await openCorrection(); openNewSpeaker();
+  const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
+  for (const [name, disabled] of [["   ",true],["Dana",false]] as const) {
+    act(() => {input.value=name; input.dispatchEvent(new Event('input',{bubbles:true}));});
+    expect(root.querySelector('[role="listbox"]')).not.toBeNull();
+    expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(disabled);
+  }
+  press(input,"Enter");
+  expect(root.querySelector('[role="listbox"]')).toBeNull();
+  expect(root.querySelector('[role="combobox"]')!.textContent).toContain("Dana");
+  expect(fetch.mock.calls.filter(call => call[1]?.method === "PUT")).toHaveLength(0); expect(document.activeElement).toBe(root.querySelector('[role="combobox"]'));
+});
+
+it("moves through every line by keyboard, closes list before dialog and returns focus to pencil", async () => {
+  const pencil = await openCorrection(); const control = root.querySelector('[role="combobox"]')!;
+  expect(document.activeElement).toBe(control); press(control,"ArrowDown");
+  expect(document.activeElement?.textContent).toBe("Blair"); press(document.activeElement!,"ArrowDown");
+  expect(document.activeElement?.textContent).toBe("Casey"); press(document.activeElement!,"Enter");
+  expect(root.querySelector('[role="listbox"]')).toBeNull(); press(control,"ArrowUp");
+  expect(document.activeElement?.getAttribute("aria-label")).toBe("New speaker"); press(document.activeElement!,"ArrowUp");
+  expect(document.activeElement?.textContent).toBe("Casey"); press(document.activeElement!,"Escape");
+  expect(root.querySelector('[role="listbox"]')).toBeNull(); expect(root.querySelector('dialog')).not.toBeNull();
+  press(control,"Escape"); expect(root.querySelector('dialog')).toBeNull(); expect(document.activeElement).toBe(pencil);
+});
+
+it("opens on the inline new speaker field when no other identified person exists", async () => {
+  await openCorrection(false);
+  expect(root.querySelector('[role="combobox"]')?.getAttribute('aria-expanded')).toBe('true');
+  expect(document.activeElement?.getAttribute('aria-label')).toBe('New speaker');
+  expect(root.querySelectorAll('[role="option"]')).toHaveLength(1);
+  expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(true);
+});
