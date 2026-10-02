@@ -42,6 +42,7 @@ export function projectTranscriptCards(turns: readonly TranscriptTurn[]): Transc
     let target: TranscriptCard | undefined;
     for (let offset = 1; offset <= Math.min(2, cards.length); offset += 1) {
       const candidate = cards[cards.length - offset];
+      if (isBackendUnknownSpeakerId(id)) continue;
       if (!candidate || candidate.lane !== lane || candidate.speakerId !== id) continue;
       const consecutiveConfirmed = offset === 1 && id !== "S00" && id !== "UNKNOWN" &&
         turn.state !== "provisional" && candidate.rows.at(-1)?.state !== "provisional";

@@ -12,6 +12,8 @@ export interface MeetingSegment {
   speaker: string;
   speaker_entity_id?: string;
   text: string;
+  edited?: boolean;
+  original_text?: string;
 }
 
 export interface MeetingAudio {
@@ -158,7 +160,9 @@ function parseTranscript(value: unknown): Meeting["transcript"] {
         end: segment.end,
         speaker: segment.speaker,
         ...(typeof segment.speaker_entity_id === "string" ? { speaker_entity_id: segment.speaker_entity_id } : {}),
-        text: segment.text
+        text: segment.text,
+        ...(segment.edited === true ? { edited: true } : {}),
+        ...(typeof segment.original_text === "string" ? { original_text: segment.original_text } : {})
       };
     })
   };

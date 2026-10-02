@@ -47,13 +47,13 @@ it.each([
   expect(root.querySelector("dialog")?.textContent).not.toContain("Applies to this speaker throughout this meeting.");
   const checkbox = root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!;
   expect(checkbox.checked).toBe(true);
-  expect(root.querySelector('dialog .hint')).toBeNull();
+  expect(root.querySelector('dialog .speaker-rename-form .hint')).toBeNull();
   if (!saveVoiceprint) act(() => checkbox.click());
   act(() => {
     const input = root.querySelector<HTMLInputElement>('#speaker-name-input')!;
     input.value = "After"; input.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  await act(async () => { root.querySelector('dialog form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+  await act(async () => { root.querySelector('dialog .speaker-rename-form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   const assertNames = () => {
     // J5: live rows name their source; File/URL rows have none.
     expect([...root.querySelectorAll('.utt-source')].map(n => n.textContent))
@@ -105,7 +105,7 @@ it.each(["active", "after Stop"])("saves the name in one action after a %s voice
     input.value = "Alex";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  await act(async () => { root.querySelector('dialog form')!.dispatchEvent(
+  await act(async () => { root.querySelector('dialog .speaker-rename-form')!.dispatchEvent(
     new Event("submit", { bubbles: true, cancelable: true })); });
   await vi.waitFor(() => expect(root.querySelector('dialog')).toBeNull());
   expect(requests).toEqual([{ label: "Alex" }, { label: "Alex", save_voiceprint: false }]);
@@ -161,23 +161,23 @@ it("reassigns only a selected settled passage to a new recording-local person", 
     ]);
     render(<TranscriptPane />, root);
   });
-  const action = root.querySelector<HTMLButtonElement>('[data-reassign-passage="two"]')!;
-  expect(action.getAttribute("aria-label")).toBe("Reassign passage");
-  expect(action.title).toBe("Reassign passage");
-  expect(action.closest(".utt-content")?.querySelector(".utt-text")?.textContent).toBe("Selected");
-  expect(action.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+  const action = root.querySelector<HTMLButtonElement>('[data-section-speaker="two"]')!;
+  expect(action.getAttribute("aria-label")).toBe("Speaker Casey");
+  expect(action.title).toBe("");
+  expect(action.closest(".utt")?.querySelector(".utt-text")?.textContent).toBe("Selected");
+
   action.focus();
   expect(document.activeElement).toBe(action);
   act(() => action.click());
-  expect(root.querySelector("#passage-speaker-title")?.textContent).toBe("Reassign passage");
+  expect(root.querySelector("#speaker-name-title")?.textContent).toBe("Speaker");
   openNewSpeaker();
   act(() => {
-    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New Speaker"]')!;
     input.value = "Blair";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await act(async () => {
-    root.querySelector('dialog form')!.dispatchEvent(
+    root.querySelector('dialog .speaker-assignment-form')!.dispatchEvent(
       new Event("submit", { bubbles: true, cancelable: true })
     );
   });
@@ -210,17 +210,17 @@ it("keeps adjacent unknown passages as separate correction targets", async () =>
     render(<TranscriptPane />, root);
   });
 
-  expect(root.querySelectorAll(".utt")).toHaveLength(1);
-  expect(root.querySelector('[data-reassign-passage="unknown-one"]')).not.toBeNull();
-  expect(root.querySelector('[data-reassign-passage="unknown-two"]')).not.toBeNull();
-  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="unknown-two"]')!.click());
+  expect(root.querySelectorAll(".utt")).toHaveLength(2);
+  expect(root.querySelector('[data-edit-passage="unknown-one"]')).not.toBeNull();
+  expect(root.querySelector('[data-edit-passage="unknown-two"]')).not.toBeNull();
+  act(() => root.querySelector<HTMLButtonElement>('[data-section-speaker="unknown-two"]')!.click());
   act(() => {
-    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New Speaker"]')!;
     input.value = "Blair";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await act(async () => {
-    root.querySelector('dialog form')!.dispatchEvent(
+    root.querySelector('dialog .speaker-assignment-form')!.dispatchEvent(
       new Event("submit", { bubbles: true, cancelable: true })
     );
   });
@@ -298,17 +298,17 @@ it("closes an A correction opened during delayed B Open and never sends A passag
     expect(root.querySelector('[data-open-meeting="meeting-b"]')).not.toBeNull()
   );
   act(() => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-b"]')!.click());
-  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="seg_0001"]')!.click());
+  act(() => root.querySelector<HTMLButtonElement>('[data-section-speaker="seg_0001"]')!.click());
   openNewSpeaker();
   act(() => {
-    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New Speaker"]')!;
     input.value = "Casey";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
   await act(async () => openedB.resolve(Response.json(meetingB)));
   await vi.waitFor(() => expect(sessionId.value).toBe("meeting-b"));
-  const staleForm = root.querySelector<HTMLFormElement>("dialog form");
+  const staleForm = root.querySelector<HTMLFormElement>("dialog .speaker-assignment-form");
   if (staleForm) {
     await act(async () => {
       staleForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -354,15 +354,15 @@ it.each(["correction-first", "open-first", "open-first-error"] as const)(
     });
     await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="meeting-b"]')).not.toBeNull());
     act(() => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-b"]')!.click());
-    act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="seg_0001"]')!.click());
+    act(() => root.querySelector<HTMLButtonElement>('[data-section-speaker="seg_0001"]')!.click());
     openNewSpeaker();
     act(() => {
-      const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
+      const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New Speaker"]')!;
       input.value = "Casey";
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
     act(() => {
-      root.querySelector<HTMLFormElement>("dialog form")!.dispatchEvent(
+      root.querySelector<HTMLFormElement>("dialog .speaker-assignment-form")!.dispatchEvent(
         new Event("submit", { bubbles: true, cancelable: true })
       );
     });
@@ -405,13 +405,17 @@ it.each(["S00", "UNKNOWN"])("never offers persisted unknown id %s as an existing
     render(<TranscriptPane />, root);
   });
 
-  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="known"]')!.click());
+  act(() => root.querySelector<HTMLButtonElement>('[data-section-speaker="known"]')!.click());
   const control = root.querySelector<HTMLButtonElement>('[role="combobox"]')!;
   if (control.getAttribute('aria-expanded') !== 'true') act(() => control.click());
   const options = [...root.querySelectorAll<HTMLElement>('dialog [role="option"]')];
   expect(options).toHaveLength(1);
   expect(options.map(option => option.dataset.speakerId)).not.toContain(unknownId);
   expect(options.map(option => option.textContent)).not.toContain("Speaker TBD");
+  press(control,"Escape"); press(control,"Escape");
+  act(() => root.querySelector<HTMLButtonElement>('[data-section-speaker="unknown"]')!.click());
+  expect(root.querySelector(".speaker-assignment-form")).not.toBeNull();
+  expect(root.querySelector<HTMLFieldSetElement>(".speaker-rename-form fieldset")?.disabled).toBe(true);
 });
 
 it("keeps closed-but-finalizing identity provisional and passage correction unavailable", async () => {
@@ -425,13 +429,13 @@ it("keeps closed-but-finalizing identity provisional and passage correction unav
   });
 
   expect(root.textContent).not.toContain("Identity settling");
-  expect(root.querySelector('[data-reassign-passage="one"]')).toBeNull();
+  expect(root.querySelector('[data-edit-passage="one"]')).toBeNull();
 
   act(() => replaceTranscript([
     {segment_id:"one",start:0,end:1,text:"Settled",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"}
   ]));
   expect(root.textContent).not.toContain("Identity settling");
-  expect(root.querySelector('[data-reassign-passage="one"]')).not.toBeNull();
+  expect(root.querySelector('[data-edit-passage="one"]')).not.toBeNull();
 });
 
 
@@ -440,7 +444,7 @@ it("allows the same voiceprint result for independent speakers on both lanes", a
   vi.stubGlobal("fetch", vi.fn(async (url, init) => {
     const id = String(url).includes("/speakers/system-person/") ? "system-person" : "mic-person";
     named.push(id);
-    expect(JSON.parse(init.body)).toEqual({label:"Alex"});
+    expect(JSON.parse(init.body)).toEqual(named.length === 1 || named.length === 3 ? {label:"Alex"} : {label:"Alex",save_voiceprint:false});
     return Response.json({meeting_id:"m",speaker_id:id,label:"Alex",voiceprint_id:"shared-person",enrollment:"enrolled"});
   }));
   await act(async () => {
@@ -453,15 +457,15 @@ it("allows the same voiceprint result for independent speakers on both lanes", a
   });
   for (const index of [0,1]) {
     act(()=>root.querySelectorAll<HTMLButtonElement>('.utt-speaker')[index].click());
-    await act(async()=>{ root.querySelector('dialog form')!.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})); });
+    await act(async()=>{ root.querySelector('dialog .speaker-rename-form')!.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})); });
     await vi.waitFor(()=>expect(root.querySelector('dialog')).toBeNull());
   }
-  expect(named).toEqual(["system-person","mic-person"]);
+  expect(named).toEqual(["system-person","mic-person","mic-person","system-person"]);
   expect(transcript.value.map(s=>s.speaker_entity_id)).toEqual(["system-person","mic-person"]);
   expect(root.querySelectorAll('.legend-chip')).toHaveLength(2);
 });
 
-it("keeps equal display names independent when one exact speaker is renamed", async () => {
+it("renames all equal display names while keeping identities independent", async () => {
   vi.stubGlobal("fetch", vi.fn(async (url) => Response.json({
     meeting_id: "m",
     speaker_id: String(url).includes("speaker-a") ? "speaker-a" : "speaker-b",
@@ -473,7 +477,8 @@ it("keeps equal display names independent when one exact speaker is renamed", as
     sessionStatus.value = "active";
     replaceTranscript([
       {start:0,end:1,text:"First",speaker:"speaker-a",speaker_entity_id:"speaker-a",display_name:"E2E Rowan",state:"confirmed"},
-      {start:1,end:2,text:"Second",speaker:"speaker-b",speaker_entity_id:"speaker-b",display_name:"E2E Rowan",state:"confirmed"}
+      {start:1,end:2,text:"Second",speaker:"speaker-b",speaker_entity_id:"speaker-b",display_name:"E2E Rowan",state:"confirmed"},
+      {start:2,end:3,text:"Third",speaker:"speaker-c",speaker_entity_id:"speaker-c",display_name:"Other",state:"confirmed"}
     ]);
     render(<TranscriptPane />, root);
   });
@@ -485,14 +490,30 @@ it("keeps equal display names independent when one exact speaker is renamed", as
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await act(async () => {
-    root.querySelector('dialog form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    root.querySelector('dialog .speaker-rename-form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
   await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
 
   expect([...root.querySelectorAll('[data-speaker-id="speaker-a"] .utt-speaker-label, [data-speaker-id="speaker-a"].legend-chip .legend-chip-name')]
     .map(node => node.textContent)).toEqual(["E2E Morgan", "E2E Morgan"]);
   expect([...root.querySelectorAll('[data-speaker-id="speaker-b"] .utt-speaker-label, [data-speaker-id="speaker-b"].legend-chip .legend-chip-name')]
-    .map(node => node.textContent)).toEqual(["E2E Rowan", "E2E Rowan"]);
+    .map(node => node.textContent)).toEqual(["E2E Morgan", "E2E Morgan"]);
+  expect(transcript.value.find(item => item.speaker_entity_id === "speaker-c")?.display_name).toBe("Other");
+});
+
+it("disables This Section Only during recording while Rename All stays enabled", async () => {
+  const fetcher = vi.fn(); vi.stubGlobal("fetch",fetcher);
+  await act(async () => {
+    sessionId.value="m";sessionStatus.value="active";
+    replaceTranscript([{segment_id:"one",start:0,end:1,text:"Recording",speaker:"a",speaker_entity_id:"a",display_name:"Alex",state:"confirmed"}]);
+    render(<TranscriptPane />,root);
+  });
+  act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.click());
+  expect(root.querySelector<HTMLFieldSetElement>(".speaker-assignment-form fieldset")?.disabled).toBe(true);
+  expect(root.querySelector<HTMLFieldSetElement>(".speaker-rename-form fieldset")?.disabled).toBe(false);
+  expect(root.querySelector("dialog")?.textContent).toContain("Available after the recording stops.");
+  await act(async () => {root.querySelector(".speaker-assignment-form")!.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
+  expect(fetcher.mock.calls.filter(call => call[1]?.method === "PUT")).toHaveLength(0);
 });
 
 function deferred<T>() {
@@ -506,7 +527,7 @@ function deferred<T>() {
 function openNewSpeaker() {
   const control = root.querySelector<HTMLButtonElement>('dialog [role="combobox"]')!;
   if (control.getAttribute("aria-expanded") !== "true") act(() => control.click());
-  act(() => root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!.focus());
+  act(() => root.querySelector<HTMLInputElement>('dialog input[aria-label="New Speaker"]')!.focus());
 }
 
 async function openCorrection(others = true) {
@@ -521,7 +542,7 @@ async function openCorrection(others = true) {
     ]);
     render(<TranscriptPane />, root);
   });
-  const pencil = root.querySelector<HTMLButtonElement>('[data-reassign-passage="one"]')!;
+  const pencil = root.querySelector<HTMLButtonElement>('[data-section-speaker="one"]')!;
   pencil.focus(); act(() => pencil.click()); return pencil;
 }
 
@@ -538,27 +559,27 @@ it("uses one dropdown without radios, excludes the current speaker and saves an 
   vi.stubGlobal("fetch", fetch); await openCorrection();
   expect(root.querySelectorAll('dialog input[type="radio"]')).toHaveLength(0);
   expect(root.querySelectorAll('dialog [role="combobox"]')).toHaveLength(1);
-  expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(true);
+  expect(root.querySelector<HTMLButtonElement>('dialog .speaker-assignment-form button[type="submit"]')!.disabled).toBe(true);
   act(() => root.querySelector<HTMLButtonElement>('[role="combobox"]')!.click());
   const options = [...root.querySelectorAll<HTMLElement>('[role="option"]')];
-  expect(options.map(option => option.textContent?.trim() || option.querySelector('input')?.getAttribute('placeholder'))).toEqual(["Blair", "Casey", "New speaker"]);
+  expect(options.map(option => option.textContent?.trim() || option.querySelector('input')?.getAttribute('placeholder'))).toEqual(["Blair", "Casey", "New Speaker"]);
   expect(options.slice(0,2).every(option => option.querySelector('.legend-chip-dot'))).toBe(true);
   act(() => options[1].click());
   expect(root.querySelector('[role="listbox"]')).toBeNull();
   expect(root.querySelector('[role="combobox"]')!.textContent).toContain("Casey");
-  expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(false);
-  await act(async () => { root.querySelector('dialog form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})); });
+  expect(root.querySelector<HTMLButtonElement>('dialog .speaker-assignment-form button[type="submit"]')!.disabled).toBe(false);
+  await act(async () => { root.querySelector('dialog .speaker-assignment-form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})); });
   await vi.waitFor(() => expect(root.querySelector('dialog')).toBeNull());
   expect(fetch.mock.calls.filter(call => call[1]?.method === "PUT")).toHaveLength(1);
 });
 
 it("types a new name in the list, rejects whitespace and confirms with Enter without saving", async () => {
   const fetch = vi.fn(); vi.stubGlobal("fetch", fetch); await openCorrection(); openNewSpeaker();
-  const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New speaker"]')!;
+  const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New Speaker"]')!;
   for (const [name, disabled] of [["   ",true],["Dana",false]] as const) {
     act(() => {input.value=name; input.dispatchEvent(new Event('input',{bubbles:true}));});
     expect(root.querySelector('[role="listbox"]')).not.toBeNull();
-    expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(disabled);
+    expect(root.querySelector<HTMLButtonElement>('dialog .speaker-assignment-form button[type="submit"]')!.disabled).toBe(disabled);
   }
   press(input,"Enter");
   expect(root.querySelector('[role="listbox"]')).toBeNull();
@@ -572,7 +593,7 @@ it("moves through every line by keyboard, closes list before dialog and returns 
   expect(document.activeElement?.textContent).toBe("Blair"); press(document.activeElement!,"ArrowDown");
   expect(document.activeElement?.textContent).toBe("Casey"); press(document.activeElement!,"Enter");
   expect(root.querySelector('[role="listbox"]')).toBeNull(); press(control,"ArrowUp");
-  expect(document.activeElement?.getAttribute("aria-label")).toBe("New speaker"); press(document.activeElement!,"ArrowUp");
+  expect(document.activeElement?.getAttribute("aria-label")).toBe("New Speaker"); press(document.activeElement!,"ArrowUp");
   expect(document.activeElement?.textContent).toBe("Casey"); press(document.activeElement!,"Escape");
   expect(root.querySelector('[role="listbox"]')).toBeNull(); expect(root.querySelector('dialog')).not.toBeNull();
   press(control,"Escape"); expect(root.querySelector('dialog')).toBeNull(); expect(document.activeElement).toBe(pencil);
@@ -581,7 +602,7 @@ it("moves through every line by keyboard, closes list before dialog and returns 
 it("opens on the inline new speaker field when no other identified person exists", async () => {
   await openCorrection(false);
   expect(root.querySelector('[role="combobox"]')?.getAttribute('aria-expanded')).toBe('true');
-  expect(document.activeElement?.getAttribute('aria-label')).toBe('New speaker');
+  expect(document.activeElement?.getAttribute('aria-label')).toBe('New Speaker');
   expect(root.querySelectorAll('[role="option"]')).toHaveLength(1);
-  expect(root.querySelector<HTMLButtonElement>('dialog button[type="submit"]')!.disabled).toBe(true);
+  expect(root.querySelector<HTMLButtonElement>('dialog .speaker-assignment-form button[type="submit"]')!.disabled).toBe(true);
 });

@@ -62,6 +62,15 @@ describe("MeetingHistory", () => {
     vi.useRealTimers();
   });
 
+  it("retains edited text and metadata when a saved meeting opens", async () => {
+    const saved = meeting({ transcript: { segments: [{id:"edited-one",start:0,end:1,speaker:"Alex",
+      speaker_entity_id:"a",text:"Corrected saved words",edited:true,original_text:"Original words"}] } });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? {meetings:[saved]} : saved)));
+    await act(async () => render(<MeetingHistory />,root));
+    await act(async () => {document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT,{detail:{meetingId:saved.id}}));});
+    await vi.waitFor(() => expect(transcript.value[0]).toMatchObject({text:"Corrected saved words",edited:true,original_text:"Original words"}));
+  });
+
   it.each([
     { status: "failed" as const, failure_code: "decode_failed", failure_reason: "Decoder unavailable." },
     { status: "completed" as const, notice: "No speech detected." }
