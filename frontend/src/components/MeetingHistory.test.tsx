@@ -160,6 +160,7 @@ describe("MeetingHistory", () => {
     await act(async () => render(<MeetingHistory />, root));
     await vi.waitFor(() => expect(root.querySelector('[aria-label="Delete session"]')).not.toBeNull());
     expect(root.querySelector<HTMLButtonElement>('[aria-label="Delete session"]')!.disabled).toBe(true);
+  });
 
   it("retains edited text and metadata when a saved meeting opens", async () => {
     const saved = meeting({ transcript: { segments: [{id:"edited-one",start:0,end:1,speaker:"Alex",
