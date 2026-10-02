@@ -461,6 +461,11 @@ class GeminiHybridEngine:
             if frontier > old:
                 if gate_words:
                     committed = [w for w in absolute if old < w.end_sample <= frontier]
+                    if self.source_lane == "microphone":
+                        committed = [GeminiWord(
+                            w.text, mapping[w.speaker] if mapping[w.speaker] is not None
+                            else f"unassigned-{frontier}-{w.speaker}", w.start_sample, w.end_sample)
+                            for w in committed]
                     self._witness_words = drop_restated(self._witness_words, committed, old)
                 if frontier > self._committed:
                     self.publish(GeminiBase(frontier, ()))

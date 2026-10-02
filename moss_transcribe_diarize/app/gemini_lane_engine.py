@@ -652,9 +652,8 @@ class MicrophoneWordGate:
             return tuple(output), restored
         frame_cache, self._terminal_frame_cache = self._terminal_frame_cache, {}
         previous_system, self._terminal_system_vectors = self._terminal_system_vectors, None
-        # Request-local speaker namespaces do not divide one independently judged candidate.
-        candidates = [(tuple(GeminiWord(w.text, "candidate", w.start_sample, w.end_sample)
-                             for w in run), samples)
+        # Witnesses carry published identities; distinct speakers retain their local-run partitions.
+        candidates = [(tuple(run), samples)
                       for run, samples in uncovered_runs(cleanup, witness, skip=skip)
                       if samples >= MIN_RUN_SAMPLES]
         if not candidates:

@@ -269,3 +269,105 @@ def test_microphone_witness_reuses_saved_contexts_and_system_vectors():
     assert len(output) == 31 and len(restored) == 1
     assert len(scans) == before+1  # The reply also needs the next context; the first is reused.
     assert embedded.count(remote) == 1
+
+
+def _mixed_witness_fixture():
+    mic, system = _local_fixture(((5.5, 7.9), (8.4, 9.6)), echo=56)
+    anchor = _local_phrase(' '.join(['genuine']*20), 5.6, 7.9, 'A')
+    stray = (w('remote', 8.2, 8.4, 'A'),)
+    reply = _local_phrase('Can you elaborate please?', 8.5, 9.3, 'B')
+    cleanup = anchor+(w('neighbour', 12, 12.2, 'final'),)
+    remote = (w('remote', 8.2, 8.4, 'tab'),)
+    return mic, system, anchor+stray+reply, cleanup, remote, reply
+
+
+def _mixed_terminal(gate, mic, system, cleanup, remote):
+    class Cleanup:
+        def diarize(self, *args, **kwargs): return GeminiWords(cleanup)
+    return TerminalTranscriber(Cleanup(), source_lane='microphone', word_gate=gate.webrtc_gate,
+        word_filter=lambda words: gate.filter_terminal(mic, words, remote, system_pcm16=system),
+        witness_filter=lambda raw, kept, witness, skip: gate.restore_witnessed_words(
+            mic, raw, kept, witness, remote, system_pcm16=system, skip=skip))
+
+
+@pytest.mark.parametrize('anchored', [False, True])
+def test_terminal_mixed_published_speakers_restore_reply_without_borrowed_stray(anchored):
+    mic, system, words, cleanup, remote, reply = _mixed_witness_fixture()
+    gate = _local_gate(system, [], remote)
+    assert gate.filter(mic, words) == words
+    gate.local_speech_seen = anchored
+    terminal = _mixed_terminal(gate, mic, system, cleanup, remote)
+    published = tuple(GeminiWord(x.text, 'speaker-0002' if x.speaker == 'B' else 'speaker-0001',
+                                x.start_sample, x.end_sample) for x in words)
+    terminal.set_witness_words(published)
+    class VoiceTape:
+        sample_count = len(mic)//2
+        def read(self, *, start_sample=0, end_sample=None):
+            return mic[2*start_sample:None if end_sample is None else 2*end_sample]
+    terminal.transcribe(VoiceTape())
+    saved = [x.text for x in terminal.last_words if 8*S <= x.start_sample < 10*S]
+    assert saved == [x.text for x in reply]
+
+
+def test_engine_mixed_speaker_witnesses_keep_published_partitions_through_finish():
+    mic, system, words, cleanup, remote, reply = _mixed_witness_fixture()
+    gate = _local_gate(system, [], remote)
+    terminal = _mixed_terminal(gate, mic, system, cleanup, remote)
+    updates = []
+    engine = GeminiHybridEngine(updates.append, word_source=object(),
+        window_scheduler=FixedWindowScheduler(), registry=OverlapRegistry(),
+        diarizer=terminal.diarizer, terminal=terminal, word_gate=gate, source_lane='microphone')
+    class VoiceTape:
+        sample_count = len(mic)//2
+        def read(self, *, start_sample=0, end_sample=None):
+            return mic[2*start_sample:None if end_sample is None else 2*end_sample]
+    try:
+        engine._publish_window(0, len(mic)//2, mic, words)
+        assert any(x.text == 'remote' for x in engine._witness_words)
+        asyncio.run(engine.finish(VoiceTape()))
+        saved = [x.text for x in terminal.last_words if 8*S <= x.start_sample < 10*S]
+        assert saved == [x.text for x in reply]
+        witness_labels = {x.text: x.speaker for x in engine._witness_words if 8*S <= x.start_sample < 10*S}
+        assert witness_labels['remote'] == 'speaker-0001'
+        assert all(witness_labels[x.text] == 'speaker-0002' for x in reply)
+        assert {r.speaker for update in updates for r in getattr(update, 'segments', ())} == {'speaker-0001', 'speaker-0002'}
+    finally:
+        engine.close()
+
+
+@pytest.mark.parametrize('same_speaker', [False, True])
+def test_two_word_replies_keep_each_published_speakers_own_text_weight(same_speaker):
+    mic, system = _local_fixture(((8.4, 9.6),), echo=56)
+    gate = _local_gate(system, [])
+    words = _local_phrase('Thanks everyone', 8.5, 8.9, 'speaker-0001')+_local_phrase(
+        'Sounds good', 9, 9.4, 'speaker-0001' if same_speaker else 'speaker-0002')
+    cleanup = (w('neighbour', 12, 12.2, 'final'),)
+    output, restored = gate.restore_witnessed_words(mic, cleanup, cleanup, words, (), system_pcm16=system)
+    assert len(output) == (5 if same_speaker else 1)
+    assert bool(restored) == same_speaker
+
+
+def test_unassigned_microphone_witnesses_keep_distinct_request_partitions():
+    mic, system = _local_fixture(((8.4, 9.6),), echo=56, seconds=45)
+    gate = _local_gate(system, [])
+    words = _local_phrase('Thanks everyone', 8.5, 8.9, 'A')+_local_phrase('Sounds good', 9, 9.4, 'B')
+    cleanup = (w('neighbour', 12, 12.2, 'final'),)
+    terminal = _mixed_terminal(gate, mic, system, cleanup, ())
+    class UnassignedRegistry:
+        def observe_window(self, start, words, *args, **kwargs):
+            return {x.speaker: None for x in words}, ()
+    engine = GeminiHybridEngine(lambda update: None, word_source=object(),
+        window_scheduler=FixedWindowScheduler(), registry=UnassignedRegistry(),
+        diarizer=terminal.diarizer, terminal=terminal, source_lane='microphone')
+    class VoiceTape:
+        sample_count = len(mic)//2
+        def read(self, *, start_sample=0, end_sample=None):
+            return mic[2*start_sample:None if end_sample is None else 2*end_sample]
+    try:
+        engine._publish_window(0, 15*S, mic, words)
+        engine._publish_window(0, 31*S, mic, (w('new', 30, 30.2, 'A'),))
+        assert len({x.speaker for x in engine._witness_words}) == 3
+        asyncio.run(engine.finish(VoiceTape()))
+        assert not any(x.text in {w.text for w in words} for x in terminal.last_words)
+    finally:
+        engine.close()

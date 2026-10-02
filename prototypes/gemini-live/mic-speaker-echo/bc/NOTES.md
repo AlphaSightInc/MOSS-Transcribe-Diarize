@@ -279,3 +279,55 @@ Targeted103 passed, including55 prior WP-C +6 new/control cases. Full backend:28
 unchanged-label positive control passes both. See FIX2 `probe-summary.json`, `test-before-after.md`,
 `verdict.json`, `source-custody.json`, and `full-backend.log`. Inherited sweep echo-proxy flags remain,
 with zero final microphone text/time differences; physical echo cancellation remains unmeasured.
+
+
+## R5B-FIX3 published-identity amendment (2026-10-01)
+
+**Structural question.** Resolve request-local namespaces without erasing distinct published speakers inside
+one omission hole. **Minimum primitives:** committed timed word (text custody), request/publication identity
+(continuity custody), per-speaker local run (independent weight/audio evidence), shared saved-pass facts
+(computation only), final kept-neighbour label (assigned after admission). None substitutes for another.
+**Invariants:** mixed stray0/reply4; frontier5/5 under both raw-label variants; negatives0; no pooling two speakers'
+short runs; exact FIX2 caches/counter/anchor custody and existing H/fallback parameters. **Unknowns:** injected
+provider frequency, physical echo cancellation. An unassigned row supplies no stable identity; preserve its
+request-local partition, scoped to the commit frontier, without claiming cross-request continuity.
+**Falsifiers/tools:** any mixed stray restored, genuine reply below4/4, seam below5/5, restored recorded negative,
+changed frozen output, cost>10s or backend regression rejects the rule. Copies of public_mix.py, mixed_engine.py,
+label_mix.py, frontier_labels.py and product_controls.py measure production gates before any production edits.
+
+D1 FIX2's candidate-wide label is **measured rejected** by R3-F1. Choose its other measured alternative: microphone
+rolling witness words carry the identity actually published for their provider label. Different published speakers
+remain different evidence groups inside one hole. Unassigned words retain distinct request-scoped labels; those
+internal labels are not user-facing and do not invent an identity. H retains witness labels through admission,
+then assigns the existing kept-neighbour/fallback final label. System witnesses remain unchanged.
+
+Prototype public actual mode1/mode3/acoustic/voice/text/WeSpeaker: baseline45cba9b5 restores stray1 +reply4;
+prototype stray0 +reply4, both pre-saved anchor states. Actual rolling custody->finish->terminal also stray0/reply4.
+Frontier same/change labels:5/5 both. Recorded negatives56 conditions /28 samples /908 words:0 restored;
+24 isolated controls unchanged. Prototype targeted142 passed. Regression red on45cba9b5:5 fail,1 pass.
+
+D2 label_mix.py illustrations: two genuine local speakers with two words each restore0, because each weighs10
+and cannot borrow the other's weight to meet15. One published speaker saying all four words restores4 (weight20).
+Distinct-label stray+four-word reply restores4; same-label control restores5 under both b4054983 and this rule:
+the existing word padding and same-speaker run permit it. That inherited same-label limit is not repaired by
+partition custody; no new threshold or audio rule is introduced. Audio evidence cannot correct an incorrect
+published identity assignment. Fresh provider and device qualification remain unmeasured.
+
+D3 FIX2's saved-fact caches, bounded embedding audio, pure counter/anchor custody, H minimum/80%/weight thresholds,
+final neighbour labeling and accepted empty-answer fallback stay unchanged. Source/receipts live under
+`~/Documents/Codex/2026-09-28/moss-gemini/evidence/R5B-FIX3/`; throwaway source is absorbed into product/bench.
+
+
+Product FIX3 verification: **PASS**, identical127 engine/level cells x4 surfaces (text/time/label) against immutable
+pass2/b4054983 receipts. BC final text/times also exact. All131 receipts name current worktree production modules;
+all answers replayed; provider cost$0. F2 live/Stop/saved206/291/310 of343; names236/250; H lost names4/duplicates0;
+negative56/28/908 restored0; isolated24 controls and4 whole-engine injections pass. Original review sources untouched.
+Mixed public anchored-off/on and whole-engine stray0/reply4; seam5/5 both label variants; two-speaker2+2 restores0,
+same-speaker4 restores4. Counter5->5, anchor/caches unchanged, crop max vector difference0.0; accepted fallback exact.
+Cost120:1.604697s/720,000 mode1 frames/360 words; empty0.000113s/0 frames (review no-encoder lower-bound scenario).
+Targeted142 passed (55 original WP-C +6 FIX2 +6 FIX3/control cases included); full backend2810 passed,9 skipped,
+2 xfailed,27 warnings,37 subtests passed,412.84s. Five new regression cases fail on45cba9b5/pass after; same-speaker
+positive control passes both; existing tests unchanged. Inherited21 sweep proxy flags retained with zero exact output
+differences. Evidence: FIX3 verdict.json, recorded-comparison.json, probe-summary.json, test-before-after.md,
+source-custody.json, full-backend.log. Physical echo cancellation/fresh provider behavior/full-encoder two-hour Stop
+latency remain unmeasured; same-label padding and unassigned cross-request identity remain stated limits.

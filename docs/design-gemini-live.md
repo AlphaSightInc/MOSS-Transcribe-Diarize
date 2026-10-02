@@ -122,8 +122,12 @@ The saved and Stop-tail passes compute the same frame facts in 30 s contexts eve
 a Stop tail as covered, rather than failed recovery.
 
 For clean-up witness restoration (WP-C), `LocalVoiceEvidence` judges **one restore
-candidate run alone**, after clean-up words were gated. During admission its words
-use one candidate label, independent of request-local namespaces. Its word
+candidate run alone**, after clean-up words were gated. Microphone witnesses carry
+the lane-continuous identity used at rolling publication, so request-local namespaces
+do not split one published speaker. Different published speakers within a hole keep
+separate local-run text-weight evidence; two words from each of two speakers cannot
+combine to meet the 15-weight bar. Words with no published identity keep their
+request-local partitions scoped to their commit frontier. Its word
 samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
 independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
 its speaker. An anchored lane never waives this evidence requirement.
