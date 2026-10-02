@@ -530,7 +530,8 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
 
 - **Incident.** Three back-to-back meetings on ga0-rog-laptop ran 45.5, 55.2 and 45.5 min and each ended
   `helper_lease_expired lanes=none`: frames and heartbeats stopped at the same instant, the server interrupted 30 s
-  later. No server bound, runtime failure or host Wi-Fi event coincided; the browser-side trigger is unmeasured.
+  later. No server bound, runtime failure or host Wi-Fi event coincided; the trigger was unmeasured then. P74 below
+  identifies Chrome request exhaustion as the browser-side cause.
 - **Saved audio 1 h → 12 h** (`GEMINI_MAX_TAPE_BYTES`, disk-bound; Account's stage is a file). Time-compressed through the
   real phase-2 stack, a 200-min meeting saved only 60 min (`audio.partial.mp3`) and skipped the post-Stop pass
   (`complete_tape_unavailable`); with the fix it saves all 200 min.
@@ -740,3 +741,37 @@ unmeasured. No production change or accepted ADR amendment is made here. Full
 contract, negative S1 evidence, options O1–O4, required ADR/test amendments, size
 estimate and one-command bench: `prototypes/gemini-live/long-meeting/resume/NOTES.md`.
 Receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/P74/resume/SUMMARY.json`.
+
+## P74: capture response lifetime (2026-10-02, candidate, not deployed)
+
+A completed POST must release its response stream, even when its acknowledgement is unused. Chrome retains an
+unread `no-store` response as an open loader; about 16,384 loaders exhaust every request from that page. Two
+frame lanes (4 POSTs/s) plus heartbeats (2/s) reach this at 45m31s. Server health cannot repair that page.
+
+P74-L1's retained bench (`prototypes/gemini-live/long-meeting/L1/NOTES.md`, `FETCH-AUDIT.md`) bundles the real
+CaptureClient, supplies synthetic worklet frames, and calls the real Phase2 routes with ScriptedGeminiEngine.
+Baseline 54fb5573 dies at capture request ordinal 16,382 in 19.24s; even ordinary GET/POST then fail. Each of C1
+(client drain), C2 (empty success), C3 (capture response `no-cache`), and C4 (C1+C3) passes 100,002 requests. Tiny
+2-sample frames accelerate request counting; this is 4.63 meeting-hours of request volume, not physical capture
+or provider-duration qualification. Native-memory runs disconnect Playwright's Network observer after acquiring
+the page: its retained request bookkeeping otherwise adds hundreds of MB. Warm native renderer RSS drifts about
+9–11 MB across the last 70,002 requests; JS heap stays roughly flat, unlike the baseline's hundreds of MB of
+retained loaders. Full receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/P74/leak-fix/`.
+
+Candidate recommendation: **C1+C3**. `captureFetch` drains the network body at one choke point before returning an
+in-memory Response with the original status, headers, and error JSON. Descriptor, create, frame, heartbeat and
+Stop all use it. Existing 409 sequence adoption, replay, 429 retry/drop, and terminal handling are unchanged.
+The server applies `Cache-Control: no-cache` only to frame/heartbeat POST responses, including errors; other API
+responses remain `no-store`. This releases old bundles' loaders while retaining the acknowledgement contract.
+C2 works in Chrome but discards acknowledgements other callers use, so it is not the product proposal.
+
+Risk: these two response types no longer prohibit all cache storage; `no-cache` requires revalidation and their
+POSTs carry no explicit freshness. The header change cannot rescue a page already exhausted; it must reload.
+The page currently keeps its last active status and says “Reconnecting — keep this tab open.” Its pill therefore
+keeps counting “Recording” although delivery has stopped; it cannot receive the eventual helper-lease interruption.
+The smallest honest copy improvement, proposed only, is: “This page lost its connection — retrying. If it stays
+disconnected, reload and start a new recording; check History for the recorded part.” No invented outage classifier
+or new timeout is needed. The fetch audit also identifies an inactive SummaryPane error-path leak: one unread HTTP
+error every 5s can exhaust a fresh page in 22h45m20s. Healthy summary replies are consumed; this slower residual is
+reported separately and is not fixed or qualified by the capture candidate. Real-duration physical capture, other browser versions, and provider throughput remain
+unmeasured by this bench.

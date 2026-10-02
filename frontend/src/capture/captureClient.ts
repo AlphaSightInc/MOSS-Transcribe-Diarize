@@ -200,6 +200,19 @@ function requestDeadline(timeoutMs: number): Readonly<{ signal: AbortSignal; can
   };
 }
 
+/** Release Chrome's network loader before any caller can ignore a response body. */
+async function captureFetch(input: string, init: RequestInit): Promise<Response> {
+  const response = await fetch(input, init);
+  if (!response.body) return response;
+  const body = await response.arrayBuffer();
+  // Keep status and error JSON available without retaining the network-backed stream.
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
+
 /**
  * Capture-health thresholds. Measured, not chosen -- re-run
  * the retained capture-health threshold measurement,
@@ -418,7 +431,7 @@ export async function stopCaptureSession(
     body: JSON.stringify({ deadline: deadlineSeconds }),
   };
   if (signal) request.signal = signal;
-  const response = await fetch(`/api/live/sessions/${encodeURIComponent(session.id)}/stop`, request);
+  const response = await captureFetch(`/api/live/sessions/${encodeURIComponent(session.id)}/stop`, request);
   if (response.status === 202) {
     const pending = await response.json();
     if (pending?.code !== "stop_in_progress" || pending?.retryable !== true) {
@@ -614,7 +627,7 @@ export class CaptureClient {
       throw new Error("both capture lanes must be attached before session creation");
     }
     const descriptor = await this.requireDescriptor();
-    const response = await fetch("/api/live/sessions", {
+    const response = await captureFetch("/api/live/sessions", {
       method: "POST",
       cache: "no-store",
       credentials: "same-origin",
@@ -739,7 +752,7 @@ export class CaptureClient {
 
   private async prepareContext(): Promise<AudioContext> {
     try {
-      const response = await fetch(
+      const response = await captureFetch(
         "/api/live/descriptor?client_min_protocol_version=2&client_max_protocol_version=2",
         { cache: "no-store", credentials: "same-origin" },
       );
@@ -1154,7 +1167,7 @@ export class CaptureClient {
     timeout.signal.addEventListener("abort", expire, { once: true });
     this.requestControllers.add(controller);
     try {
-      return await fetch(input, { ...init, signal: controller.signal });
+      return await captureFetch(input, { ...init, signal: controller.signal });
     } finally {
       timeout.cancel();
       timeout.signal.removeEventListener("abort", expire);
