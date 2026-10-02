@@ -484,8 +484,11 @@ See [measurement](../audits/mixer-repair-feasibility-20260911.md).
 The exact body is `{expected_instance_id: string|null, instance_id: string,
 automatic: boolean}`. Compare the expected writer unless null; return 409
 `capture_writer_mismatch` on conflict. Automatic resume refuses with
-`capture_page_alive` while the last accepted heartbeat is younger than 3 s;
-explicit user resume skips this refusal. A repeated identical old→new request
+`capture_page_alive` with `retry_after_ms` (rounded-up milliseconds until 3 s
+silence) while the last accepted heartbeat is younger than 3 s. The browser
+retries automatic resume for up to 8 s after load, acquiring media in parallel,
+then becomes a viewer if the original writer still heartbeats. Explicit user
+resume skips this wait. A repeated identical old→new request
 returns its original response and renews the lease only once. The response
 contains descriptor, lane next sequence/new epoch/last capture end/health, capture
 clock, mixed sample count, lease remaining, next heartbeat sequence/send time,
@@ -493,8 +496,12 @@ and interruption bounds. Both capture endpoints use the returned clock offset;
 first resumed lane frames carry discontinuity with the returned new epoch.
 
 **U2** gap metadata is separate from speech: missing time is mixer silence,
-and the exact `([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line survives
-Stop, refinement, reload, History and server exports. **U3** 120 s abandonment
+and closed `capture_interruptions` plus `sample_rate` survive Stop, refinement,
+reload and History in the snapshot `session` and saved document top level.
+Browser transcript/exports render the exact
+`([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line. The server adds no export
+endpoint or renderer; existing Python subtitle exports stay unchanged. **U3**
+120 s abandonment
 and existing accepted-Stop/expiry owners remain authoritative; an overdue lease
 is refused even before its timer callback. **U4** origin-cookie authorization
 precedes a per-Meeting guard spanning resume and frames/heartbeat/Stop/Abort.
@@ -508,5 +515,7 @@ to M20 coordinator lifetime and M21 scope; its evidence for M22–M25 is the off
 product matrix and `tests/phase2/test_live_resume.py`, not native host qualification.
 
 An interruption's end is null until a genuinely new accepted resumed frame supplies
-it; cached acknowledgements do not close it. Pending metadata is exposed and
-persisted, but a timed line is rendered only when its end is known.
+it; cached acknowledgements do not close it. Open intervals are not listed in
+`capture_interruptions`; completed bounds are integers on the mixed clock,
+with the end at the first resumed audio sample. Metadata stays outside
+recognition and summary input.

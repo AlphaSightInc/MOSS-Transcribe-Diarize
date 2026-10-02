@@ -67,8 +67,9 @@ from .live_v2_session import (
 
 
 class CaptureConflict(RuntimeError):
-    def __init__(self, code: str):
+    def __init__(self, code: str, *, retry_after_ms: int | None = None):
         self.code = code
+        self.retry_after_ms = retry_after_ms
         super().__init__(code)
 
 
@@ -106,6 +107,7 @@ class LiveTransportSnapshotView:
     visible: LiveServiceSnapshot | None
     current: LiveServiceSnapshot | None
     fields: Mapping[str, object]
+    session_fields: Mapping[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -344,7 +346,10 @@ def attach_live_routes(
 
     @app.exception_handler(CaptureConflict)
     async def capture_conflict_response(_request, exc):
-        return JSONResponse({"code": exc.code}, status_code=409)
+        body = {"code": exc.code}
+        if exc.retry_after_ms is not None:
+            body["retry_after_ms"] = exc.retry_after_ms
+        return JSONResponse(body, status_code=409)
 
     raw_v2_sessions = LiveV2SessionRegistry(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
@@ -514,7 +519,7 @@ def attach_live_routes(
                 raise CaptureConflict("capture_writer_mismatch")
             age = helper_presence.heartbeat_age_ns(session_id)
             if automatic and age is not None and age < 3_000_000_000:
-                raise CaptureConflict("capture_page_alive")
+                raise CaptureConflict("capture_page_alive", retry_after_ms=(3_000_000_000 - age + 999_999) // 1_000_000)
             v2_session = v2_sessions.get(session_id)
             if v2_session.status != "active":
                 raise CaptureConflict("live_session_terminal")
@@ -1126,8 +1131,11 @@ def _transport_snapshot_response(
         capture_guard = v2_mixers.get(session_id).last_capture_guard
     except KeyError:
         capture_guard = None
+    snapshot = None if view.visible is None else view.visible.to_dict()
+    if snapshot is not None:
+        snapshot["session"].update(view.session_fields)
     return {
-        "snapshot": None if view.visible is None else view.visible.to_dict(),
+        "snapshot": snapshot,
         "unchanged": view.visible is None,
         "capture_guard": capture_guard,
         "v2_session": None if v2_session is None else v2_session.to_dict(),

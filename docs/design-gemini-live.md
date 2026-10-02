@@ -780,13 +780,19 @@ unmeasured by this bench.
 
 **U1** browser reload/reopen resumes the same Meeting by an explicit handshake;
 automatic requests cannot steal a page whose accepted heartbeat is less than 3 s
-old. User requests may take over immediately. A per-Meeting guard serializes the
+old; 409 `capture_page_alive` includes `retry_after_ms`. The browser retries
+automatic resume for up to 8 s after load, then becomes a viewer only if the old
+writer still heartbeats. User requests may take over immediately. A per-Meeting
+guard serializes the
 handshake and all capture mutations; compare-and-swap yields one winner. The
 response supplies authoritative clocks/cursors. Idempotent retry returns the same
 state without renewing twice. **U2** every handoff records mixed-clock interruption
 metadata separately from speech; mixer zero-fill preserves elapsed missing time.
-The exact `([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line persists through
-Stop/refinement/reload/History and appears in both server export formats.
+Closed `capture_interruptions` plus `sample_rate` persist through
+Stop/refinement/reload/History in the snapshot `session` and saved document top
+level. Open gaps are not listed. Browser transcript/exports render the exact
+`([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line; server metadata only, no
+export endpoint or new renderer. Existing Python subtitle exports stay unchanged.
 Recognition, speaker statistics and summary input exclude it. **U3** retain the
 120 s lease and lifecycle owner; expiry/closing/accepted Stop/server restart never
 reopen. **U4** only the origin Sign-in session replaces its page, and the old
@@ -804,9 +810,10 @@ full state using real routes/mixer/archive with an offline engine. Provider and
 physical-device recovery, clock accuracy under real network latency, and browser
 product acceptance remain unmeasured. Candidate server build only; no deployment.
 
-P74-RS verification: all six offline product cells pass; 26 new regression cases
-fail on `c7884d46` and pass on the candidate, while the headerless normal-meeting
-control passes on both. Full backend: 2945 passed, 9 skipped, 2 xfailed,
-37 subtests passed (437.80 s). Existing expectations unchanged.
+P74-RS verification after lead R1–R3: all six offline product cells pass.
+Original regressions: 26 red on `c7884d46`, one headerless control green.
+Amendments: 11 red / 17 green on `ed89d899`, all 28 green on the final candidate.
+Full backend: 2946 passed, 9 skipped, 2 xfailed, 37 subtests passed (420.86 s).
+Existing pre-P74 expectations unchanged; server export assertions removed per R3.
 Receipts and local commit classification: `status/P74-RS-STATUS.md` under
 `~/Documents/Codex/2026-09-28/moss-gemini/`.

@@ -171,7 +171,7 @@ class MeetingSummaries:
                      "error_code": None, "speaker_names": speaker_names(document)}
             await self._write(value)
             return value, readable_transcript({k: v for k, v in document.items()
-                                                if k not in {"interruptions", "interruption_lines"}})
+                                                if k not in {"capture_interruptions", "sample_rate"}})
 
     async def update(self, attempt_id: str, state: str, *, document=None, error_code=None):
         source_changed = False

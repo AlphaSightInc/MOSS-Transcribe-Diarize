@@ -332,12 +332,15 @@
 ## P74 browser resume decisions
 
 **U1** reload/reopen may automatically resume one active Meeting using its stored
-devices/settings. Automatic takeover refuses while the current page's heartbeat
-is younger than 3 s; explicit user takeover may proceed. **U2** a Capture
-interruption is `{start_sample, end_sample}` on the mixed sample clock, outside
-speech rows: silence in saved audio, exact
-`([HH:MM:SS-HH:MM:SS] Recording Interrupted)` in time in transcript/export,
-never recognition, speaker statistics or summary input. **U3** retain the 120 s
-lease; terminal/closing/expired/accepted-Stop/server-restarted Meetings cannot
-resume. **U4** originating browser Sign-in session only; a replaced page is a
-viewer, excluded by `X-Moss-Capture-Instance` on all four capture mutations.
+settings. A heartbeat younger than 3 s returns 409 `capture_page_alive` with
+`retry_after_ms`; the browser retries automatically for up to 8 s after load,
+then becomes a viewer only if the original writer still heartbeats. Explicit
+user takeover may proceed immediately. **U2** `capture_interruptions` contains
+closed `{start_sample, end_sample}` intervals on the mixed clock, with
+`sample_rate` beside it in the live snapshot's `session` and at the saved
+transcript document's top level. Open gaps are not listed. Missing audio stays
+silence; the browser renders the timed Recording Interrupted line in transcript
+and exports. The server supplies metadata only, outside speech and summary input.
+**U3** retain the 120 s lease; terminal/closing/expired/accepted-Stop/server-restarted
+Meetings cannot resume. **U4** originating browser Sign-in session only; a replaced
+page is a viewer, fenced by `X-Moss-Capture-Instance` on all four capture mutations.

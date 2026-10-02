@@ -2562,22 +2562,6 @@ def create_phase2_app(
             raise HTTPException(status_code=404, detail="Meeting not found.")
         return meeting_response(await handle.snapshot())
 
-    @app.get("/api/meetings/{meeting_id}/export")
-    async def export_meeting(meeting_id: str, request: Request, format: str = "txt"):
-        from .recording_interruption import transcript_export
-
-        account = await require_account(request)
-        handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
-        if handle is None:
-            raise HTTPException(status_code=404, detail="Meeting not found.")
-        meeting = await handle.snapshot()
-        try:
-            content = transcript_export(readable_transcript(meeting.transcript) or {}, format)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        return Response(content, media_type="text/markdown" if format == "md" else "text/plain",
-                        headers={"Content-Disposition": f'attachment; filename="transcript-{meeting_id}.{format}"'})
-
     @app.put("/api/meetings/{meeting_id}/title")
     async def rename_meeting(meeting_id: str, request: Request):
         account = await require_account(request)

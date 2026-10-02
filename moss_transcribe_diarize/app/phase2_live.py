@@ -1318,7 +1318,7 @@ class _Phase2LiveTransportAdapter:
                 binding.interruptions.append(dict(gap))
             else:
                 binding.interruptions[index] = dict(gap)
-            document = {**binding.durable_document, **interruption_fields(binding.interruptions)}
+            document = {**binding.durable_document, **interruption_fields(binding.interruptions, self.live.runtime.descriptor.sample_rate)}
             binding.durable_version = await binding.handle.commit_transcript(document)
             binding.durable_document = document
             return index
@@ -1340,8 +1340,8 @@ class _Phase2LiveTransportAdapter:
                 "speaker_labels": dict(binding.speaker_labels),
                 "speaker_label_revision": binding.speaker_label_revision,
                 "needs_review": binding.durable_needs_review,
-                **interruption_fields(binding.interruptions),
             },
+            session_fields=interruption_fields(binding.interruptions, self.live.runtime.descriptor.sample_rate),
         )
 
     def events(

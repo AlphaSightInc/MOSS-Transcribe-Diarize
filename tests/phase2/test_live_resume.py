@@ -78,10 +78,14 @@ def test_resume_gap_archive_and_terminal(live, gap):
                 json=bench.frame(lane, 8 + i, 4 + gap + i * .5, cursor['resume_device_epoch'], i == 0))
             assert r.status_code == 200, r.text
     gap_row = {'start_sample': 4 * bench.RATE, 'end_sample': (4 + gap) * bench.RATE}
-    assert client.get(base + '/snapshot').json()['interruptions'] == [gap_row]
+    snapshot = client.get(base + '/snapshot').json()
+    assert snapshot['snapshot']['session']['capture_interruptions'] == [gap_row]
+    assert snapshot['snapshot']['session']['sample_rate'] == bench.RATE
+    assert 'capture_interruptions' not in snapshot
     assert client.post(base + '/stop', json={'deadline': 20}, headers=new).status_code == 200
     meeting = bench.wait_meeting(client, sid, 'completed')
-    assert meeting['transcript']['interruptions'] == [gap_row]
+    assert meeting['transcript']['capture_interruptions'] == [gap_row]
+    assert meeting['transcript']['sample_rate'] == bench.RATE
     assert len(engines) == 1
     archive = list((st.resume_evidence_root / 'meetings').glob('**/audio.mp3'))
     # The fixture's database and audio directory share a disposable evidence root.
@@ -94,9 +98,13 @@ def test_resume_gap_archive_and_terminal(live, gap):
 def test_automatic_liveness_and_explicit_takeover(live):
     client, st, cookies, engines, clock, timer, sid, base, old = live
     before = st.live_helper_failures.arm(sid)
-    assert resume(client, base, automatic=True).json()['code'] == 'capture_page_alive'
+    assert resume(client, base, automatic=True).json() == {
+        'code': 'capture_page_alive', 'retry_after_ms': 3000}
     clock.now += 2_999_999_999
-    assert resume(client, base, automatic=True).status_code == 409
+    waiting = resume(client, base, automatic=True)
+    assert waiting.status_code == 409
+    assert waiting.json() == {'code': 'capture_page_alive', 'retry_after_ms': 1}
+    assert st.live_helper_failures.snapshot(sid) == before
     clock.now += 1
     accepted = resume(client, base, automatic=True)
     assert accepted.status_code == 200
@@ -106,6 +114,23 @@ def test_automatic_liveness_and_explicit_takeover(live):
     assert resume(client, base, automatic=True).json() == accepted.json()
     assert st.live_helper_failures.snapshot(sid) == lease
     assert resume(client, base, instance='user', expected='new').status_code == 200
+
+
+def test_automatic_wait_tracks_real_heartbeats_past_client_retry_window(live):
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    # A duplicated page remains a viewer while the original keeps heartbeating.
+    for sequence in range(1, 6):
+        clock.now += 2 * bench.NS
+        assert client.post(base + '/heartbeat', json=bench.hb('old', sequence), headers=old).status_code == 200
+        lease = st.live_helper_failures.snapshot(sid)
+        clock.now += 500_000_000
+        waiting = resume(client, base, automatic=True)
+        assert waiting.status_code == 409
+        assert waiting.json() == {'code': 'capture_page_alive', 'retry_after_ms': 2500}
+        assert st.live_helper_failures.snapshot(sid) == lease
+        assert st.live_helper_presence.snapshot(sid).instance_id == 'old'
+    clock.now += 2_500_000_000
+    assert resume(client, base, automatic=True).status_code == 200
 
 
 @pytest.mark.parametrize('operation', ['frames', 'heartbeat', 'stop', 'abort'])
@@ -164,7 +189,7 @@ def test_stop_accepted_first_and_expired_never_reopen(live):
 
 
 @pytest.mark.parametrize('live', [True], indirect=True)
-def test_gap_metadata_survives_refinement_exports_and_summary(live):
+def test_gap_metadata_survives_refinement_and_summary(live):
     client, st, cookies, engines, clock, timer, sid, base, old = live
     prefix(live)
     client.portal.call(st.phase2_live.sync_and_flush, sid)
@@ -182,7 +207,7 @@ def test_gap_metadata_survives_refinement_exports_and_summary(live):
     assert client.post(base + '/stop', json={'deadline': 20}, headers=new).status_code == 200
     detail = bench.wait_meeting(client, sid, 'completed')
     assert detail['refinement_state'] == 'running'
-    before = detail['transcript']['interruptions']
+    before = detail['transcript']['capture_interruptions']
     client.portal.call(release.set)
     import time
     for _ in range(100):
@@ -192,18 +217,14 @@ def test_gap_metadata_survives_refinement_exports_and_summary(live):
         time.sleep(.02)
     assert detail['refinement_state'] == 'done', detail
     document = detail['transcript']
-    assert document['interruptions'] == before
+    assert document['capture_interruptions'] == before
     assert client.get('/api/meetings').json()['meetings'][0]['id'] == sid
     assert document == client.get(f'/api/meetings/{sid}').json()['transcript']
-    marker = '([00:00:04-00:00:09] Recording Interrupted)'
-    assert marker in client.get(base + '/snapshot').text
-    assert marker in json.dumps(document)
-    for fmt in ('md', 'txt'):
-        exported = client.get(f'/api/meetings/{sid}/export', params={'format': fmt})
-        assert exported.status_code == 200
-        assert exported.text.count(marker) == 1
-        assert exported.text.index('cleaned audible block') < exported.text.index(marker)
-        assert exported.text.rindex('cleaned audible block') > exported.text.index(marker)
+    assert document['sample_rate'] == bench.RATE
+    session = client.get(base + '/snapshot').json()['snapshot']['session']
+    assert session['capture_interruptions'] == before
+    assert session['sample_rate'] == bench.RATE
+    assert 'Recording Interrupted' not in json.dumps(document['segments'])
     from moss_transcribe_diarize.app.phase2_summary import MeetingSummaries
     async def source():
         account = await st.phase2_store.account_for_session(cookies['a'])
@@ -212,8 +233,9 @@ def test_gap_metadata_survives_refinement_exports_and_summary(live):
             (await handle.snapshot()).transcript_version)
         return summary_input
     summary_input = client.portal.call(source)
-    assert 'interruptions' not in summary_input
-    assert marker not in json.dumps(summary_input)
+    assert 'capture_interruptions' not in summary_input
+    assert 'sample_rate' not in summary_input
+    assert 'Recording Interrupted' not in json.dumps(summary_input)
     assert all('Recording Interrupted' not in str(block) for block in engines[0].audio_blocks)
 
 
@@ -281,7 +303,7 @@ def test_two_resumes_have_two_ordered_gaps(live):
         assert client.post(base + '/frames', json=bench.frame(lane, 9, 14.5, cursor['resume_device_epoch'], True), headers=third).status_code == 200
     assert client.post(base + '/stop', json={'deadline': 20}, headers=third).status_code == 200
     document = bench.wait_meeting(client, sid, 'completed')['transcript']
-    assert document['interruptions'] == [
+    assert document['capture_interruptions'] == [
         {'start_sample': 64000, 'end_sample': 144000},
         {'start_sample': 152000, 'end_sample': 232000}]
 
@@ -315,9 +337,11 @@ def test_new_writer_cached_ack_does_not_close_pending_gap(live):
     r = client.post(base + '/frames', json=bench.frame('system', 0, 9, 1, True), headers=new)
     assert r.status_code == 200
     snapshot = client.get(base + '/snapshot').json()
-    assert snapshot['interruptions'][0]['end_sample'] is None
-    assert snapshot['interruption_lines'] == []
-    assert 'Recording Interrupted' not in client.get(f'/api/meetings/{sid}/export').text
+    assert snapshot['snapshot']['session']['capture_interruptions'] == []
+    assert snapshot['snapshot']['session']['sample_rate'] == bench.RATE
+    document = client.get(f'/api/meetings/{sid}').json()['transcript']
+    assert document['capture_interruptions'] == []
+    assert document['sample_rate'] == bench.RATE
 
 
 def test_early_resume_translates_nonzero_capture_origin_before_first_mix(live):
@@ -335,7 +359,7 @@ def test_early_resume_translates_nonzero_capture_origin_before_first_mix(live):
             json=bench.frame(lane, cursor['next_sequence'], 12.5, cursor['resume_device_epoch'], True)).status_code == 200
     assert client.post(base + '/stop', json={'deadline': 20}, headers=new).status_code == 200
     doc = bench.wait_meeting(client, sid, 'completed')['transcript']
-    assert doc['interruptions'] == [{'start_sample': 8000, 'end_sample': 88000}]
+    assert doc['capture_interruptions'] == [{'start_sample': 8000, 'end_sample': 88000}]
 
 
 def test_headerless_stale_bundle_never_resumes_normal_meeting(tmp_path):
@@ -350,7 +374,7 @@ def test_headerless_stale_bundle_never_resumes_normal_meeting(tmp_path):
                 assert client.post(base + '/frames', json=bench.frame(lane, i, i * .5)).status_code == 200
         assert client.post(base + '/stop', json={'deadline': 20}).status_code == 200
         meeting = bench.wait_meeting(client, sid, 'completed')
-        assert 'interruptions' not in meeting['transcript']
+        assert 'capture_interruptions' not in meeting['transcript']
         archives = list((tmp_path / 'stale/meetings').glob('**/audio.mp3'))
         assert len(archives) == 1
         pcm = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(archives[0]), '-f', 's16le', '-ac', '1', '-ar', '16000', '-'])
@@ -389,9 +413,8 @@ def test_saved_interruption_survives_full_server_restart(tmp_path):
         bench.session(client, cookies['a'])
         assert client.get(f'/api/meetings/{sid}').json()['transcript'] == saved
         assert client.get('/api/meetings').json()['meetings'][0]['id'] == sid
-        for fmt in ('md', 'txt'):
-            assert '([00:00:01-00:00:06] Recording Interrupted)' in client.get(
-                f'/api/meetings/{sid}/export', params={'format': fmt}).text
+        assert saved['capture_interruptions'] == [{'start_sample': 16000, 'end_sample': 96000}]
+        assert saved['sample_rate'] == bench.RATE
         assert resume(client, base).status_code in {404, 409}
         bench.session(client, cookies['b'])
-        assert client.get(f'/api/meetings/{sid}/export').status_code == 404
+        assert client.get(f'/api/meetings/{sid}').status_code == 404

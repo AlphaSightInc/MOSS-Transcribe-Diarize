@@ -107,10 +107,13 @@ workspace by clearing its cookie, so no isolation is weakened.
 ## 2026-10-02 — P74 capture page is replaceable, Account authority is not
 
 **U1** within-lease browser reload can resume the same Meeting through the existing
-owner-bound Live binding. **U2** interruptions persist beside the transcript, with
-the exact `([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line in snapshot, saved
-document and server Markdown/plain-text exports. They are neither speaker rows
-nor recognition/summary input. **U3** the lease stays 120 s; interrupted/closing/
+owner-bound Live binding. Automatic requests wait on 409 `capture_page_alive`
+with `retry_after_ms`; the browser retries for up to 8 s while media acquisition
+runs in parallel. **U2** closed `capture_interruptions` persist beside the
+transcript, with `sample_rate` in the snapshot `session` and saved document top
+level. Open gaps are not listed. Browser transcript/exports render the timed
+line; the server supplies metadata only, never speaker rows or recognition/summary
+input. **U3** the lease stays 120 s; interrupted/closing/
 terminal Meetings and accepted Stop never reopen. **U4** only the origin Sign-in
 session can replace its page: another session of that Account receives 403,
 another Account 404. The page id is a writer fence, not a credential. Origin
