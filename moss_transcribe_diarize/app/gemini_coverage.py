@@ -222,16 +222,26 @@ class WitnessWord:
 
 
 def source_partitions(witness: Sequence, previous: Sequence, words: Sequence, request: int):
-    """Continue source evidence only through re-heard words, splitting ambiguous old groups."""
+    """Continue source evidence through two re-heard words, splitting ambiguous old groups."""
     prior = sorted(previous, key=lambda w: w.start_sample)
     starts = [w.start_sample for w in prior]
+    pairs = defaultdict(set)
     matches = defaultdict(set)
+    qualified = set()
     continuing = defaultdict(set)
     for word in words:
         for old in prior[bisect_left(starts, word.start_sample-STEP):bisect_right(starts, word.start_sample+STEP)]:
             if abs(old.end_sample-word.end_sample) <= STEP and _same(old.text, word.text):
                 matches[word.speaker].add(old.source_partition)
-                continuing[(old.text, old.start_sample, old.end_sample, old.source_partition)].add(word.speaker)
+                pairs[(word.speaker, old.source_partition)].add((
+                    (old.text, old.start_sample, old.end_sample),
+                    (word.text, word.start_sample, word.end_sample)))
+    for (label, partition), heard in pairs.items():
+        if len({old for old, _ in heard}) < 2 or len({new for _, new in heard}) < 2:
+            continue
+        qualified.add((label, partition))
+        for (text, a, b), _ in heard:
+            continuing[(text, a, b, partition)].add(label)
     reverse = defaultdict(set)
     for label, partitions in matches.items():
         for partition in partitions:
@@ -239,7 +249,8 @@ def source_partitions(witness: Sequence, previous: Sequence, words: Sequence, re
     mapping = {}
     for label in dict.fromkeys(w.speaker for w in words):
         partitions = matches[label]
-        if len(partitions) == 1 and len(reverse[next(iter(partitions))]) == 1:
+        if (len(partitions) == 1 and len(reverse[next(iter(partitions))]) == 1
+                and (label, next(iter(partitions))) in qualified):
             mapping[label] = next(iter(partitions))
         else:
             mapping[label] = f'source-{request}-{label}'
