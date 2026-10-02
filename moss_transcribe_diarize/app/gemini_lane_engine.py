@@ -437,7 +437,7 @@ class LocalVoiceEvidence:
     def _runs(words: Sequence[GeminiWord]) -> list[list[GeminiWord]]:
         by_label: dict[str, list[GeminiWord]] = {}
         for word in words:
-            by_label.setdefault(word.speaker, []).append(word)
+            by_label.setdefault(getattr(word, "source_partition", word.speaker), []).append(word)
         runs = []
         for rows in by_label.values():
             end = None
@@ -652,7 +652,7 @@ class MicrophoneWordGate:
             return tuple(output), restored
         frame_cache, self._terminal_frame_cache = self._terminal_frame_cache, {}
         previous_system, self._terminal_system_vectors = self._terminal_system_vectors, None
-        # Witnesses carry published identities; distinct speakers retain their local-run partitions.
+        # Source partitions preserve request evidence independently of published identity.
         candidates = [(tuple(run), samples)
                       for run, samples in uncovered_runs(cleanup, witness, skip=skip)
                       if samples >= MIN_RUN_SAMPLES]

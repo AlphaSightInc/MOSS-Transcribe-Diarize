@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
+from collections import defaultdict, deque
+from dataclasses import dataclass, replace
+from itertools import accumulate
 import unicodedata
 from typing import Sequence
 
@@ -177,3 +180,136 @@ def drop_restated(witness: Sequence, committed: Sequence, frontier: int) -> list
     """Replace truncated frontier copies with the later window's committed words."""
     words = list(witness) + list(committed)
     return one_owner(words, [0]*len(witness) + [frontier]*len(committed))
+
+
+@dataclass(frozen=True, slots=True)
+class WitnessWord:
+    text: str
+    speaker: str
+    start_sample: int
+    end_sample: int
+    source_partition: str
+
+
+def source_partitions(witness: Sequence, previous: Sequence, words: Sequence, request: int):
+    """Continue source evidence only through re-heard words, splitting ambiguous old groups."""
+    prior = sorted(previous, key=lambda w: w.start_sample)
+    starts = [w.start_sample for w in prior]
+    matches = defaultdict(set)
+    continuing = defaultdict(set)
+    for word in words:
+        for old in prior[bisect_left(starts, word.start_sample-STEP):bisect_right(starts, word.start_sample+STEP)]:
+            if abs(old.end_sample-word.end_sample) <= STEP and _same(old.text, word.text):
+                matches[word.speaker].add(old.source_partition)
+                continuing[(old.text, old.start_sample, old.end_sample, old.source_partition)].add(word.speaker)
+    reverse = defaultdict(set)
+    for label, partitions in matches.items():
+        for partition in partitions:
+            reverse[partition].add(label)
+    mapping = {}
+    for label in dict.fromkeys(w.speaker for w in words):
+        partitions = matches[label]
+        if len(partitions) == 1 and len(reverse[next(iter(partitions))]) == 1:
+            mapping[label] = next(iter(partitions))
+        else:
+            mapping[label] = f'source-{request}-{label}'
+    updated = []
+    for old in witness:
+        labels = continuing.get((old.text, old.start_sample, old.end_sample, old.source_partition), ())
+        if len(labels) == 1:
+            label = next(iter(labels))
+            if len(matches[label]) == 1:
+                old = replace(old, source_partition=mapping[label])
+        updated.append(old)
+    heard = {(text,a,b) for text,a,b,_ in continuing}
+    context = [w for w in updated if (w.text,w.start_sample,w.end_sample) in heard]
+    return updated, mapping, context
+
+
+def relabel_witnesses(witness: Sequence, rows: Sequence) -> list:
+    """Published identity changes with a published row; source evidence never changes here."""
+    updated = []
+    for word in witness:
+        overlaps = [(min(word.end_sample, row.end_sample)-max(word.start_sample,row.start_sample),row.speaker)
+                    for row in rows]
+        samples, speaker = max(overlaps, key=lambda pair: pair[0], default=(0,None))
+        updated.append(replace(word,speaker=speaker or f'unassigned-{word.source_partition}') if samples>0 else word)
+    return updated
+
+
+def restore_system_witnessed_words(words: Sequence, witness: Sequence, *, skip=()):
+    """Restore H words, bridging each published identity to its nearest kept final label.
+
+    A published speaker absent from all kept words gets one separate final label; the
+    existing final-to-live overlap mapping can then preserve its name. Source partitions
+    govern microphone evidence only. Kept words never change or borrow restored evidence.
+    """
+    filled, restored = restore_witnessed_words(words, witness, skip=skip)
+    if not restored:
+        return filled, restored
+    kept = sorted(words, key=lambda w: _span(w))
+    starts = [w.start_sample for w in kept]
+    ends = list(accumulate((_span(w)[1] for w in kept), max))
+    bridge = defaultdict(dict)
+    for live in witness:
+        if live.speaker.startswith('unassigned-'):
+            continue
+        a, b = _span(live)
+        for index in range(bisect_right(ends, a), bisect_left(starts, b)):
+            word = kept[index]
+            if min(b, _span(word)[1]) > max(a, word.start_sample):
+                bridge[live.speaker][index] = word
+    indexed = {}
+    for speaker, candidates in bridge.items():
+        items = sorted(candidates.items())
+        positions = [word.start_sample for _, word in items]
+        max_ends, owners = [], []
+        for i, (_, word) in enumerate(items):
+            end = _span(word)[1]
+            if not max_ends or end > max_ends[-1]:
+                max_ends.append(end)
+                owners.append(i)
+            else:
+                max_ends.append(max_ends[-1])
+                owners.append(owners[-1])
+        indexed[speaker] = (items, positions, max_ends, owners)
+    live_by_word = defaultdict(deque)
+    for w in sorted(witness, key=lambda w: (w.start_sample, w.end_sample)):
+        live_by_word[(w.text, w.start_sample, _span(w)[1])].append(w.speaker)
+    kept_ids = {id(w) for w in words}
+    make = type(words[0])
+    output = []
+    labels = {}
+    inserted = []
+    for word in filled:
+        if id(word) in kept_ids:
+            output.append(word)
+            continue
+        live = live_by_word[(word.text, word.start_sample, word.end_sample)].popleft()
+        speaker = word.speaker
+        if not live.startswith('unassigned-'):
+            if live in indexed:
+                items, positions, max_ends, owners = indexed[live]
+                overlap = bisect_left(max_ends, word.start_sample)
+                if overlap < len(items) and positions[overlap] <= word.end_sample:
+                    nearest = overlap
+                else:
+                    right = bisect_right(positions, word.start_sample)
+                    choices = ([owners[right-1]] if right else []) + ([right] if right < len(items) else [])
+                    nearest = min(choices, key=lambda i: (
+                        max(0, word.start_sample - _span(items[i][1])[1],
+                            items[i][1].start_sample - word.end_sample), items[i][0]))
+                speaker = items[nearest][1].speaker
+            else:
+                speaker = f'witness-{live}'
+        output.append(make(word.text, speaker, word.start_sample, word.end_sample))
+        inserted.append(word)
+        labels[id(word)] = speaker
+    inserted.sort(key=lambda w: (w.start_sample, w.end_sample))
+    inserted_starts = [w.start_sample for w in inserted]
+    for run in restored:
+        lo = bisect_left(inserted_starts, round(run['start_s']*LIVE_SAMPLE_RATE))
+        hi = bisect_left(inserted_starts, round(run['end_s']*LIVE_SAMPLE_RATE))
+        run['speakers'] = [labels[id(w)] for w in inserted[lo:hi]]
+        run['speaker'] = run['speakers'][0]
+    return tuple(output), restored

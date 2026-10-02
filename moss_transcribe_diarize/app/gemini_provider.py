@@ -19,7 +19,7 @@ from typing import Callable, Sequence
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .gemini_live_runtime import GeminiSegment
-from .gemini_coverage import missing_witness_intervals, restore_witnessed_words
+from .gemini_coverage import missing_witness_intervals, restore_witnessed_words, restore_system_witnessed_words
 from .transcript_text import join_text
 
 MODEL = "gemini-3.5-transcribe"
@@ -446,7 +446,9 @@ class TerminalTranscriber:
                 all_words = list(self.identity_policy.remap(all_words, pcm))
             raw_cleanup = tuple(all_words)
             if restore and self.source_lane != "microphone":
-                all_words, restored = restore_witnessed_words(
+                restore_words = (restore_system_witnessed_words if self.source_lane == "system"
+                                 else restore_witnessed_words)
+                all_words, restored = restore_words(
                     all_words, self._witness_words, skip=self.coverage_gaps)
             if self.word_gate is not None:
                 all_words = list(self.word_gate.filter(pcm, all_words))
