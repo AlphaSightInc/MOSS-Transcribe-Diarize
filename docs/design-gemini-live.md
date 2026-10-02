@@ -180,6 +180,15 @@ voice activity is scanned once; saved-pass 30 s local-frame facts and system vec
 are reused. Microphone embeddings read only the candidate's audio span. Re-admission
 does not increment provider or local-rescue counters or change the lane anchor.
 
+After the surviving per-run weight check, each admitted source run is compared with
+the original clean-up words using H2's same whole-run time-shift rule (1 s, 12
+comparable units, existing 0.1 s overlap). A rejected neighbour cannot hide a shifted
+reply already beside the hole: the matching source run is withheld before label
+assignment and insertion, and adds nothing to `witness_restored_words`. The hole-level
+check and remaining admitted words' label/insertion behavior stay unchanged. System
+restoration inserts whole checked holes, then assigns labels; it has no separately
+admitted source pieces. FIX6 measurements: `mic-speaker-echo/c6/NOTES.md`.
+
 Measured H prototype: lost name tokens 115 → 4 across 100 pairs; doubled adjacent units
 0; 236/250 names retained in 25 system engine cells. BC composition preserves F2's
 206/291/310 live/Stop/saved units of 343; omitted five-word replies restored at 10/20 dB

@@ -18,7 +18,7 @@ from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel, Gemi
                                   GeminiRolling, GeminiSegment, GeminiUpdate,
                                   _preview_units, _unit_weight)
 from .gemini_provider import GeminiWord
-from .gemini_coverage import MIN_RUN_SAMPLES, _span, uncovered_runs
+from .gemini_coverage import MIN_RUN_SAMPLES, _span, already_beside, uncovered_runs
 from .live_span_bounds import LIVE_SAMPLE_RATE
 
 GEMINI_MIC_WINDOW_SECONDS = 30
@@ -685,6 +685,12 @@ class MicrophoneWordGate:
             else:
                 admitted = TextEchoGuard().filter(admitted, system_words)
             admitted = self._local_kept(admitted, local)
+            source_runs = {}
+            for word in admitted:
+                source_runs.setdefault(local[id(word)], []).append(word)
+            shifted = {id(w) for source_run in source_runs.values()
+                       if already_beside(source_run, cleanup) for w in source_run}
+            admitted = tuple(w for w in admitted if id(w) not in shifted)
             if not admitted:
                 continue
             a, b = admitted[0].start_sample, max(_span(w)[1] for w in admitted)
