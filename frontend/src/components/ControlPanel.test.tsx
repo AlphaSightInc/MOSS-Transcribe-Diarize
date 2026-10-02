@@ -335,12 +335,12 @@ describe("ControlPanel reattach", () => {
   const meters = () => [...root.querySelectorAll(".capture-meter-track")].map(node => node.getAttribute("aria-label"));
   /** One click on Start, settled: the recording runs, or the Start was abandoned. */
   async function clickStart() {
-    await act(async () => button("Start recording")!.click());
+    await act(async () => button("Start Recording")!.click());
     await vi.waitFor(() => expect(button("Starting…")).toBeUndefined());
   }
   async function startRecording() {
     await clickStart();
-    expect(button("Stop recording")).toBeTruthy();
+    expect(button("Stop Recording")).toBeTruthy();
   }
   const callOrder = (mock: ReturnType<typeof vi.fn>) => mock.mock.invocationCallOrder[0];
 
@@ -357,8 +357,8 @@ describe("ControlPanel reattach", () => {
       expect(button("Mute mic")).toBeUndefined();
       expect(meters()).toEqual([]);
       expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
-      expect(button("Start recording")!.disabled).toBe(false);
-      expect(button("Start recording")!.hasAttribute("title")).toBe(false);
+      expect(button("Start Recording")!.disabled).toBe(false);
+      expect(button("Start Recording")!.hasAttribute("title")).toBe(false);
 
       act(() => { sessionId.value = "meeting-on-screen"; });
       await startRecording();
@@ -426,7 +426,7 @@ describe("ControlPanel reattach", () => {
       expect(status()).toBe("Microphone unavailable");
       // The box stays unticked for the next Start, in this browser.
       expect(JSON.parse(storage.getItem(storageKeys.captureSources)!)).toEqual({ system: true, microphone: false });
-      await act(async () => button("Stop recording")!.click());
+      await act(async () => button("Stop Recording")!.click());
       expect(status()).toBeNull();
     });
 
@@ -436,7 +436,7 @@ describe("ControlPanel reattach", () => {
       await clickStart();
       expect(phase()).toBe("idle");
       expect(status()).toBeNull();
-      expect(button("Start recording")!.disabled).toBe(false);
+      expect(button("Start Recording")!.disabled).toBe(false);
       expect(button("Reset")).toBeUndefined();
       expect(mocks.startMicrophone).not.toHaveBeenCalled();
       expect(mocks.attachSilentLane).not.toHaveBeenCalled();
@@ -479,7 +479,7 @@ describe("ControlPanel reattach", () => {
       expect(mocks.createSession).not.toHaveBeenCalled();
       expect(mocks.attachSilentLane).not.toHaveBeenCalled();
       expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
-      expect(button("Start recording")!.disabled).toBe(false);
+      expect(button("Start Recording")!.disabled).toBe(false);
       expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, microphone === "unavailable"]);
     });
 
@@ -493,21 +493,21 @@ describe("ControlPanel reattach", () => {
       expect(mocks.createSession).not.toHaveBeenCalled();
       expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
       expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([false, false]);
-      expect(button("Start recording")!.disabled).toBe(true);
+      expect(button("Start Recording")!.disabled).toBe(true);
     });
 
     it("disables Start with a tooltip only while both boxes are unticked", async () => {
       await act(async () => render(<ControlPanel />, root));
       await act(async () => box("System Sound Output").click());
-      expect(button("Start recording")!.disabled).toBe(false);
+      expect(button("Start Recording")!.disabled).toBe(false);
       await act(async () => box("Microphone").click());
-      expect(button("Start recording")!.disabled).toBe(true);
-      expect(button("Start recording")!.title).toBe("Tick System Sound Output or Microphone.");
-      await act(async () => button("Start recording")!.click());
+      expect(button("Start Recording")!.disabled).toBe(true);
+      expect(button("Start Recording")!.title).toBe("Tick System Sound Output or Microphone.");
+      await act(async () => button("Start Recording")!.click());
       expect(mocks.captureOptions).toBeNull();
       await act(async () => box("System Sound Output").click());
-      expect(button("Start recording")!.disabled).toBe(false);
-      expect(button("Start recording")!.title).toBe("");
+      expect(button("Start Recording")!.disabled).toBe(false);
+      expect(button("Start Recording")!.title).toBe("");
     });
 
     it("remembers the ticked sources in this browser, and works when storage is blocked", async () => {
@@ -535,7 +535,7 @@ describe("ControlPanel reattach", () => {
       expect(sessionId.value).toBe("meeting-on-screen");
       expect(status()).toBe("Two meetings are already recording — stop one first.");
       expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
-      expect(button("Start recording")!.disabled).toBe(false);
+      expect(button("Start Recording")!.disabled).toBe(false);
       expect(meters()).toEqual([]);
       // The next Start clears the line.
       await startRecording();
@@ -546,7 +546,7 @@ describe("ControlPanel reattach", () => {
       let share!: (stream: unknown) => void;
       mocks.requestDisplayMedia.mockReturnValue(new Promise(resolve => { share = resolve; }));
       await act(async () => { sessionId.value = "meeting-on-screen"; render(<ControlPanel />, root); });
-      await act(async () => button("Start recording")!.click());
+      await act(async () => button("Start Recording")!.click());
       expect(phase()).toBe("configuring");
       expect(button("Starting…")?.disabled).toBe(true);
       expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
@@ -561,7 +561,7 @@ describe("ControlPanel reattach", () => {
       expect(mocks.startMicrophone).not.toHaveBeenCalled();
       expect(mocks.createSession).not.toHaveBeenCalled();
       expect(phase()).toBe("idle");
-      expect(button("Start recording")!.disabled).toBe(false);
+      expect(button("Start Recording")!.disabled).toBe(false);
     });
   });
 
@@ -574,11 +574,11 @@ describe("ControlPanel reattach", () => {
     it("offers Start as soon as a recording has finished, keeps the finished meeting until the next one exists", async () => {
       await act(async () => render(<ControlPanel />, root));
       await startRecording();
-      await act(async () => button("Stop recording")!.click());
+      await act(async () => button("Stop Recording")!.click());
       await finish();
       expect(phase()).toBe("terminal");
       expect(button("Reset")).toBeUndefined();
-      expect(button("Start recording")?.disabled).toBe(false);
+      expect(button("Start Recording")?.disabled).toBe(false);
       expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([false, false]);
       expect(sessionId.value).toBe("account-live-meeting");
 
@@ -614,12 +614,12 @@ describe("ControlPanel reattach", () => {
       mocks.captureStop.mockImplementationOnce(() => new Promise((_, reject) => { failStop = reject; }));
       await act(async () => render(<ControlPanel />, root));
       await startRecording();
-      await act(async () => button("Stop recording")!.click());
+      await act(async () => button("Stop Recording")!.click());
       await finish("closed");
       await startRecording();
       await act(async () => failStop(new Error("timeout")));
       expect(phase()).toBe("active");
-      expect(button("Stop recording")).toBeDefined();
+      expect(button("Stop Recording")).toBeDefined();
       expect(status()).toBeNull();
     });
 
@@ -627,7 +627,7 @@ describe("ControlPanel reattach", () => {
       mocks.captureStop.mockRejectedValueOnce(new Error("HTTP 500"));
       await act(async () => render(<ControlPanel />, root));
       await startRecording();
-      await act(async () => button("Stop recording")!.click());
+      await act(async () => button("Stop Recording")!.click());
       expect(phase()).toBe("error");
       expect(status()).toBe("Stop failed: HTTP 500");
       expect(button("Reset")).toBeUndefined();
@@ -657,7 +657,7 @@ describe("ControlPanel reattach", () => {
       // The choice for the next recording is untouched.
       expect(storage.getItem(storageKeys.captureSources)).toBeNull();
 
-      await act(async () => button("Stop recording")!.click());
+      await act(async () => button("Stop Recording")!.click());
       expect(mocks.captureStop).toHaveBeenCalledWith(5);
       expect(status()).toBeNull();
       await act(async () => { sessionStatus.value = "closed"; sessionError.value = null;
@@ -688,7 +688,7 @@ describe("ControlPanel reattach", () => {
       expect(meters()).toEqual([]);
       expect(button("Share again")).toBeUndefined();
       expect(phase()).toBe("active");
-      expect(button("Stop recording")?.disabled).toBe(false);
+      expect(button("Stop Recording")?.disabled).toBe(false);
     });
   });
 
@@ -697,7 +697,7 @@ describe("ControlPanel reattach", () => {
     // The meeting is slow to appear, so the microphone's first 10 s pass before a session exists.
     mocks.createSession.mockImplementationOnce(() => new Promise(() => undefined));
     await act(async () => { render(<ControlPanel />, root); });
-    await act(async () => button("Start recording")!.click());
+    await act(async () => button("Start Recording")!.click());
     await vi.waitFor(() => expect(mocks.createSession).toHaveBeenCalled());
 
     act(() => mocks.captureOptions?.onMeter?.("microphone", 0));
@@ -711,20 +711,20 @@ describe("ControlPanel reattach", () => {
   it("allows the server Gemini fallback when the browser key is blank", async () => {
     mocks.apiKey = "";
     await act(async () => render(<ControlPanel />, root));
-    await act(async () => button("URL")!.click());
+    await act(async () => button("YouTube")!.click());
     const url = root.querySelector<HTMLInputElement>("#meeting-url")!;
     await act(async () => { url.value = "https://example.com/a.mp3"; url.dispatchEvent(new Event("input", { bubbles: true })); });
-    expect(button("Start URL transcription")!.disabled).toBe(false);
+    expect(button("Start YouTube Transcription")!.disabled).toBe(false);
     expect(root.textContent).not.toContain("Enter your Gemini API key");
   });
 
   it("explains a non-https URL instead of silently disabling Start", async () => {
     await act(async () => render(<ControlPanel />, root));
-    await act(async () => button("URL")!.click());
+    await act(async () => button("YouTube")!.click());
     expect(root.textContent).not.toContain("Enter an exact https://");
     const url = root.querySelector<HTMLInputElement>("#meeting-url")!;
     await act(async () => { url.value = "http://example.com/a.mp3"; url.dispatchEvent(new Event("input", { bubbles: true })); });
-    expect(button("Start URL transcription")!.disabled).toBe(true);
+    expect(button("Start YouTube Transcription")!.disabled).toBe(true);
     expect(root.textContent).toContain("Use an https:// link.");
   });
 
@@ -733,7 +733,7 @@ describe("ControlPanel reattach", () => {
       render(<ControlPanel />, root);
     });
     expect(root.querySelector('input[type="password"]')).toBeNull();
-    expect(button("Start recording")?.disabled).toBe(false);
+    expect(button("Start Recording")?.disabled).toBe(false);
     await startRecording();
     expect(mocks.captureOptions).toMatchObject({ workletUrl: workletMeta.content });
   });
@@ -762,7 +762,7 @@ describe("ControlPanel reattach", () => {
     // Read-only: the source boxes are locked and there is nothing to start.
     expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
     expect(root.textContent).not.toContain("read-only");
-    expect(button("Start recording")).toBeUndefined();
+    expect(button("Start Recording")).toBeUndefined();
     expect(button("Mute mic")).toBeUndefined();
     expect(window.sessionStorage.getItem(storageKeys.sessionReattach)).toBeNull();
 
@@ -774,7 +774,7 @@ describe("ControlPanel reattach", () => {
     });
     expect(mocks.createMossSessionPoller).not.toHaveBeenCalled();
     expect(root.querySelector('[data-capture-phase="idle"]')).not.toBeNull();
-    expect(button("Start recording")?.disabled).toBe(false);
+    expect(button("Start Recording")?.disabled).toBe(false);
   });
 
   it("does not replace an originating capture page with a history observer", async () => {
@@ -782,7 +782,7 @@ describe("ControlPanel reattach", () => {
     await act(async () => {
       render(<ControlPanel />, root);
     });
-    await act(async () => button("Start recording")!.click());
+    await act(async () => button("Start Recording")!.click());
 
     act(() => {
       document.dispatchEvent(
@@ -813,7 +813,7 @@ describe("ControlPanel reattach", () => {
     act(() => { mocks.captureOptions?.onTransportRecovered?.(); mocks.pollerOptions?.onRecovered?.(); });
     expect(status()).toBe("Recording stopped: connection lost.");
     expect(button("Reset")).toBeUndefined();
-    expect(button("Start recording")?.disabled).toBe(false);
+    expect(button("Start Recording")?.disabled).toBe(false);
   });
 
   it("shows a keep-list capture line from the server only while this tab records", async () => {
@@ -862,17 +862,17 @@ describe("ControlPanel reattach", () => {
     await act(async () => { render(<App />, root); });
     const topPill = () => root.querySelector(".top-status")?.textContent;
     expect(topPill()).toBe("Standby");
-    await act(async () => button("Start recording")?.click());
+    await act(async () => button("Start Recording")?.click());
     expect(topPill()).toBe("Starting…");
     await vi.waitFor(() => expect(mocks.createSession).toHaveBeenCalled());
     expect(topPill()).toBe("Starting…");
     await act(async () => settle());
     await vi.waitFor(() => expect(topPill()).toBe(pill));
     if (outcome === "created") {
-      expect(button("Stop recording")).toBeTruthy();
+      expect(button("Stop Recording")).toBeTruthy();
       expect(sessionStatus.value).toBe("active");
     } else {
-      expect(button("Start recording")?.disabled).toBe(false);
+      expect(button("Start Recording")?.disabled).toBe(false);
     }
   });
 
@@ -881,7 +881,7 @@ describe("ControlPanel reattach", () => {
     mocks.requestDisplayMedia.mockReturnValue(new Promise((_resolve, reject) => { cancel = reject; }));
     await act(async () => { render(<App />, root); });
     const topPill = () => root.querySelector(".top-status")?.textContent;
-    await act(async () => button("Start recording")?.click());
+    await act(async () => button("Start Recording")?.click());
     expect(topPill()).toBe("Starting…");
     await act(async () => cancel(new DOMException("Permission denied", "NotAllowedError")));
     await vi.waitFor(() => expect(topPill()).toBe("Standby"));
@@ -890,7 +890,7 @@ describe("ControlPanel reattach", () => {
   it("keeps polling while an accepted Stop is still draining", async () => {
     await act(async () => { render(<ControlPanel />, root); });
     await startRecording();
-    await act(async () => button("Stop recording")?.click());
+    await act(async () => button("Stop Recording")?.click());
     expect(mocks.captureStop).toHaveBeenCalledWith(5);
     // The top pill stops counting at the click, before the server reports anything (#14).
     expect(sessionStopRequested.value).toBe("account-live-meeting");
@@ -928,9 +928,9 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[data-capture-phase="terminal"]')).not.toBeNull();
     // Raw reasons and codes never reach the page: every abnormal end is K5.
     expect(status()).toBe("Recording stopped: connection lost.");
-    expect(button("Stop recording")).toBeUndefined();
+    expect(button("Stop Recording")).toBeUndefined();
     expect(button("Reset")).toBeUndefined();
-    expect(button("Start recording")?.disabled).toBe(false);
+    expect(button("Start Recording")?.disabled).toBe(false);
     expect(mocks.createSession).toHaveBeenCalledTimes(1);
   });
 
@@ -1035,7 +1035,7 @@ describe("ControlPanel reattach", () => {
 
       // Mute only flips the lane: no replacement, no restart, no new session.
       await act(async () => button("Mute mic")!.click());
-      expect(button("Stop recording")).toBeTruthy();
+      expect(button("Stop Recording")).toBeTruthy();
       expect(mocks.replaceLane).not.toHaveBeenCalled();
       expect(mocks.captureStop).not.toHaveBeenCalled();
       expect(mocks.createSession).toHaveBeenCalledOnce();
@@ -1054,7 +1054,7 @@ describe("ControlPanel reattach", () => {
       let created!: (session: { id: string }) => void;
       mocks.createSession.mockImplementationOnce(() => new Promise(resolve => { created = resolve; }));
       await act(async () => render(<ControlPanel />, root));
-      await act(async () => button("Start recording")!.click());
+      await act(async () => button("Start Recording")!.click());
       await vi.waitFor(() => expect(mocks.createSession).toHaveBeenCalled());
       act(() => mocks.captureOptions!.onMeter!("microphone", 0));
       act(() => mocks.captureOptions!.onPreflightStatus!(remedy));

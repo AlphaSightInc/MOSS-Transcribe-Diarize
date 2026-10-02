@@ -132,7 +132,7 @@ async function chooseMicrophone(deviceId: string) {
 }
 /** One click on Start, through to a running recording. */
 async function record() {
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("active");
 }
 /** Everything a Start opened is released: contexts closed, tracks stopped, no frame handlers. */
@@ -182,7 +182,7 @@ afterEach(async () => {
 // One click, three source choices.
 it("asks for the share picker inside the click, before the microphone, and records both sources", async () => {
   await act(async () => {
-    button("Start recording")!.click();
+    button("Start Recording")!.click();
     // Synchronous: Chrome's picker needs the click's user activation.
     expect(media().getDisplayMedia).toHaveBeenCalledOnce();
     expect(media().getUserMedia).not.toHaveBeenCalled();
@@ -274,7 +274,7 @@ it("(a) a denied microphone starts system sound only, unticks Microphone and say
 });
 it("(b) a closed picker starts nothing, says nothing, and the next click works", async () => {
   displayMode = "cancel";
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBeUndefined();
   expect(button("Reset")).toBeUndefined();
@@ -287,7 +287,7 @@ it("(b) a closed picker starts nothing, says nothing, and the next click works",
 });
 it("a share that fails for another reason starts nothing and names the reason", async () => {
   displayMode = "reject";
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBe("System sound output failed: chooser rejected");
   expect(media().getUserMedia).not.toHaveBeenCalled();
@@ -309,32 +309,32 @@ it("(c) a surface shared without audio starts the microphone only and says so", 
 it.each(["unticked", "denied"])("(c) a surface without audio and a microphone %s starts nothing and tells how to share audio", async microphone => {
   displayMode = "missing";
   if (microphone === "unticked") await untick("Microphone"); else denyMicrophone = true;
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBe("No audio was shared — turn on “Also share audio” in Chrome’s picker");
   expect(sessionCreates()).toBe(0);
   expect(silentSources).toHaveLength(0);
   expectReleased();
-  expect(button("Start recording")?.disabled).toBe(false);
+  expect(button("Start Recording")?.disabled).toBe(false);
   displayMode = "ok"; denyMicrophone = false;
   await record();
 });
 it("a denied microphone as the only source starts nothing, unticks it and disables Start", async () => {
   await untick("System Sound Output");
   denyMicrophone = true;
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBe("Microphone unavailable");
   expect(sessionCreates()).toBe(0);
   expectReleased();
-  expect(button("Start recording")?.disabled).toBe(true);
-  expect(button("Start recording")?.title).toBe("Tick System Sound Output or Microphone.");
+  expect(button("Start Recording")?.disabled).toBe(true);
+  expect(button("Start Recording")?.title).toBe("Tick System Sound Output or Microphone.");
 });
 
 // Attachment failures: everything a Start opened is released without Reset.
 it.each(["source", "worklet"])("F4/4 releases the acquired share after %s failure", async failure => {
   sourceFails = failure === "source"; workletFails = failure === "worklet";
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBe(`System sound output failed: ${failure} attachment failed`);
   expect(media().getUserMedia).not.toHaveBeenCalled();
@@ -346,7 +346,7 @@ it.each(["source", "worklet"])("F4/5 releases the attached share and the acquire
     sourceFails = failure === "source"; workletFails = failure === "worklet";
     return open(constraints);
   });
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBe(`Microphone failed: ${failure} attachment failed`);
   expect(streams.length).toBeGreaterThanOrEqual(3);
@@ -357,7 +357,7 @@ it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
     throw new Error("display capture is not supported");
   });
   await act(async () => {
-    button("Start recording")!.click();
+    button("Start Recording")!.click();
     expect(request).toHaveBeenCalledOnce();
     await new Promise(resolve => setTimeout(resolve, 0));
   });
@@ -433,7 +433,7 @@ it.each(["system", "microphone"] as const)("K3: a recorded %s that stops mid-rec
     && beat.lanes.system.failure_code === null && beat.lanes.microphone.failure_code === null)).toBe(true);
   expect(status()).toBe(lane === "system" ? "System sound output stopped." : "Microphone stopped.");
 
-  await click("Stop recording");
+  await click("Stop Recording");
   expect(phase()).toBe("stopping");
   expect(posted("heartbeat").at(-1)).toMatchObject({ state: "stopped" });
   expect(vi.mocked(fetch).mock.calls.some(([url]) => url === "/api/live/sessions/probe/stop")).toBe(true);
@@ -445,7 +445,7 @@ it.each(["descriptor", "microphone"] as const)("pending %s shows Starting… wit
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else media().getUserMedia.mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("configuring");
   expect(button("Starting…")?.disabled).toBe(true);
   expect(button("Reset")).toBeTruthy();
@@ -458,7 +458,7 @@ it.each(["descriptor", "microphone"] as const)("pending %s shows Starting… wit
 });
 it("a server that cannot be reached starts nothing and releases the share", async () => {
   vi.mocked(fetch).mockImplementationOnce(async () => { throw new TypeError("Failed to fetch"); });
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBe("Start failed: no connection to the server.");
   expect(media().getUserMedia).not.toHaveBeenCalled();
@@ -469,7 +469,7 @@ it("a refused meeting starts nothing and releases both sources", async () => {
   vi.mocked(fetch).mockImplementation(async (url: string | URL | Request) => String(url).includes("/descriptor")
     ? descriptorResponse as unknown as Response
     : { ok: false, status: 409, json: async () => ({ detail: { code: "live_capacity_full" } }) } as unknown as Response);
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("idle");
   expect(status()).toBe("Two meetings are already recording — stop one first.");
   expectReleased();
@@ -478,7 +478,7 @@ it.each(["descriptor", "microphone"] as const)("Reset before pending %s resolves
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else media().getUserMedia.mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
-  await click("Start recording");
+  await click("Start Recording");
   await click("Reset");
   expect(phase()).toBe("idle");
   await settle(() => gate.resolve(pending === "descriptor"
@@ -493,7 +493,7 @@ it.each(["descriptor", "microphone"] as const)("an old %s rejection after Reset 
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else media().getUserMedia.mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
-  await click("Start recording"); await click("Reset");
+  await click("Start Recording"); await click("Reset");
   await record();
   await settle(() => gate.reject(new Error("old microphone denied")));
   expect(phase()).toBe("active");
@@ -503,7 +503,7 @@ it.each(["descriptor", "microphone"] as const)("an old %s rejection after Reset 
 it.each(["success", "cancel"] as const)("Reset while the picker is open handles a late %s", async outcome => {
   const chooser = deferred<MediaStream>();
   media().getDisplayMedia.mockImplementationOnce(() => chooser.promise);
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("configuring");
   await click("Reset");
   await settle(() => outcome === "success" ? chooser.resolve(new FakeStream() as unknown as MediaStream)
@@ -518,7 +518,7 @@ it.each(["microphone", "system"] as const)("a %s that stops before the meeting e
   const answer = vi.mocked(fetch).getMockImplementation()!;
   vi.mocked(fetch).mockImplementation((url, request) =>
     url === "/api/live/sessions" && sessionCreates() === 1 ? created.promise : answer(url, request));
-  await click("Start recording");
+  await click("Start Recording");
   expect(phase()).toBe("configuring");
   const track = streams[lane === "system" ? 0 : 2].getTracks()[0];
   await settle(() => track.dispatchEvent(new Event("ended")));
