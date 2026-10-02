@@ -355,7 +355,7 @@ def attach_live_routes(
         max_retained_samples=runtime.descriptor.bounds.max_retained_samples
     )
     capture_observations = LiveCaptureObservationRegistry()
-    v2_sessions = _ObservedLiveV2SessionRegistry(raw_v2_sessions, capture_observations)
+    v2_sessions = _ObservedLiveV2SessionRegistry(raw_v2_sessions, capture_observations, capture_writers)
     v2_mixers = LiveCompatibilityMixerRegistry(
         max_output_samples=runtime.descriptor.bounds.max_frame_samples,
         capture_correlation=os.environ.get("MOSS_CAPTURE_CORRELATION") == "1",
@@ -474,14 +474,35 @@ def attach_live_routes(
         try:
             # Origin authority precedes the page fence, including cached frame replay.
             authority = await adapter.authorize(request, operation, session_id)
-            writer = capture_writers[session_id]
-            await writer.guard.acquire()
-            acquired = True
+            # Keep the writer reference for this admitted request, but never hold its
+            # lock while either lane uploads or JSON/PCM is parsed.
+            writer = capture_writers.get(session_id)
+            try:
+                if operation == "frame":
+                    payload = _frame_from_payload(await request.json())
+                elif operation == "heartbeat":
+                    payload = HelperHeartbeat.from_dict(await request.json())
+                elif operation == "resume":
+                    payload = _resume_from_payload(await request.json())
+                else:
+                    body = await _optional_json(request)
+                    payload = (float(body.get("deadline", 0.0)) if operation == "stop"
+                               else str(body.get("reason") or "aborted"))
+            except (TypeError, ValueError) as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            request.state.live_capture_payload = payload
+            if writer is not None:
+                await writer.guard.acquire()
+                acquired = True
             adapter.validate_mutation(authority)
-            if operation != "resume" and writer.resumed and (
+            if writer is not None and operation != "resume" and writer.resumed and (
                 request.headers.get("X-Moss-Capture-Instance") != writer.instance_id
             ):
                 raise CaptureConflict("capture_replaced")
+            # Already-admitted Stops may join the shared raw outcome after release.
+            # Other delayed bodies cannot recreate capture state after teardown.
+            if session_id not in capture_writers and operation != "stop":
+                raise CaptureConflict("live_session_terminal")
             request.state.live_capture_authority = authority
             request.state.release_capture_guard = release_guard
             yield
@@ -494,17 +515,7 @@ def attach_live_routes(
         authority = request.state.live_capture_authority
         writer = capture_writers[session_id]
         try:
-            payload = await request.json()
-            if not isinstance(payload, dict) or set(payload) != {
-                "expected_instance_id", "instance_id", "automatic",
-            }:
-                raise ValueError("resume requires expected_instance_id, instance_id and automatic.")
-            expected, instance, automatic = (payload["expected_instance_id"],
-                                             payload["instance_id"], payload["automatic"])
-            if expected is not None and (not isinstance(expected, str) or not expected):
-                raise ValueError("expected_instance_id must be null or a non-empty string.")
-            if not isinstance(instance, str) or not instance or type(automatic) is not bool:
-                raise ValueError("instance_id must be non-empty and automatic must be boolean.")
+            expected, instance, automatic = request.state.live_capture_payload
             pair = (expected, instance)
             lease = helper_failures.snapshot(session_id)
             now = helper_failures.now_ns()
@@ -615,73 +626,75 @@ def attach_live_routes(
         authority: object | None = None
         try:
             authority = request.state.live_capture_authority
-            payload = await request.json()
-            frame = _frame_from_payload(payload)
-            if (
-                frame.v2_frame is not None
-                and frame.v2_frame.sample_rate != runtime.descriptor.sample_rate
-            ):
-                # lane, sequence, sample_count and pcm length are all validated, but the
-                # declared rate was only checked for positivity. A version-skewed or
-                # hand-rolled client could therefore ship PCM that is then interpreted at
-                # the wrong rate -- garbled audio and wrong timestamps, returned as 200 with
-                # no signal that anything is wrong. The contract layer cannot know the
-                # service rate, so it is checked here against the live descriptor.
-                raise ValueError(
-                    f"frame sample_rate must be {runtime.descriptor.sample_rate}."
-                )
-            adapter.validate_mutation(authority)
-            if frame.v2_frame is None:
-                accepted = runtime.accept_frame(session_id, frame.audio_frame)
-                result = _TransportAcceptResult(
-                    ack=accepted.ack,
-                    queued_item_ids=accepted.queued_item_ids,
-                )
-            else:
-                snapshot = runtime.snapshot(session_id)
-                if snapshot is None:
-                    raise KeyError(session_id)
-                if snapshot.session.status != "active":
-                    raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
-                v2_session = v2_sessions.get(session_id)
-                writer = capture_writers[session_id]
-                lane_cursor = v2_session.snapshot().lanes[frame.v2_frame.lane]
-                is_new_frame = frame.v2_frame.sequence == lane_cursor.next_sequence
-                ack = v2_session.accept(frame.v2_frame)
-                if is_new_frame and not writer.resumed:
-                    if writer.instance_id is None:
-                        writer.instance_id = request.headers.get("X-Moss-Capture-Instance")
-                    if not writer.clock_anchored:
-                        lane_state = v2_session.resume_lanes()[frame.v2_frame.lane.value]
-                        writer.clock_anchor_ns = helper_failures.now_ns() - lane_state["last_capture_end_timestamp_ns"]
-                        writer.clock_anchored = True
-                if (is_new_frame and writer.interruption is not None
-                        and frame.v2_frame.lane in writer.first_lanes
-                        and frame.v2_frame.device_epoch >= writer.response["lanes"][frame.v2_frame.lane.value]["resume_device_epoch"]):
-                    end = max(writer.interruption["start_sample"], writer.gap_anchor_samples + (
-                        frame.v2_frame.capture_timestamp_ns - writer.gap_anchor_ns
-                    ) * runtime.descriptor.sample_rate // 1_000_000_000)
-                    prior = writer.interruption["end_sample"]
-                    writer.interruption["end_sample"] = end if prior is None else min(prior, end)
-                    writer.first_lanes.discard(frame.v2_frame.lane)
-                    await adapter.record_interruption(authority, writer.interruption, writer.interruption_index)
-                capture_observations.observe_accepted(session_id, frame.v2_frame)
-                tapes.append_lane_frame(session_id, frame.v2_frame)
-                mixed = v2_mixers.get(session_id).admit_available(
-                    session_id,
-                    v2_session,
-                    runtime,
-                    final=False,
-                    retryable_backpressure=True,
-                )
-                _tape_mixed(tapes, session_id, mixed)
-                snapshot = runtime.snapshot(session_id)
-                if snapshot is None:
-                    raise KeyError(session_id)
-                result = _TransportAcceptResult(
-                    ack=ack,
-                    queued_item_ids=() if mixed is None else mixed.queued_item_ids,
-                )
+            try:
+                frame = request.state.live_capture_payload
+                if (
+                    frame.v2_frame is not None
+                    and frame.v2_frame.sample_rate != runtime.descriptor.sample_rate
+                ):
+                    # lane, sequence, sample_count and pcm length are all validated, but the
+                    # declared rate was only checked for positivity. A version-skewed or
+                    # hand-rolled client could therefore ship PCM that is then interpreted at
+                    # the wrong rate -- garbled audio and wrong timestamps, returned as 200 with
+                    # no signal that anything is wrong. The contract layer cannot know the
+                    # service rate, so it is checked here against the live descriptor.
+                    raise ValueError(
+                        f"frame sample_rate must be {runtime.descriptor.sample_rate}."
+                    )
+                adapter.validate_mutation(authority)
+                if frame.v2_frame is None:
+                    accepted = runtime.accept_frame(session_id, frame.audio_frame)
+                    result = _TransportAcceptResult(
+                        ack=accepted.ack,
+                        queued_item_ids=accepted.queued_item_ids,
+                    )
+                else:
+                    snapshot = runtime.snapshot(session_id)
+                    if snapshot is None:
+                        raise KeyError(session_id)
+                    if snapshot.session.status != "active":
+                        raise LiveSessionClosed(f"live session is {snapshot.session.status}.")
+                    v2_session = v2_sessions.get(session_id)
+                    writer = capture_writers[session_id]
+                    lane_cursor = v2_session.snapshot().lanes[frame.v2_frame.lane]
+                    is_new_frame = frame.v2_frame.sequence == lane_cursor.next_sequence
+                    ack = v2_session.accept(frame.v2_frame)
+                    if is_new_frame and not writer.resumed:
+                        if writer.instance_id is None:
+                            writer.instance_id = request.headers.get("X-Moss-Capture-Instance")
+                        if not writer.clock_anchored:
+                            lane_state = v2_session.resume_lanes()[frame.v2_frame.lane.value]
+                            writer.clock_anchor_ns = helper_failures.now_ns() - lane_state["last_capture_end_timestamp_ns"]
+                            writer.clock_anchored = True
+                    if (is_new_frame and writer.interruption is not None
+                            and frame.v2_frame.lane in writer.first_lanes
+                            and frame.v2_frame.device_epoch >= writer.response["lanes"][frame.v2_frame.lane.value]["resume_device_epoch"]):
+                        end = max(writer.interruption["start_sample"], writer.gap_anchor_samples + (
+                            frame.v2_frame.capture_timestamp_ns - writer.gap_anchor_ns
+                        ) * runtime.descriptor.sample_rate // 1_000_000_000)
+                        prior = writer.interruption["end_sample"]
+                        writer.interruption["end_sample"] = end if prior is None else min(prior, end)
+                        writer.first_lanes.discard(frame.v2_frame.lane)
+                        await adapter.record_interruption(authority, writer.interruption, writer.interruption_index)
+                    capture_observations.observe_accepted(session_id, frame.v2_frame)
+                    tapes.append_lane_frame(session_id, frame.v2_frame)
+                    mixed = v2_mixers.get(session_id).admit_available(
+                        session_id,
+                        v2_session,
+                        runtime,
+                        final=False,
+                        retryable_backpressure=True,
+                    )
+                    _tape_mixed(tapes, session_id, mixed)
+                    snapshot = runtime.snapshot(session_id)
+                    if snapshot is None:
+                        raise KeyError(session_id)
+                    result = _TransportAcceptResult(
+                        ack=ack,
+                        queued_item_ids=() if mixed is None else mixed.queued_item_ids,
+                    )
+            finally:
+                request.state.release_capture_guard()
             published = await adapter.publication(
                 authority,
                 session_id,
@@ -754,7 +767,7 @@ def attach_live_routes(
     async def accept_live_helper_heartbeat(session_id: str, request: Request):
         try:
             authority = request.state.live_capture_authority
-            heartbeat = HelperHeartbeat.from_dict(await request.json())
+            heartbeat = request.state.live_capture_payload
             adapter.validate_mutation(authority)
             writer = capture_writers[session_id]
             header = request.headers.get("X-Moss-Capture-Instance")
@@ -818,12 +831,12 @@ def attach_live_routes(
         authority: object | None = None
         try:
             authority = request.state.live_capture_authority
-            payload = await _optional_json(request)
+            deadline = request.state.live_capture_payload
             adapter.validate_mutation(authority)
             result = await control.stop(
                 authority,
                 session_id,
-                float(payload.get("deadline", 0.0)),
+                deadline,
                 stop_intent,
                 on_capture_closed=request.state.release_capture_guard,
             )
@@ -935,8 +948,7 @@ def attach_live_routes(
     async def abort_live_session(session_id: str, request: Request):
         try:
             authority = request.state.live_capture_authority
-            payload = await _optional_json(request)
-            reason = str(payload.get("reason") or "aborted")
+            reason = request.state.live_capture_payload
             adapter.validate_mutation(authority)
             await control.abort(authority, session_id, reason)
             published = await adapter.publication(
@@ -1008,6 +1020,20 @@ def _release_live_capture_state(
             release(session_id)
         except KeyError:
             pass
+
+
+def _resume_from_payload(payload: object) -> tuple[str | None, str, bool]:
+    if not isinstance(payload, dict) or set(payload) != {
+        "expected_instance_id", "instance_id", "automatic",
+    }:
+        raise ValueError("resume requires expected_instance_id, instance_id and automatic.")
+    expected, instance, automatic = (payload["expected_instance_id"],
+                                     payload["instance_id"], payload["automatic"])
+    if expected is not None and (not isinstance(expected, str) or not expected):
+        raise ValueError("expected_instance_id must be null or a non-empty string.")
+    if not isinstance(instance, str) or not instance or type(automatic) is not bool:
+        raise ValueError("instance_id must be non-empty and automatic must be boolean.")
+    return expected, instance, automatic
 
 
 async def _optional_json(request) -> dict[str, Any]:
@@ -1208,15 +1234,17 @@ def _capture_observation_snapshot(
 
 
 class _ObservedLiveV2SessionRegistry:
-    """Pair v2-session lifetime with capture-health observation lifetime."""
+    """Pair v2-session lifetime with capture observations and page writers."""
 
     def __init__(
         self,
         sessions: LiveV2SessionRegistry,
         observations: LiveCaptureObservationRegistry,
+        writers: dict[str, _CaptureWriter],
     ) -> None:
         self._sessions = sessions
         self._observations = observations
+        self._writers = writers
 
     def __contains__(self, session_id: object) -> bool:
         return session_id in self._sessions
@@ -1239,6 +1267,7 @@ class _ObservedLiveV2SessionRegistry:
     def release(self, session_id: str):
         session = self._sessions.release(session_id)
         self._observations.release(session_id)
+        self._writers.pop(session_id, None)
         return session
 
     def expire(self, session_id: str, reason: str, *, lane_failure_codes=None):
@@ -1248,6 +1277,7 @@ class _ObservedLiveV2SessionRegistry:
             lane_failure_codes=lane_failure_codes,
         )
         self._observations.release(session_id)
+        self._writers.pop(session_id, None)
         return snapshot
 
 

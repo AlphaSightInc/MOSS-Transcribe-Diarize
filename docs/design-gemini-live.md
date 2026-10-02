@@ -810,10 +810,20 @@ full state using real routes/mixer/archive with an offline engine. Provider and
 physical-device recovery, clock accuracy under real network latency, and browser
 product acceptance remain unmeasured. Candidate server build only; no deployment.
 
-P74-RS verification after lead R1–R3: all six offline product cells pass.
+P74-RS verification: all six offline product cells pass after R1–R3 and L1.
 Original regressions: 26 red on `c7884d46`, one headerless control green.
-Amendments: 11 red / 17 green on `ed89d899`, all 28 green on the final candidate.
-Full backend: 2946 passed, 9 skipped, 2 xfailed, 37 subtests passed (420.86 s).
+R1–R3: 11 red / 17 green on `ed89d899`, all 28 green on `f40524f7`.
+L1: eleven new cases red on `f40524f7`, all 39 P74 cases green on the final
+candidate. Full backend: 2957 passed, 9 skipped, 2 xfailed,
+37 subtests passed (423.90 s).
 Existing pre-P74 expectations unchanged; server export assertions removed per R3.
 Receipts and local commit classification: `status/P74-RS-STATUS.md` under
 `~/Documents/Codex/2026-09-28/moss-gemini/`.
+
+Lead L1 concurrency correction: a capture lock protects the writer fence and
+accepted mutation, never request upload or JSON/PCM parsing. Origin authorization
+stays first; frame publication happens after releasing the guard. Page-writer
+entries are removed beside v2 capture release/expiry, including Stop, Abort and
+lease expiry. Offline ASGI tests hold one body mid-upload while the other lane
+and heartbeat finish, and reject late old-writer/terminal bodies without
+recreating presence. Full-suite and red/green receipts: P74-RS-STATUS.md.

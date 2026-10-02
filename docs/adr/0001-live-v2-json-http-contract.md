@@ -519,3 +519,13 @@ it; cached acknowledgements do not close it. Open intervals are not listed in
 `capture_interruptions`; completed bounds are integers on the mixed clock,
 with the end at the first resumed audio sample. Metadata stays outside
 recognition and summary input.
+
+Lead L1: authorize the origin before consuming the request body. Read JSON and
+parse frame PCM, heartbeat, resume and terminal-control payloads before taking
+the capture guard; the fence is checked under the guard immediately before
+mutation. Frame acceptance releases the guard before publication. One stalled
+lane upload therefore cannot block the other lane or heartbeat. Writer entries
+share v2 capture lifetime: `_ObservedLiveV2SessionRegistry.release` handles
+Stop/Abort/control teardown, and `.expire` handles helper lease/failure expiry.
+A delayed admitted body cannot recreate capture state after teardown; already
+admitted Stops still join the existing raw Stop outcome.

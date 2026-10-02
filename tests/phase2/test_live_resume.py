@@ -418,3 +418,134 @@ def test_saved_interruption_survives_full_server_restart(tmp_path):
         assert resume(client, base).status_code in {404, 409}
         bench.session(client, cookies['b'])
         assert client.get(f'/api/meetings/{sid}').status_code == 404
+
+
+@pytest.mark.parametrize('lane', ['system', 'microphone'])
+@pytest.mark.parametrize('resumed', [False, True])
+def test_stalled_frame_body_does_not_block_peer_lane_or_heartbeat(live, lane, resumed):
+    import asyncio
+    import httpx
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    if resumed:
+        state = resume(client, base).json()
+        headers = {'X-Moss-Capture-Instance': 'new'}
+        heartbeat = bench.hb('new', state['heartbeat_next_sequence'])
+        heartbeat['sent_monotonic_ns'] = state['heartbeat_next_monotonic_ns']
+    else:
+        headers, heartbeat = old, bench.hb('old', 1)
+    epoch = int(resumed)
+    async def exercise():
+        stalled, release = asyncio.Event(), asyncio.Event()
+        body = json.dumps(bench.frame(lane, 0, 0, epoch, resumed)).encode()
+        async def upload():
+            yield body[:len(body) // 2]
+            stalled.set()
+            await release.wait()
+            yield body[len(body) // 2:]
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=client.app),
+                base_url='https://moss.test', cookies=client.cookies) as wire:
+            slow = asyncio.create_task(wire.post(base + '/frames', content=upload(),
+                headers={**headers, 'Content-Type': 'application/json'}))
+            try:
+                await asyncio.wait_for(stalled.wait(), timeout=1)
+                peer = 'microphone' if lane == 'system' else 'system'
+                accepted = await asyncio.wait_for(asyncio.gather(
+                    wire.post(base + '/frames', json=bench.frame(peer, 0, 0, epoch, resumed), headers=headers),
+                    wire.post(base + '/heartbeat', json=heartbeat, headers=headers)), timeout=1)
+                assert [r.status_code for r in accepted] == [200, 200]
+                assert not slow.done() and not release.is_set()
+            finally:
+                release.set()
+                response = await asyncio.wait_for(slow, timeout=2)
+            assert response.status_code == 200, response.text
+    client.portal.call(exercise)
+
+
+@pytest.mark.parametrize('ending', ['stop', 'abort', 'expiry'])
+def test_capture_writer_removed_at_capture_end(live, ending):
+    import inspect
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    # Observe the existing registry, including on the unmodified red candidate.
+    route = next(r for r in client.app.routes if getattr(r, 'path', '') == '/api/live/sessions/{session_id}/frames')
+    writers = inspect.getclosurevars(route.dependant.dependencies[0].call).nonlocals['capture_writers']
+    assert sid in writers
+    prefix(live)
+    if ending == 'expiry':
+        clock.now = st.live_helper_failures.snapshot(sid).deadline_monotonic_ns
+        client.portal.call(timer.scheduled[-1][1].fire)
+    else:
+        payload = {'deadline': 20} if ending == 'stop' else {'reason': 'test capture end'}
+        assert client.post(base + '/' + ending, json=payload, headers=old).status_code == 200
+    assert bench.wait_meeting(client, sid, 'completed' if ending == 'stop' else 'interrupted')
+    assert sid not in writers
+
+
+def test_writer_replaced_while_body_uploading_is_fenced_at_mutation(live):
+    import asyncio
+    import httpx
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    async def exercise():
+        stalled, release = asyncio.Event(), asyncio.Event()
+        body = json.dumps(bench.frame('system', 0, 0)).encode()
+        async def upload():
+            yield body[:len(body) // 2]
+            stalled.set()
+            await release.wait()
+            yield body[len(body) // 2:]
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=client.app),
+                base_url='https://moss.test', cookies=client.cookies) as wire:
+            slow = asyncio.create_task(wire.post(base + '/frames', content=upload(), headers=old))
+            try:
+                await asyncio.wait_for(stalled.wait(), timeout=1)
+                adopted = await asyncio.wait_for(wire.post(base + '/resume', json={
+                    'expected_instance_id': 'old', 'instance_id': 'new', 'automatic': False}), timeout=1)
+                assert adopted.status_code == 200
+            finally:
+                release.set()
+                response = await asyncio.wait_for(slow, timeout=2)
+            assert response.status_code == 409
+            assert response.json()['code'] == 'capture_replaced'
+            assert st.live_v2_sessions.get(sid).resume_lanes()['system']['next_sequence'] == 0
+    client.portal.call(exercise)
+
+
+@pytest.mark.parametrize('ending', ['stop', 'abort', 'expiry'])
+def test_delayed_heartbeat_cannot_recreate_capture_after_teardown(live, ending):
+    import asyncio
+    import httpx
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    prefix(live)
+    async def exercise():
+        stalled, release = asyncio.Event(), asyncio.Event()
+        body = json.dumps(bench.hb('old', 2)).encode()
+        async def upload():
+            yield body[:len(body) // 2]
+            stalled.set()
+            await release.wait()
+            yield body[len(body) // 2:]
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=client.app),
+                base_url='https://moss.test', cookies=client.cookies) as wire:
+            slow = asyncio.create_task(wire.post(base + '/heartbeat', content=upload(), headers=old))
+            try:
+                await asyncio.wait_for(stalled.wait(), timeout=1)
+                if ending == 'expiry':
+                    clock.now = st.live_helper_failures.snapshot(sid).deadline_monotonic_ns
+                    timer.scheduled[-1][1].fire()
+                else:
+                    payload = {'deadline': 20} if ending == 'stop' else {'reason': 'end during upload'}
+                    ended = await asyncio.wait_for(wire.post(base + '/' + ending,
+                        json=payload, headers=old), timeout=2)
+                    assert ended.status_code == 200
+                async def wait_terminal():
+                    while (await wire.get(f'/api/meetings/{sid}')).json()['status'] == 'active':
+                        await asyncio.sleep(.01)
+                await asyncio.wait_for(wait_terminal(), timeout=2)
+                assert st.live_helper_presence.snapshot(sid) is None
+            finally:
+                release.set()
+                response = await asyncio.wait_for(slow, timeout=2)
+            assert response.status_code == 409
+            assert response.json()['code'] == 'live_session_terminal'
+            assert st.live_helper_presence.snapshot(sid) is None
+            assert st.live_helper_failures.snapshot(sid) is None
+    client.portal.call(exercise)
