@@ -201,3 +201,224 @@ No measured safe guard set exists for the proposed text-only rule. Latest-END se
 UNMEASURED: original stress raw/origin/final/snapshot history; true acoustic per-unit clocks and fresh loss; physical-device behavior; future provider variance; safe occurrence evidence. No provider calls, ports, hosts, private audio, product/test edits, frontend build, push or deployment. Only a7 run.py/NOTES.md are locally added relative to099b1fde. Product tests added/changed NONE; fail-before/pass-after and product-vs-candidate implementation parity N/A.
 
 Frozen design/negative results remain beside the absorbed shared bench. User specifically requires this prototype and local commit; no premature deletion/production absorption. COMMON full backend: **2897 passed,9 skipped,2 xfailed,37 subtests passed,27 warnings in404.59s; exit0**. Command: `MOSS_TEST_REAL_SQLITE=1 PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-r5-f3.venv/bin/python -m pytest -q -p no:cacheprovider tests`. Receipt: own `full-backend.log`. One-command final measurement exited0; replay-parity.json records exact initial/final core equality. No blockers or product implementation required; lead decision is to retain C0.
+
+## Lead addendum — frozen C5/C3S/ONCE contract (before measurement)
+
+1. Structural question: can checking the anchor immediately behind the current cut prevent advancing into another occurrence, and does allowing only one advance per solid endpoint bound the remaining error?
+2. Minimum primitives: unchanged lane/unit spans/original-turn continuity/frontier; current composed cut (whether the frontier is already satisfied); latest solid END sample (ONCE occurrence budget). No new model, storage, thresholds or acoustic inference.
+3. Invariants: C0 remains minimum, same C1 floor/reset rules, latest-END source, identical evidence25 and deployed boundary matcher. ONCE state isolated by lane. No product/test changes. D16 accepts count-floor rewrite loss; it does not establish the frequency of additional anchor loss.
+4. Unknowns: exact anchor-ending text may be inside a stress capture's unavailable hidden prefix; do not infer satisfaction there. Text equality still cannot date the first later occurrence when the old occurrence was rewritten away. Acoustic loss, rarity and duration remain unmeasured where raw clocks are absent.
+5. Falsifier: ALREADY-SATISFIED still permits a later occurrence when the anchor at the current cut is missing/mismatched; ONCE may suppress a later useful repair or permit a harmful first advance. Keep these outcomes even under D16; report measurements separately from acceptance.
+6. Tool decision: reuse original run.py and all inputs/scoring/controls unchanged; compare all eight original candidates exactly against original receipts. Offline extension prints every decision/state. Full backend required by COMMON before local commit; failure would block until explained. No calls/providers/ports.
+
+Frozen mechanics:
+- C5 current cut=max(C0, unchanged C1 floor, previous valid C5 cut), using C4's retained position/reset composition. C3S current cut=C0 (no floor).
+- ALREADY-SATISFIED: ending windows of at most K+8 visible grey units, ending **exactly** at the current cut; reuse `_repeated_head(anchor, window)` and accept only when it returns the entire window length. Windows begin on an anchor unit as in the original search. Evidence25 and gap/density/reach/lone-end rules unchanged. If exact ending text lies inside the missing published prefix, satisfaction is UNKNOWN and not asserted.
+- Satisfied -> return current cut; otherwise search windows in original increasing-start order, accepting the FIRST deployed-matcher hit whose END is strictly after current cut. This ending-position condition is explicitly requested by the lead; original C4's start-at-previous-cut behavior remains unchanged as comparator. Hit may start before current cut.
+- C5+ONCE: per-lane latest solid END sample. Only an actual anchor advance consumes the allowance; satisfaction or baseline/floor movement does not. After a move, no further search until END advances. A retreat does not restore the allowance (wait until past the last endpoint); no text change at the same END restores it. State persists across turn removal because the identifier is lane+END, not turn. Session scope is this replay; no new lifecycle policy.
+- No G added to these candidates. All original core/recorded populations and18 constructed controls unchanged. Frozen original candidates remain for parity; joined variants remain original diagnostics.
+- Same eight population traces, same known boundaries and raw/solid constructed events, no control rewritten to fit ALREADY-SATISFIED. If the lead's motivating description differs from the existing control, report that difference.
+
+Command: `PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-r5-f3.venv/bin/python prototypes/gemini-live/mic-speaker-echo/a7/addendum.py`.
+Own receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/R5B-A7/addendum/`. Original receipts preserved.
+
+## Lead addendum — measured results (C5, C5+ONCE, C3S)
+
+**D4: No previously failing control is closed by ALREADY-SATISFIED/ONCE in the unchanged18-control suite; C5 and C5+ONCE are exactly C4 on all2351 core publications.** C3S has the same c6s recovery without the count floor's rewrite loss, but retains first-hit occurrence ambiguity. Under D16, accepting the floor loss changes the trade-off, not these measurements.
+
+### F5 — full core matrix, unchanged scoring/populations
+
+| Population / publications / audio | Candidate | Repeat unit-seconds | Added fresh proxy flags | Changed observations vs C0 | Already-correct changes |
+|---|---|---:|---:|---:|---:|
+|zh-188s / 366 / 187.89s|C0|328.00|0|0|0|
+|zh-188s / 366 / 187.89s|C1|327.00|0|1|0|
+|zh-188s / 366 / 187.89s|C4|327.00|0|1|0|
+|zh-188s / 366 / 187.89s|C5|327.00|0|1|0|
+|zh-188s / 366 / 187.89s|C5+ONCE|327.00|0|1|0|
+|zh-188s / 366 / 187.89s|C3S|328.00|0|0|0|
+|en-302s / 575 / 304.0s|C0|38.50|0|0|0|
+|en-302s / 575 / 304.0s|C1|38.50|0|0|0|
+|en-302s / 575 / 304.0s|C4|38.50|0|0|0|
+|en-302s / 575 / 304.0s|C5|38.50|0|0|0|
+|en-302s / 575 / 304.0s|C5+ONCE|38.50|0|0|0|
+|en-302s / 575 / 304.0s|C3S|38.50|0|0|0|
+|r5d-cell / 64 / 40.0s|C0|0.00|0|0|0|
+|r5d-cell / 64 / 40.0s|C1|0.00|0|0|0|
+|r5d-cell / 64 / 40.0s|C4|0.00|0|0|0|
+|r5d-cell / 64 / 40.0s|C5|0.00|0|0|0|
+|r5d-cell / 64 / 40.0s|C5+ONCE|0.00|0|0|0|
+|r5d-cell / 64 / 40.0s|C3S|0.00|0|0|0|
+|c6s / 478 / 300s|C0|18868.27|0|0|0|
+|c6s / 478 / 300s|C1|1730.19|0|36|0|
+|c6s / 478 / 300s|C4|314.28|0|36|0|
+|c6s / 478 / 300s|C5|314.28|0|36|0|
+|c6s / 478 / 300s|C5+ONCE|314.28|0|36|0|
+|c6s / 478 / 300s|C3S|314.28|0|36|0|
+|c6 / 868 / 960s|C0|73988.68|0|0|0|
+|c6 / 868 / 960s|C1|73988.68|0|0|0|
+|c6 / 868 / 960s|C4|11852.33|5295|118|0|
+|c6 / 868 / 960s|C5|11852.33|5295|118|0|
+|c6 / 868 / 960s|C5+ONCE|11852.33|5295|118|0|
+|c6 / 868 / 960s|C3S|20909.89|173|105|0|
+
+Bounded-tail residue, C0/C1/C4/C5/C5+ONCE/C3S:
+
+- zh-188s: 197.5/196.5/196.5/196.5/196.5/197.5.
+- en-302s: 38.5/38.5/38.5/38.5/38.5/38.5.
+- r5d-cell: 0.0/0.0/0.0/0.0/0.0/0.0.
+- c6s: 6264.06/1637.69/221.78/221.78/221.78/221.78.
+- c6: 34295.42/34295.42/6901.15/6901.15/6901.15/9925.23.
+
+Direct row-cut comparison (not merely aggregate equality) finds0 C5-vs-C4 and0 ONCE-vs-C4 differences in each population. All original eight candidate matrices match prior receipts on all eight populations, with all18 constructed raw/solid/event sequences, known boundaries and original outputs identical after JSON tuple/list representation normalization. No threshold/population/scorer/attack was tuned. Receipts: addendum/parity.json, C4-cut-parity.json.
+
+### F6 — satisfaction and ONCE state
+
+| Population | C5 satisfied rows | C5 unknown ending-prefix rows | C5 anchor advances | ONCE blocked rows | C3S anchor advances |
+|---|---:|---:|---:|---:|---:|
+|zh-188s|237|0|0|0|0|
+|en-302s|375|0|0|0|0|
+|r5d-cell|0|0|0|0|0|
+|c6s|34|396|2|72|36|
+|c6|96|0|9|115|105|
+
+C5 avoids searching on742 satisfied row-observations, but no output changes relative to C4 result. ONCE blocks72 c6s/115 c6 row searches without changing a cut. It permits the first harmful hit in every first-publication attack; the same-turn attack's solid endpoint advances15→30s, restoring its allowance before the harmful hit. No demonstrated output benefit earns ONCE's extra state here.
+
+C3S current cut=C0 each publication; the requested first-hit-END-after-current-cut search repeatedly finds the SAME old anchor, instead of skipping it because a previous anchor cut was remembered. Thus it avoids original C3's alternating fallback on c6s. This benefit comes from the lead's current-cut/ending-position search semantics, not proof that ALREADY-SATISFIED repairs later occurrences. At255.1s C0/C1/C4/C5/C5+ONCE/C3S cuts=1/801/822/822/822/822.
+
+### F7 — every unchanged constructed control
+
+Counts are known fresh units hidden, including inherited C0 errors, not frequency. Exact units follow; full input/state/output in addendum/constructed-controls.json.
+
+| Control | C0 | C1 | C4 | C5 | C5+ONCE | C3S |
+|---|---:|---:|---:|---:|---:|---:|
+|A5-known-clock-rewrite|0|15|15|15|15|0|
+|A2-F1-A2-later-chorus|0|0|25|25|25|25|
+|A2-A4-new-turn-chorus|9|9|9|9|9|9|
+|A2-same-turn-missing-old-anchor|0|6|19|19|19|19|
+|A3-short-common-four|0|0|0|0|0|0|
+|A3-common-five|8|8|8|8|8|8|
+|A3-CJK-eight|0|0|0|0|0|0|
+|A3-CJK-nine|0|0|0|0|0|0|
+|A3-mixed-script|15|15|15|15|15|15|
+|A3-traditional-simplified|0|0|0|0|0|0|
+|A4-latest-end|0|0|0|0|0|0|
+|A4-stale-tail-in-fresh|13|13|13|13|13|13|
+|A4-long-fresh-stale-tail|0|0|0|0|0|0|
+|A3-long-prefix-common-five|0|0|20|20|20|20|
+|A3-long-prefix-mixed-script|0|0|26|26|26|26|
+|A2-recorded-c2-chorus-composition|0|0|29|29|29|29|
+|A2-recorded-c3-chorus-composition|0|0|29|29|29|29|
+|A2-recorded-c4-chorus-composition|0|0|29|29|29|29|
+
+Exact fresh units hidden (grouping identical lists only; every event retained):
+
+**A5-known-clock-rewrite**
+
+- Event1: none.
+- Event2, C1,C4,C5,C5+ONCE: `["我", "们", "的", "这", "个", "推", "广", "方", "案", "我", "看", "过", "了", "写", "得"]`.
+
+**A2-F1-A2-later-chorus**
+
+- Event1, C4,C5,C5+ONCE,C3S: `["unrevised", "speech", "has", "never", "been", "committed", "and", "this", "completely", "different", "lengthy", "passage", "belongs", "to", "the", "new", "chorus", "occurrence", "today", "then", "finish", "with", "a", "chorus", "now"]`.
+
+**A2-A4-new-turn-chorus**
+
+- Event1, C0,C1,C4,C5,C5+ONCE,C3S: `["1", "settled", "introduction", "with", "several", "words", "before", "the", "frontier"]`.
+
+**A2-same-turn-missing-old-anchor**
+
+- Event1: none.
+- Event2, C1: `["fresh", "unrevised", "speech", "has", "never", "been"]`.
+- Event2, C4,C5,C5+ONCE,C3S: `["fresh", "unrevised", "speech", "has", "never", "been", "committed", "and", "belongs", "to", "a", "later", "occurrence", "then", "finish", "with", "a", "chorus", "now"]`.
+
+**A3-short-common-four**
+
+- Event1: none.
+
+**A3-common-five**
+
+- Event1, C0,C1,C4,C5,C5+ONCE,C3S: `["different", "fresh", "words", "yes", "we", "can", "agree", "now"]`.
+
+**A3-CJK-eight**
+
+- Event1: none.
+
+**A3-CJK-nine**
+
+- Event1: none.
+
+**A3-mixed-script**
+
+- Event1, C0,C1,C4,C5,C5+ONCE,C3S: `["新", "的", "語", "句", "今", "天", "gemini", "模", "型", "需", "要", "新", "的", "計", "畫"]`.
+
+**A3-traditional-simplified**
+
+- Event1: none.
+
+**A4-latest-end**
+
+- Event1: none.
+
+**A4-stale-tail-in-fresh**
+
+- Event1, C0,C1,C4,C5,C5+ONCE,C3S: `["new", "speech", "from", "this", "moment", "the", "overlapping", "speaker", "repeats", "this", "familiar", "chorus", "again"]`.
+
+**A4-long-fresh-stale-tail**
+
+- Event1: none.
+
+**A3-long-prefix-common-five**
+
+- Event1, C4,C5,C5+ONCE,C3S: `["new", "speech", "from", "this", "moment", "belongs", "to", "a", "separate", "entirely", "fresh", "overlapping", "speaker", "occurrence", "today", "yes", "we", "can", "agree", "now"]`.
+
+**A3-long-prefix-mixed-script**
+
+- Event1, C4,C5,C5+ONCE,C3S: `["new", "speech", "from", "this", "moment", "belongs", "to", "a", "separate", "entirely", "fresh", "overlapping", "speaker", "occurrence", "today", "今", "天", "gemini", "模", "型", "需", "要", "新", "的", "計", "畫"]`.
+
+**A2-recorded-c2-chorus-composition**
+
+- Event1, C4,C5,C5+ONCE,C3S: `["new", "speech", "from", "this", "moment", "belongs", "to", "a", "separate", "entirely", "fresh", "overlapping", "speaker", "occurrence", "today", "is", "it", "you", "is", "it", "you", "is", "it", "you", "who", "got", "the", "truth", "now"]`.
+
+**A2-recorded-c3-chorus-composition**
+
+- Event1, C4,C5,C5+ONCE,C3S: `["new", "speech", "from", "this", "moment", "belongs", "to", "a", "separate", "entirely", "fresh", "overlapping", "speaker", "occurrence", "today", "is", "it", "you", "is", "it", "you", "is", "it", "you", "who", "got", "the", "truth", "now"]`.
+
+**A2-recorded-c4-chorus-composition**
+
+- Event1, C4,C5,C5+ONCE,C3S: `["new", "speech", "from", "this", "moment", "belongs", "to", "a", "separate", "entirely", "fresh", "overlapping", "speaker", "occurrence", "today", "is", "it", "you", "is", "it", "you", "is", "it", "you", "who", "got", "the", "truth", "now"]`.
+
+### D5 — what ALREADY-SATISFIED actually closes
+
+**No previously failing constructed control is closed.** The motivating satisfied-old-occurrence→NEXT-occurrence description differs from the frozen F1/A2 control: its first eight raw units are `1 settled introduction about the previous meeting fresh`, whereas the anchor is `finish with a chorus now`. C0 cut7 ends at `meeting`; the old tail is absent. Satisfaction is false and the later hit advances to33; known fresh boundary8 gives25 hidden units. This control was not rewritten to make the rule pass.
+
+ALREADY-SATISFIED successfully stops searching on already-aligned controls: first rewrite publication (cut60), new-turn-chorus (cut9), first same-turn publication (cut11), short-prefix common-five (cut8), nine-CJK (cut9), short-prefix mixed script (cut15), latest-END overlap (cut11); C3S also satisfies the rewritten a6 tail at45. These already had the same C4 result, including inherited C0 loss9/8/15 in new-turn/common/mixed cases. It prevents no additional known loss in this suite.
+
+Unclosed: missing-old-anchor later-chorus25; same-turn-missing-old-anchor19; recorded c2/c3/c4 chorus compositions29 each; long fresh prefix+common-five20; mixed-script26. Their cuts do not end on the old tail. ONCE permits the first search and leaves all of them. Count-floor rewrite15 remains for C5/ONCE as accepted by D16; C3S hides0 because it has no floor, not because ALREADY/ONCE made the floor safe.
+
+Overlap ordering: new variants use latest-END and hide0 in the long fresh stale-tail control; original joined-START diagnostics still hide23 exact fresh units (original F3 and retained receipt). Latest-END avoids this stale-source error, not missing-old-occurrence ambiguity. All short/CJK/script controls and inherited baseline losses retained.
+
+### F8 — recorded attacks and rarity evidence
+
+| Recorded population | Publications | C0/C1/C4/C5/C5+ONCE/C3S repeat | Changed counts | Added proxy flags / already-correct changes |
+|---|---:|---|---|---|
+|cell2|230|74.8/74.8/74.8/74.8/74.8/74.8|0/0/0/0/0/0|0/0/0/0/0/0 / 0/0/0/0/0/0|
+|cell3|195|0.0/0.0/0.0/0.0/0.0/0.0|0/0/0/0/0/0|0/0/0/0/0/0 / 0/0/0/0/0/0|
+|cell4|200|959.52/959.52/0.0/0.0/0.0/0.0|0/0/58/58/58/58|0/0/0/0/0/0 / 0/0/0/0/0/0|
+
+Complete Mandarin/English/R5-D:0 added proxy flags on1005 publications /531.89s audio (8.86min); also0 on c6s. Short/overlapping recorded inputs are not an independent forecast. Constructed controls establish possibility/size, not frequency or actual grey-loss duration.
+
+Old c6: C5/ONCE5295 added proxy unit-observations over49 publications, in4 contiguous flag intervals653.81–667.30,700.09–712.42,727.09–741.72,773.25–787.93; total55.13 observation seconds of960s tape. C3S173 over36 publications, first3 intervals,40.45 observation seconds. These are **proxy-screening intervals**, not acoustic loss durations/rates. `good friends` is already solid; other boundaries can select earlier repeated phrases. Do not turn these intervals into fresh-loss frequency claims.
+
+### D6 — recommendation under accepted D16
+
+**Prefer C3S as the next candidate for qualification; omit ONCE.** D16 means the15-unit floor rewrite loss alone no longer rejects a candidate. Even with that acceptance, C5/ONCE add no measured improvement over C4. C3S achieves identical c6s recovery314.28 unit-seconds and avoids known floor rewrite loss; on old c6 it trades more residual repetition20909.89 vs11852.33 for fewer additional screening flags173 vs5295. C5 removes more duplication; C3S is the smaller, more conservative trade-off when temporary missing grey text matters.
+
+C3S still hides20–29 known fresh units in occurrence attacks, about1.3–1.9×the accepted15-unit floor loss. That may be comparable under the stated tolerance, but **rarity is UNMEASURED**. These prototype cuts never alter solid/saved text; actual grey-loss persistence is unmeasured. No production qualification claim follows from this bench. If the lead proceeds under uncertainty, C3S is the measured compromise; do not claim C5 closed A2 or ONCE proved protection. Further qualification requires complete public raw/origin/final traces and acoustic occurrence timing; no provider/instrumentation action is authorized here.
+
+Hypothetical mechanical size: C3S40–70 runtime lines using existing units/matcher/current cuts, with ALREADY-SATISFIED10–20 of those; ONCE10–20 extra state/reset lines. Estimates only; no product implementation/tests changed. Original absolute zero-loss recommendation remains historical; D6 supersedes that decision rule for this D16 addendum.
+
+### Verification and custody — addendum
+
+Final one-command replay exit0; exact parity of original eight candidates on all8 populations and all18 controls. Startup factory duplicate-key and tuple-vs-JSON-list parity-check errors corrected without candidate/scorer changes; first/error receipts retained. Full state printed to addendum/measurement.log and population JSONLs; parity.json/C4-cut-parity.json hold checks.
+
+Owned changes: a7/addendum.py frozen extension; a7/run.py extracts unchanged candidate factory so the extension reuses the SAME measurements/controls; a7/NOTES.md appended. Status append contains final matrix/controls/acceptance recommendation; DONE follows local commit. All required checks complete. No product/test/frontend/source receipt edits, provider calls, hosts/ports/push. COMMON full backend: **2897 passed,9 skipped,2 xfailed,37 subtests passed,27 warnings in402.90s; exit0**. Same required command as original run; receipt `R5B-A7/addendum/full-backend.log`. Tests added/changed NONE; implementation fail-before/pass-after/product-vs-prototype gates N/A. No blockers.

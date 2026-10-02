@@ -115,6 +115,11 @@ class TailCandidate:
         return cuts, details
 
 
+def make_candidates():
+    return {n:TailCandidate(floor=n.startswith('C4'), guard=n.endswith('G'), joined=n.endswith('J'))
+            for n in NAMES[2:]}
+
+
 def complete(name, loader):
     events, commits, total = loader()
     trace = a6.capture(name, loader, a6.HEAD)
@@ -178,8 +183,7 @@ def stress(sub):
 def measure(name, trace, truths, seconds, seam):
     rate = rates(trace)
     floor = a6.Floor()
-    candidates = {n:TailCandidate(floor=n.startswith('C4'), guard=n.endswith('G'), joined=n.endswith('J'))
-                  for n in NAMES[2:]}
+    candidates = make_candidates()
     outputs = {n:[] for n in NAMES}
     full, examples = [], []
     for i, event in enumerate(trace):
@@ -219,7 +223,7 @@ def measure(name, trace, truths, seconds, seam):
 
 def control_sequence(case, events, known_boundaries, rate):
     floor = a6.Floor()
-    candidates = {n:TailCandidate(floor=n.startswith('C4'), guard=n.endswith('G'), joined=n.endswith('J')) for n in NAMES[2:]}
+    candidates = make_candidates()
     memory, out = [], []
     for event, boundary in zip(events, known_boundaries):
         row = event['rows'][0]
