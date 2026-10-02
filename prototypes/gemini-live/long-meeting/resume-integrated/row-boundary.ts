@@ -1,0 +1,11 @@
+import { projectTranscriptRows } from "../../../../frontend/src/lib/transcriptCards";
+import type { TranscriptTurn } from "../../../../frontend/src/lib/mergeTranscript";
+const turn = (start: number): TranscriptTurn => ({start,end:start+1,speaker:"speaker-a",speaker_entity_id:"speaker-a",display_name:"Alex",state:"confirmed",text:`speech ${start}`,source_lane:"system",segment_ids:[`p${start}`],target_segment_keys:[`p${start}`],segments:[{start,end:start+1,text:`speech ${start}`}],provisional_stale:false});
+const gaps=[{start:1,end:4}];
+const before=projectTranscriptRows([turn(0),turn(4)],[],gaps);
+const candidate=before.map((row,i)=>({...row,continuation:row.continuation && !gaps.some(g=>i>0 && g.start>=before[i-1].start && g.start<=row.start)}));
+const noGap=projectTranscriptRows([turn(0)],[{...turn(4),state:"provisional",segment_ids:[]}]);
+const noGapCandidate=noGap.map(row=>({...row}));
+const state={before,candidate,noGap,noGapCandidate,hiddenAfterGapBefore:before.filter(r=>r.continuation).length,hiddenAfterGapCandidate:candidate.filter(r=>r.continuation).length,ordinaryGuessContinues:noGap.at(-1)?.continuation,noGapUnchanged:JSON.stringify(noGap)===JSON.stringify(noGapCandidate)};
+console.log(JSON.stringify(state,null,2));
+if(state.hiddenAfterGapCandidate!==0 || !state.ordinaryGuessContinues || !state.noGapUnchanged)throw new Error("candidate falsified");
