@@ -114,6 +114,18 @@ class LiveV2Session:
         with self._lock:
             return self._snapshot_locked()
 
+    def resume_lanes(self) -> dict[str, dict[str, object]]:
+        with self._lock:
+            return {
+                lane.value: {
+                    "next_sequence": value.next_sequence,
+                    "resume_device_epoch": (value.current_device_epoch or 0) + 1,
+                    "last_capture_end_timestamp_ns": self._ingress.last_capture_end(lane),
+                    "health": value.health,
+                }
+                for lane, value in self._snapshot_locked().lanes.items()
+            }
+
     def retained_frames(self, lane: LiveLane | None = None) -> tuple[RetainedLiveV2Frame, ...]:
         with self._lock:
             return self._ingress.retained_frames(lane)

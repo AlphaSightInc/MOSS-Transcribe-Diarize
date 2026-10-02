@@ -58,3 +58,18 @@ Measured basis: `prototypes/stop-lease/NOTES.md` and
 fixed virtual 30-second lease ordering, genuine failure, cancelled request,
 45-second wall-clock drain and 90-second wall-clock terminal refinement.
 No change to the lease duration, wait deadlines, inference, or identity policy.
+
+## 2026-10-02 — P74 browser capture handoff (U1–U4)
+
+The Phase-2 browser contract supersedes the earlier view-only reload decision:
+**U1** reload/reopen within the lease may automatically resume the same Meeting
+with stored capture settings. **U2** missing time remains silence and separate
+`{start_sample, end_sample}` metadata, rendered in time as
+`([HH:MM:SS-HH:MM:SS] Recording Interrupted)`. **U3** the 120 s lease is unchanged;
+expiry, server restart, closing and accepted Stop cannot reopen capture. **U4**
+only the originating browser Sign-in session may resume; the replaced page is
+a viewer, fenced on frames, heartbeat, Stop and Abort. This server package
+implements the handshake, durable metadata and server Markdown/plain-text exports;
+browser restoration is a separate package. Tab audio still needs Chrome's picker
+where gesture-free capture is refused; microphone capture need not wait for it.
+No queued audio is recovered. Accepted Stop retains its server-owned outcome.

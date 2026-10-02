@@ -24,6 +24,7 @@ from .live_service_runtime import (
     LiveServiceSnapshot,
     active_live_session_count,
 )
+from .recording_interruption import interruption_fields
 from .live_transport import (
     LiveTransportCreated,
     LiveTransportEventView,
@@ -86,6 +87,7 @@ class _LiveBinding:
     public_snapshot: LiveServiceSnapshot | None = None
     public_events: tuple[LiveServiceEvent, ...] = ()
     durable_document: dict[str, object] = field(default_factory=lambda: {"segments": []})
+    interruptions: list[dict[str, int | None]] = field(default_factory=list)
     durable_version: int = 0
     durable_needs_review: bool = False
     public_event_high_water: int = -1
@@ -529,7 +531,7 @@ class Phase2LiveMeetings:
                     else:
                         labels[speaker_id] = label
                 publications.append(_SpeakerLabelPublication(
-                    binding.handle, labels, _transcript_document(snapshot, labels)
+                    binding.handle, labels, _transcript_document(snapshot, labels, binding.interruptions)
                 ))
                 bindings.append(binding)
             yield publications
@@ -581,7 +583,7 @@ class Phase2LiveMeetings:
                 None,
             )
             mutation = _ManualSpeakerMutation(
-                document=_transcript_document(snapshot, labels),
+                document=_transcript_document(snapshot, labels, binding.interruptions),
                 evidence=evidence,
             )
             yield mutation
@@ -693,7 +695,7 @@ class Phase2LiveMeetings:
                         labels.pop(speaker_id, None)
                     else:
                         labels[speaker_id] = label
-                document = _transcript_document(publication.snapshot, labels)
+                document = _transcript_document(publication.snapshot, labels, binding.interruptions)
                 try:
                     document_changed = document != binding.durable_document
                     if terminal is not None:
@@ -802,7 +804,7 @@ class Phase2LiveMeetings:
                 document = (
                     binding.durable_document
                     if terminal_snapshot is None
-                    else _transcript_document(terminal_snapshot, binding.speaker_labels)
+                    else _transcript_document(terminal_snapshot, binding.speaker_labels, binding.interruptions)
                 )
             if recover or terminal_snapshot is None:
                 await self._recover_terminal_locked(
@@ -891,7 +893,7 @@ class Phase2LiveMeetings:
         status = publication.snapshot.session.finalization_status
         if status not in {"final", "failed", "unavailable"}:
             return
-        document = (_transcript_document(publication.snapshot, binding.speaker_labels)
+        document = (_transcript_document(publication.snapshot, binding.speaker_labels, binding.interruptions)
                     if status == "final" else None)
         try:
             binding.durable_version = await binding.handle.settle_refinement(document)
@@ -1190,7 +1192,7 @@ class _Phase2CreateAuthority:
 class _Phase2LiveTransportAdapter:
     """Account authority and durable publication at the shared Live transport seam."""
 
-    _MUTATIONS = frozenset({"frame", "heartbeat", "stop", "abort"})
+    _MUTATIONS = frozenset({"frame", "heartbeat", "stop", "abort", "resume"})
 
     def __init__(
         self,
@@ -1305,6 +1307,22 @@ class _Phase2LiveTransportAdapter:
 
             raise HTTPException(status_code=409, detail="Account lifecycle is changing.")
 
+    async def record_interruption(
+        self, authority: object, gap: dict[str, int | None], index: int | None = None,
+    ) -> int:
+        binding = self._binding(authority)
+        async with binding.speaker_mutation_lock:
+            self.validate_mutation(authority)
+            if index is None:
+                index = len(binding.interruptions)
+                binding.interruptions.append(dict(gap))
+            else:
+                binding.interruptions[index] = dict(gap)
+            document = {**binding.durable_document, **interruption_fields(binding.interruptions)}
+            binding.durable_version = await binding.handle.commit_transcript(document)
+            binding.durable_document = document
+            return index
+
     def snapshot(
         self,
         authority: object,
@@ -1322,6 +1340,7 @@ class _Phase2LiveTransportAdapter:
                 "speaker_labels": dict(binding.speaker_labels),
                 "speaker_label_revision": binding.speaker_label_revision,
                 "needs_review": binding.durable_needs_review,
+                **interruption_fields(binding.interruptions),
             },
         )
 
@@ -1401,6 +1420,7 @@ def attach_phase2_live_routes(
 def _transcript_document(
     snapshot: LiveServiceSnapshot,
     speaker_labels: Mapping[str, str] | None = None,
+    interruptions: list[dict[str, int | None]] | None = None,
 ) -> dict[str, object]:
     canonical = snapshot.session.identity_snapshot.canonical_speakers
     labels = {} if speaker_labels is None else speaker_labels
@@ -1412,6 +1432,7 @@ def _transcript_document(
          else None for segment in transcript],
         labels)
     return {
+        **interruption_fields(interruptions or [], sample_rate),
         "segments": [
             {
                 "id": f"seg_{index:04d}",

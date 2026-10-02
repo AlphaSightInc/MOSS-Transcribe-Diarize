@@ -20,7 +20,9 @@
   derived artifacts. It remains after capture stops or the server restarts.
 - **Interrupted Meeting**: Terminal Meeting whose active work ended without a normal Stop,
   such as after lost capture, Account revocation, recovery, or operator interruption. Its
-  last valid transcript and recoverable audio remain owner-private; capture never resumes.
+  last valid transcript and recoverable audio remain owner-private; a terminal Meeting
+  never resumes. Browser reload before the 120 s lease expires may instead resume an
+  active Meeting through the originating Sign-in session, with a separate Capture interruption.
 - **Meeting artifact**: A transcript, retained audio file, or language-model output owned
   through exactly one Meeting. It cannot have a different owner from that Meeting.
 - **Canonical meeting audio**: The single mixed recording retained for a Meeting after
@@ -241,7 +243,9 @@
   injected monotonic receipt time for a newly accepted increasing heartbeat
   sequence only; exact duplicates are idempotent without freshness refresh.
   Regressions, changed duplicates, non-advancing helper time, and helper
-  instance switches reject without mutating stored presence.
+  ordinary instance switches reject without mutating stored presence. Explicit
+  P74 resume replaces the page id while preserving heartbeat sequence/send-time
+  ordering and last real receipt; it renews the lease once, not presence freshness.
 - **IDEA-036 explicit helper lease**: Default-off live mode requires a
   caller-supplied strictly positive `live_helper_lease_seconds`, forwarded by
   `ops/start-web.sh` from `MOSS_LIVE_HELPER_LEASE_SECONDS` as
@@ -253,7 +257,8 @@
 - **Live helper failure coordinator**: One deep
   `LiveHelperFailureCoordinator` owns `observe(session_id, heartbeat)` and
   `release(session_id)` at the capture-authorized heartbeat seam. It renews
-  only on newly accepted increasing heartbeats using server-monotonic receipt
+  on newly accepted increasing heartbeats or one explicit within-lease P74 resume,
+  using server-monotonic receipt
   time, fences scheduled expiry by sequence/generation, maps explicit typed
   one-lane failure to `LiveV2Session.fail_lane`, and maps helper failure,
   all-lane failure, or generation-matched lease expiry to v2 expiry, mono
@@ -323,3 +328,16 @@
   which creates or updates a Voiceprint in that Account's private Voiceprint bank. The
   represented person may be a team member, meeting participant, or recorded-media speaker
   such as a podcast host. Unnamed session-speaker vectors are discarded when the session ends.
+
+## P74 browser resume decisions
+
+**U1** reload/reopen may automatically resume one active Meeting using its stored
+devices/settings. Automatic takeover refuses while the current page's heartbeat
+is younger than 3 s; explicit user takeover may proceed. **U2** a Capture
+interruption is `{start_sample, end_sample}` on the mixed sample clock, outside
+speech rows: silence in saved audio, exact
+`([HH:MM:SS-HH:MM:SS] Recording Interrupted)` in time in transcript/export,
+never recognition, speaker statistics or summary input. **U3** retain the 120 s
+lease; terminal/closing/expired/accepted-Stop/server-restarted Meetings cannot
+resume. **U4** originating browser Sign-in session only; a replaced page is a
+viewer, excluded by `X-Moss-Capture-Instance` on all four capture mutations.

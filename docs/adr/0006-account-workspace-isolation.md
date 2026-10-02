@@ -103,3 +103,17 @@ shows "Workspace unavailable" and `POST /api/workspace/bootstrap` answers 401 (W
 loader bootstraps a **new, empty** workspace with no refusal page. The old workspace is never revived or reassigned;
 in-flight API calls with an unmatched credential still answer 401. A revoked browser could already obtain a fresh
 workspace by clearing its cookie, so no isolation is weakened.
+
+## 2026-10-02 — P74 capture page is replaceable, Account authority is not
+
+**U1** within-lease browser reload can resume the same Meeting through the existing
+owner-bound Live binding. **U2** interruptions persist beside the transcript, with
+the exact `([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line in snapshot, saved
+document and server Markdown/plain-text exports. They are neither speaker rows
+nor recognition/summary input. **U3** the lease stays 120 s; interrupted/closing/
+terminal Meetings and accepted Stop never reopen. **U4** only the origin Sign-in
+session can replace its page: another session of that Account receives 403,
+another Account 404. The page id is a writer fence, not a credential. Origin
+authorization runs before the fence, including cached frame replay. After resume,
+missing or mismatched `X-Moss-Capture-Instance` returns 409 `capture_replaced`;
+headerless clients that never resume keep their existing behavior.

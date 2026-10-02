@@ -477,3 +477,36 @@ end changed 7,024 samples; producer-observed ends preserved every mixed byte in 
 two-lane drift/skew test. Decoder bytes remain unchanged, but changed canonical
 windows can change WER; numerical regression results must be reported explicitly.
 See [measurement](../audits/mixer-repair-feasibility-20260911.md).
+
+## 2026-10-02 — P74 resumable handshake (U1–U4)
+
+**U1** `POST /api/live/sessions/{id}/resume` replaces capture in the same Meeting.
+The exact body is `{expected_instance_id: string|null, instance_id: string,
+automatic: boolean}`. Compare the expected writer unless null; return 409
+`capture_writer_mismatch` on conflict. Automatic resume refuses with
+`capture_page_alive` while the last accepted heartbeat is younger than 3 s;
+explicit user resume skips this refusal. A repeated identical old→new request
+returns its original response and renews the lease only once. The response
+contains descriptor, lane next sequence/new epoch/last capture end/health, capture
+clock, mixed sample count, lease remaining, next heartbeat sequence/send time,
+and interruption bounds. Both capture endpoints use the returned clock offset;
+first resumed lane frames carry discontinuity with the returned new epoch.
+
+**U2** gap metadata is separate from speech: missing time is mixer silence,
+and the exact `([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line survives
+Stop, refinement, reload, History and server exports. **U3** 120 s abandonment
+and existing accepted-Stop/expiry owners remain authoritative; an overdue lease
+is refused even before its timer callback. **U4** origin-cookie authorization
+precedes a per-Meeting guard spanning resume and frames/heartbeat/Stop/Abort.
+After handoff, missing/mismatched `X-Moss-Capture-Instance` is 409
+`capture_replaced`. Ordinary heartbeat instance switching still fails; explicit
+handoff changes the instance without resetting its sequence/send-time ordering
+or refreshing its last real receipt. Headerless non-resuming clients are unchanged.
+
+The existing M01–M25 native/legacy obligations remain. P74 adds explicit takeover
+to M20 coordinator lifetime and M21 scope; its evidence for M22–M25 is the offline
+product matrix and `tests/phase2/test_live_resume.py`, not native host qualification.
+
+An interruption's end is null until a genuinely new accepted resumed frame supplies
+it; cached acknowledgements do not close it. Pending metadata is exposed and
+persisted, but a timed line is rendered only when its end is known.

@@ -775,3 +775,38 @@ or new timeout is needed. The fetch audit also identifies an inactive SummaryPan
 error every 5s can exhaust a fresh page in 22h45m20s. Healthy summary replies are consumed; this slower residual is
 reported separately and is not fixed or qualified by the capture candidate. Real-duration physical capture, other browser versions, and provider throughput remain
 unmeasured by this bench.
+
+## P74-RS: same-meeting server resume candidate (2026-10-02)
+
+**U1** browser reload/reopen resumes the same Meeting by an explicit handshake;
+automatic requests cannot steal a page whose accepted heartbeat is less than 3 s
+old. User requests may take over immediately. A per-Meeting guard serializes the
+handshake and all capture mutations; compare-and-swap yields one winner. The
+response supplies authoritative clocks/cursors. Idempotent retry returns the same
+state without renewing twice. **U2** every handoff records mixed-clock interruption
+metadata separately from speech; mixer zero-fill preserves elapsed missing time.
+The exact `([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line persists through
+Stop/refinement/reload/History and appears in both server export formats.
+Recognition, speaker statistics and summary input exclude it. **U3** retain the
+120 s lease and lifecycle owner; expiry/closing/accepted Stop/server restart never
+reopen. **U4** only the origin Sign-in session replaces its page, and the old
+writer receives `capture_replaced` on frames/heartbeat/Stop/Abort. Headerless
+non-resuming clients retain their existing meeting flow. Browser restoration and
+summary-watcher transfer belong to the client package.
+
+Offline product matrix: 4 s prefix + 5/30/90/119 s gap + 4 s continuation produces
+one exact 13/38/98/127 s MP3, with zero-amplitude interior gaps and completed status.
+125 s refuses with interrupted status. At 119 s +45 s continuation, retained
+PCM peaks at 29.5/60 s per lane; the first resumed live row is delayed 30 s by
+existing mixer pacing. No larger buffer or new mixer algorithm.
+`measure.py --product` under `prototypes/gemini-live/long-meeting/resume/` prints
+full state using real routes/mixer/archive with an offline engine. Provider and
+physical-device recovery, clock accuracy under real network latency, and browser
+product acceptance remain unmeasured. Candidate server build only; no deployment.
+
+P74-RS verification: all six offline product cells pass; 26 new regression cases
+fail on `c7884d46` and pass on the candidate, while the headerless normal-meeting
+control passes on both. Full backend: 2945 passed, 9 skipped, 2 xfailed,
+37 subtests passed (437.80 s). Existing expectations unchanged.
+Receipts and local commit classification: `status/P74-RS-STATUS.md` under
+`~/Documents/Codex/2026-09-28/moss-gemini/`.
