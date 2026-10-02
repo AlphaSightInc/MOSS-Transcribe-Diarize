@@ -306,13 +306,14 @@ end of currently visible solid rows in that lane, including degraded fallback ro
 cannot advance on an empty base/window clock alone. If replacement makes that extent
 retreat, snapshot history is discarded. The unchanged comparable-unit prefix of the
 snapshot is removed only when it extends beyond the existing text cut. A unit is hidden
-only if the time rule proves it was published at or before the confirmed point, or the
-existing text rules cut it exactly as today. The existing genuine-repeat limit above
-remains; the lead explicitly amended A4's freshness gate to judge time additions only.
+by the time rule only if it proves publication at or before confirmation. Text-rule
+cuts remain unchanged; C1's count floor below is a separate user-authorized trade.
+The existing genuine-repeat limit above remains; the lead explicitly amended A4's
+freshness gate to judge time additions only.
 
 Different original starts never borrow snapshots. Duplicate source keys, joined rows,
 ambiguous origins and text changed by lane filtering abstain. Prefix rewrites shorten
-the cut; a unit count alone cannot justify removing rewritten words. Pending history
+the exact snapshot proof; a count alone does not establish word timing. Pending history
 holds at most 64 publications per active turn plus one snapshot. If a stalled frontier
 needs history discarded at that bound, the time rule abstains until retained history is
 eligible; a dropped newer publication cannot leave an older snapshot in force. Once
@@ -326,7 +327,58 @@ already-computed text-rule rows, clears snapshot state and increments numeric
 `preview_snapshot_errors`. Snapshot advance faults after base/rolling commits likewise
 clear/count/continue. The meeting remains active; later previews can publish normally.
 
-Recorded product replay matches the prototype on 366 Mandarin, 575 English and 64 R5-D
+**D16 O2 (2026-10-02): enable C1, then measure real-world effectiveness.** Each
+unambiguous original turn keeps a cut count N with its snapshot state. Shown cut is
+`max(today's cut, N)`, even after a text rewrite; today's cut is the larger of the
+text-rule and exact-snapshot cuts. Seed N from today's cut and retain each new
+maximum. Keep it only in the same lane and original
+turn while the visible-solid confirmed point does not retreat and current units are
+at least N. A shrink below N discards the old count; today's cut can seed it anew.
+Final, turn removal, source reopen, Stop and new meeting clear it at the existing
+snapshot lifecycle boundaries. Ambiguous origins abstain. Floor computation shares
+the optional snapshot fault boundary: on error, show text-rule rows, clear state,
+increment `preview_snapshot_errors`, and keep the meeting active.
+
+**Accepted limit:** if a rewrite deletes head units and appends fresh speech, C1 can
+hide that many fresh units in grey until they become solid. The known-clock control
+deletes 15 of 60 old units and appends 20 fresh units: today's cut45 becomes60,
+hiding15 fresh units. D16 supersedes the no-additional-fresh-loss invariant for C1
+only; the measured loss is retained as an accepted-limit test, not a passing freshness
+claim. Solid and saved transcript processing are unchanged.
+
+**Second accepted limit (lead disposition of review pass 9 F1, same class):** the floor
+trusts today's cut. When today's rule hides a whole short interim that repeats an earlier
+solid line (13 of 13 units) and the provider then inserts fresh words before that line's
+end, today's rule alone would self-correct (13 -> 7) but the floor holds 13 and hides 6
+fresh units for the rest of that turn. Constructed control; on the recorded streams the
+cut of a non-shrinking turn decreased once in 3,974 comparisons and the higher cut was
+right. The effect is grey-only, confined to that turn, and ends when the words become
+solid; the user's stated tolerance (2026-10-02) is exactly this: temporary, never carried
+into later turns. A text-anchor refinement that can re-place the cut is being measured
+(a7); until then the per-meeting `floor_hidden_units` counter reports how much the rule hid.
+
+C1 product matches the frozen A5 prototype on all 1,005 complete A4 publications.
+The only difference from C0 is Mandarin publication137 at69s, cut144->145; English575
+and R5-D64 are unchanged. Conditional c6s published-row repair: 478 observations,
+repeat18868.27->1730.19 unit-seconds,36 changed observations; old c6:868 observations,
+repeat73988.68 unchanged,0 changes. Original stress keys, raw prefixes and provider
+final flags were not captured: these are overlap-conditioned repair measurements,
+not complete raw service/lifecycle parity or acoustic fresh-loss qualification.
+Physical-device effectiveness and future provider variance remain UNMEASURED.
+
+Numeric `preview.<lane>.floor_hidden_units` accumulates units hidden beyond today's
+text/snapshot cut; `floor_publications` counts publications where that extra cut acts.
+Both follow existing time-cut accounting, including cached-row republications.
+`time_hidden_units` still measures only the snapshot addition. The existing per-meeting
+content-free operator diagnostics line carries these counters; no new event/storage.
+Evidence and reproducible commands: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/R5B-A6/`;
+regressions: `tests/gemini/test_gemini_preview_floor.py`.
+On the same fixed two-hour solid population below, C1's added runtime work including
+snapshot/floor processing and diagnostics is0.880ms mean (0.975ms p95), within the
+1ms mean gate; current C0 bench0.667ms. Retained F1/A2 calls2749/2749, A5 transitions
+5/5, degraded controls and FIX7 overflow/fault probes remain unchanged.
+
+The earlier A4-only product replay matched its prototype on 366 Mandarin, 575 English and 64 R5-D
 publications. Mandarin changes 23 calls, removing 46 additional old unit-publications;
 English and R5-D output are unchanged. All six divergence injections remove the repeat
 and keep their fresh suffix; time additions outside the exact snapshot prefix are zero.
