@@ -346,6 +346,17 @@ hiding15 fresh units. D16 supersedes the no-additional-fresh-loss invariant for 
 only; the measured loss is retained as an accepted-limit test, not a passing freshness
 claim. Solid and saved transcript processing are unchanged.
 
+**Second accepted limit (lead disposition of review pass 9 F1, same class):** the floor
+trusts today's cut. When today's rule hides a whole short interim that repeats an earlier
+solid line (13 of 13 units) and the provider then inserts fresh words before that line's
+end, today's rule alone would self-correct (13 -> 7) but the floor holds 13 and hides 6
+fresh units for the rest of that turn. Constructed control; on the recorded streams the
+cut of a non-shrinking turn decreased once in 3,974 comparisons and the higher cut was
+right. The effect is grey-only, confined to that turn, and ends when the words become
+solid; the user's stated tolerance (2026-10-02) is exactly this: temporary, never carried
+into later turns. A text-anchor refinement that can re-place the cut is being measured
+(a7); until then the per-meeting `floor_hidden_units` counter reports how much the rule hid.
+
 C1 product matches the frozen A5 prototype on all 1,005 complete A4 publications.
 The only difference from C0 is Mandarin publication137 at69s, cut144->145; English575
 and R5-D64 are unchanged. Conditional c6s published-row repair: 478 observations,
