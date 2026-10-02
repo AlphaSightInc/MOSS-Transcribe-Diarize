@@ -1835,3 +1835,63 @@ describe("silent lane for a source that is not recorded (round 5)", () => {
       message.samples.length === 4 && message.samples.every((sample: number) => sample === 0))).toBe(true);
   });
 });
+
+// P74: inspect the ORIGINAL network Response, not a mock's json call count.
+describe("capture response ownership", () => {
+  const outcomes = [
+    ["accepted", 200, '{"ack":{}}'],
+    ["empty success", 204, null],
+    ["bad frame", 400, '{"detail":"bad frame"}'],
+    ["terminal conflict", 409, '{"detail":"closed"}'],
+    ["sequence adoption", 409, '{"failure":{"code":"v2_out_of_order_frame","expected_sequence":5}}'],
+    ["retention retry", 429, '{"failure":{"code":"v2_lane_retention_capacity_reached"}}'],
+    ["queue drop", 429, '{}'],
+    ["server retry", 503, '{"detail":"unavailable"}'],
+    ["invalid JSON", 500, 'broken JSON'],
+  ] as const;
+  for (const route of ["frames", "heartbeat"]) {
+    it.each(outcomes)(`${route} releases the original response: %s`, async (_name, status, body) => {
+      const original = new Response(body, { status, headers: { "Cache-Control": "no-store" } });
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(original));
+      const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL }) as unknown as {
+        fetchRequest: (url: string, init: RequestInit) => Promise<Response>;
+      };
+      const response = await client.fetchRequest(`/api/live/sessions/session/${route}`, { method: "POST" });
+      expect(original.body === null || original.bodyUsed).toBe(true);
+      expect(response.status).toBe(status);
+      expect(await response.text()).toBe(body ?? "");
+    });
+  }
+  it("rejects a response whose body fails during draining, releasing its reader", async () => {
+    const original = new Response(new ReadableStream({
+      start(controller) { controller.error(new TypeError("body delivery failed")); },
+    }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(original));
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL }) as unknown as {
+      fetchRequest: (url: string, init: RequestInit) => Promise<Response>;
+    };
+    await expect(client.fetchRequest("/api/live/sessions/session/frames", { method: "POST" }))
+      .rejects.toThrow("body delivery failed");
+    expect(original.bodyUsed).toBe(true);
+  });
+});
+
+it("the actual frame delivery cannot bypass response release", async () => {
+  const original = Response.json({ ack: { sequence: 0 } });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(original));
+  const { client, lane } = activeFrameClient();
+  const delivery = client as unknown as { postFrame: (frame: ReturnType<typeof makeV2Frame>, state: TestLaneState) => Promise<string> };
+  const frame = makeV2Frame("microphone", 0, 1, false, 0, new Float32Array([0.5, -0.5]), client.descriptor!, 4);
+  expect(await delivery.postFrame(frame, lane)).toBe("accepted");
+  expect(original.bodyUsed).toBe(true);
+});
+
+it("the actual heartbeat delivery cannot bypass response release", async () => {
+  const original = Response.json({ helper_presence: {} });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(original));
+  const { client } = activeFrameClient();
+  const delivery = client as unknown as { heartbeatPending: string; flushHeartbeat: () => Promise<void> };
+  delivery.heartbeatPending = "capturing";
+  await delivery.flushHeartbeat();
+  expect(original.bodyUsed).toBe(true);
+});

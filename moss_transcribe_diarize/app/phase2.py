@@ -2286,7 +2286,13 @@ def create_phase2_app(
             request.state.phase2_session_id = session_id
         response = await call_next(request)
         if request.url.path == "/" or request.url.path.startswith("/api/"):
-            response.headers["Cache-Control"] = "no-store"
+            capture_post = (
+                request.method == "POST"
+                and request.url.path.startswith("/api/live/sessions/")
+                and request.url.path.endswith(("/frames", "/heartbeat"))
+            )
+            # Old capture bundles leave bodies unread; no-store pins Chrome loaders.
+            response.headers["Cache-Control"] = "no-cache" if capture_post else "no-store"
         if open_workspace:
             set_session_cookie(response, request.state.phase2_session_id)
         return response
