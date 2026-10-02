@@ -73,3 +73,13 @@ function response(body: unknown, status = 200): Response {
     json: async () => body
   } as Response;
 }
+
+
+it("preserves saved interruption metadata beside speech for History and exports", async () => {
+  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...payload,
+    transcript: { ...payload.transcript, interruptions: [{ start_sample: 57_600_000, end_sample: 58_080_000 }] } }) });
+  const meeting = await openMeeting("meeting/one", fetcher);
+  expect(meeting.transcript?.interruptions).toEqual([{ start: 3600, end: 3630 }]);
+  expect(meeting.transcript?.segments).toHaveLength(1);
+  expect(meeting.transcript?.segments[0].text).toBe("hello");
+});

@@ -13,6 +13,7 @@ import {
   parseCaptureDescriptor,
   pcm16Base64,
   stopCaptureSession,
+  abortCaptureSession,
 } from "./captureClient";
 
 const WORKLET_URL = "/static/worklets/lane-framer.js?v=" + "a".repeat(64);
@@ -391,6 +392,7 @@ describe("browser capture frame contract", () => {
         signal: expect.any(AbortSignal),
         headers: {
           "Content-Type": "application/json",
+          "X-Moss-Capture-Instance": expect.stringMatching(/^browser-/),
         },
         body: JSON.stringify({ deadline: 1.25 }),
       },
@@ -832,7 +834,7 @@ describe("browser capture frame contract", () => {
   });
 
   it("closes local media even when terminal Stop is rejected", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 409 }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 409, json: async () => ({}) }));
     const { client } = activeFrameClient();
     (client as unknown as { scheduleHeartbeat: (state: string) => Promise<void> }).scheduleHeartbeat = vi
       .fn()
@@ -1166,7 +1168,7 @@ describe("browser capture frame contract", () => {
     expect(fetchSpy).toHaveBeenCalledOnce();
     const [url, request] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/api/live/sessions/session/frames");
-    expect(request.headers).toEqual({ "Content-Type": "application/json" });
+    expect(request.headers).toEqual({ "Content-Type": "application/json", "X-Moss-Capture-Instance": expect.stringMatching(/^browser-/) });
     expect(lane.sequence).toBe(1);
     expect(client.session).toEqual({ id: "session" });
   });
@@ -1728,6 +1730,22 @@ describe("microphone device request (issue #2)", () => {
     expect(laneTrack.stop).not.toHaveBeenCalled();
   });
 
+  it("opens the microphone before starting a gestureless suspended AudioContext", async () => {
+    const client = idleClient();
+    let opened = false;
+    const context = (client as unknown as { context: { state: string; resume: ReturnType<typeof vi.fn> } }).context;
+    context.state = "suspended";
+    context.resume.mockImplementation(async () => {
+      if (!opened) throw new DOMException("microphone must be active", "NotAllowedError");
+      context.state = "running";
+    });
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => {
+      opened = true; return { getTracks: () => [fakeTrack()] } as unknown as MediaStream;
+    }) } });
+    await expect(client.startMicrophone("builtin")).resolves.toBe("builtin");
+    expect(context.resume).toHaveBeenCalledOnce();
+  });
+
   it("opens a named device directly, with no request that leaves Chrome to choose", async () => {
     const getUserMedia = vi.fn(async () => ({ getTracks: () => [fakeTrack()] }) as unknown as MediaStream);
     const enumerateDevices = vi.fn();
@@ -1894,4 +1912,98 @@ it("the actual heartbeat delivery cannot bypass response release", async () => {
   delivery.heartbeatPending = "capturing";
   await delivery.flushHeartbeat();
   expect(original.bodyUsed).toBe(true);
+});
+
+describe("within-lease capture adoption", () => {
+  it("adopts lane cursors, epochs, heartbeat base and both clock endpoints", async () => {
+    const { client, lane } = activeFrameClient();
+    client.session = null;
+    client.context = Object.assign(new EventTarget(), { sampleRate: 4, currentTime: 2,
+      close: vi.fn().mockResolvedValue(undefined) }) as unknown as AudioContext;
+    client.lanes.set("system", testLaneState());
+    const fetcher = vi.fn(async (url: string, _request?: RequestInit) => new Response(JSON.stringify(url.endsWith("/resume") ? {
+      session_id: "session", descriptor: { sample_rate: 4, frame_samples: 2 },
+      capture_now_ns: 90_000_000_000, heartbeat_next_sequence: 99, heartbeat_next_monotonic_ns: 5_000_000_000,
+      lanes: { microphone: { next_sequence: 77, resume_device_epoch: 5 }, system: { next_sequence: 88, resume_device_epoch: 6 } }
+    } : {}), { status: 200 }));
+    vi.stubGlobal("fetch", fetcher);
+    await (client as unknown as CaptureClient).resumeSession("session", "old", true);
+    expect(lane.sequence).toBe(77);
+    expect(lane.deviceEpoch).toBe(5);
+    expect(lane.pendingDiscontinuityEpochs.has(5)).toBe(true);
+    client.onWorkletFrame("microphone", workletFrame(8));
+    await vi.waitFor(() => expect(fetcher.mock.calls.some(([url]) => url.endsWith("/frames"))).toBe(true));
+    const calls = fetcher.mock.calls as unknown as [string, RequestInit][];
+    const frame = JSON.parse(calls.find(([url]) => url.endsWith("/frames"))![1].body as string);
+    expect(frame).toMatchObject({ sequence: 77, device_epoch: 5, discontinuity: true });
+    expect(frame.capture_timestamp_ns).toBeGreaterThanOrEqual(90_000_000_000);
+    expect(frame.capture_end_timestamp_ns - frame.capture_timestamp_ns).toBe(500_000_000);
+    const heartbeat = JSON.parse(calls.find(([url]) => url.endsWith("/heartbeat"))![1].body as string);
+    expect(heartbeat.sequence).toBe(99);
+    expect(heartbeat.sent_monotonic_ns).toBeGreaterThanOrEqual(5_000_000_000);
+    const page = (client as unknown as CaptureClient).captureInstanceId;
+    for (const [, request] of calls) expect(request.headers).toMatchObject({ "X-Moss-Capture-Instance": page });
+  });
+
+  it("a replaced frame writer closes media and cannot recreate a meeting", async () => {
+    const replaced = vi.fn();
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL, onCaptureReplaced: replaced });
+    const active = client as unknown as ActiveClient;
+    active.context = Object.assign(new EventTarget(), { sampleRate: 4, close: vi.fn().mockResolvedValue(undefined) }) as unknown as AudioContext;
+    active.descriptor = { sampleRate: 4, frameSamples: 2, preflightStatusLines: { microphoneSilent: "silent" } };
+    active.session = { id: "session" }; active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
+    const lane = testLaneState(); active.lanes.set("microphone", lane);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ code: "capture_replaced" }), { status: 409 })));
+    active.onWorkletFrame("microphone", workletFrame(0));
+    await vi.waitFor(() => expect(replaced).toHaveBeenCalledOnce());
+    expect(active.context).toBeNull();
+    await expect(client.createSession()).rejects.toThrow("capture replaced");
+  });
+});
+
+
+it("fences separate Stop and Abort helpers with the capture page header", async () => {
+  const fetcher = vi.fn(async () => new Response("{}", { status: 200 })); vi.stubGlobal("fetch", fetcher);
+  await stopCaptureSession({ id: "same", instanceId: "page-new" }, 1);
+  await abortCaptureSession({ id: "same", instanceId: "page-new" }, "aborted");
+  expect(fetcher.mock.calls.map(call => (call as unknown as [string, RequestInit])[1].headers)).toEqual([
+    { "Content-Type": "application/json", "X-Moss-Capture-Instance": "page-new" },
+    { "Content-Type": "application/json", "X-Moss-Capture-Instance": "page-new" }]);
+});
+
+it.each(["heartbeat", "stop", "abort"] as const)("retires replaced capture on %s", async route => {
+  const replaced = vi.fn();
+  const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL, onCaptureReplaced: replaced });
+  Object.assign(client, { session: { id: "same" }, context: Object.assign(new EventTarget(), {
+    sampleRate: 4, currentTime: 0, close: vi.fn().mockResolvedValue(undefined) }) });
+  const fetcher = vi.fn(async (url: string, _request?: RequestInit) => new Response(JSON.stringify(
+    url.endsWith("/" + route) ? { code: "capture_replaced" } : {}), { status: url.endsWith("/" + route) ? 409 : 200 }));
+  vi.stubGlobal("fetch", fetcher);
+  if (route === "heartbeat") await (client as unknown as { scheduleHeartbeat(state: string): Promise<void> }).scheduleHeartbeat("capturing");
+  else await (route === "stop" ? client.stop(0) : client.abort("aborted")).catch(() => undefined);
+  expect(replaced).toHaveBeenCalledOnce();
+  expect((client as unknown as ActiveClient).context).toBeNull();
+  for (const [, request] of fetcher.mock.calls) expect(request?.headers).toMatchObject({ "X-Moss-Capture-Instance": client.captureInstanceId });
+  await expect(client.createSession()).rejects.toThrow("capture replaced");
+});
+
+it("replays the same resume handshake after a lost response before sending audio", async () => {
+  const { client } = activeFrameClient(); client.session = null;
+  client.context = Object.assign(new EventTarget(), { sampleRate: 4, currentTime: 2 }) as unknown as AudioContext;
+  client.lanes.set("system", testLaneState());
+  let resumes = 0;
+  const fetcher = vi.fn(async (url: string, _request?: RequestInit) => {
+    if (url.endsWith("/resume") && ++resumes === 1) throw new TypeError("response lost after takeover");
+    return new Response(JSON.stringify(url.endsWith("/resume") ? {
+      descriptor: { sample_rate: 4, frame_samples: 2 }, capture_now_ns: 5_000_000_000,
+      heartbeat_next_sequence: 9, heartbeat_next_monotonic_ns: 10,
+      lanes: { microphone: { next_sequence: 4, resume_device_epoch: 2 }, system: { next_sequence: 4, resume_device_epoch: 2 } }
+    } : {}));
+  }); vi.stubGlobal("fetch", fetcher);
+  await expect((client as unknown as CaptureClient).resumeSession("same", "old", true)).resolves.toEqual({ id: "same" });
+  const requests = fetcher.mock.calls.filter(([url]) => url.endsWith("/resume"));
+  expect(requests).toHaveLength(2);
+  expect(requests[0][1]?.body).toBe(requests[1][1]?.body);
+  expect(requests[0][1]?.headers).toEqual(requests[1][1]?.headers);
+  expect(client.session).toEqual({ id: "same" });
 });

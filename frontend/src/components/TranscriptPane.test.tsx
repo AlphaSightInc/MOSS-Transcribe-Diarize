@@ -3,7 +3,7 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { applySessionStateEvent, captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionMode, sessionNeedsReview, sessionStatus } from "../state/session";
+import { recordingInterruptions, applySessionStateEvent, captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionMode, sessionNeedsReview, sessionStatus } from "../state/session";
 import { autoscroll, resetUiState, selectedSummaryMeeting } from "../state/ui";
 import { TranscriptPane } from "./TranscriptPane";
 import { dispatchWsEvent } from "../api/ws";
@@ -33,6 +33,23 @@ describe("TranscriptPane", () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("renders interruption metadata between same-speaker rows without speech or speaker controls", () => {
+    act(() => {
+      sessionId.value = "m";
+      replaceTranscript([0, 3700].map((start, index) => ({ start, end: start + 2, text: index ? "After" : "Before",
+        speaker: "S01", speaker_entity_id: "S01", display_name: "Alex", state: "final" as const })));
+      recordingInterruptions.value = [{ start: 3660, end: 3690 }];
+      render(<TranscriptPane />, root);
+    });
+    const timeline = root.querySelector('[data-transcript-cards]')!;
+    const gap = timeline.querySelector('[data-recording-interruption]')!;
+    expect(gap.textContent).toBe("([01:01:00-01:01:30] Recording Interrupted)");
+    expect(gap.querySelector("button, [data-speaker-id]")).toBeNull();
+    expect([...timeline.children].map(node => node.textContent)).toEqual([
+      expect.stringContaining("Before"), gap.textContent, expect.stringContaining("After")]);
+    expect(root.querySelectorAll(".utt-speaker")).toHaveLength(2);
   });
 
   it("has no title row: the card starts at the speaker legend (#9)", () => {

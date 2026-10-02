@@ -20,6 +20,7 @@ import {
 } from "../lib/transcriptCards";
 import { recallCaptureSurface, transcriptSourceLabel } from "../lib/captureSurface";
 import {
+  recordingInterruptions,
   sessionId,
   sessionNeedsReview,
   provisionalSegments,
@@ -115,7 +116,7 @@ export function TranscriptPane() {
 
   const fullTranscriptItems = transcript.value;
   const searchQuery = transcriptSearchQuery.value.trim();
-  const allTurns = groupSegmentsIntoTurns(fullTranscriptItems);
+  const allTurns = groupSegmentsIntoTurns(fullTranscriptItems, { interruptions: recordingInterruptions.value });
   const guessedSpeakerIds = [...new Set(provisionalSegments.value.flatMap(segment =>
     segment.tentative_speaker ? [segment.tentative_speaker] : []))];
   const automaticProcessingRunning =
@@ -134,7 +135,7 @@ export function TranscriptPane() {
   const guessTurns = tentativeTurns(tentativeBlocks);
   const guesses = new Set(guessTurns);
   const rowSpeakerLabel = (turn: TranscriptTurn) => guesses.has(turn) ? turn.display_name : speakerLabel(turn);
-  const rows = projectTranscriptRows(displayedTurns, guessTurns);
+  const rows = projectTranscriptRows(displayedTurns, guessTurns, recordingInterruptions.value);
   const labelledTurns = new Set(rows.filter(row => !row.continuation).map(row => row.fragments[0]!));
   const searchResults = buildTranscriptSearchResults(
     [...displayedTurns, ...guessTurns],
@@ -146,7 +147,7 @@ export function TranscriptPane() {
     searchResults.matchCount > 0
       ? Math.min(activeSearchMatchIndex, searchResults.matchCount - 1)
       : -1;
-  const transcriptAvailable = rows.length > 0;
+  const transcriptAvailable = rows.length > 0 || recordingInterruptions.value.some(gap => gap.end !== null);
   const activeSessionId = sessionId.value;
   const captureSurface = activeSessionId ? recallCaptureSurface(activeSessionId) : null;
   const sourceLabel = (lane: string | undefined) => transcriptSourceLabel(lane, captureSurface, sessionMode.value);
@@ -425,7 +426,7 @@ export function TranscriptPane() {
   }
 
   async function handleCopy(): Promise<void> {
-    const text = buildTranscriptExportText(allTurns, speakerLabel);
+    const text = buildTranscriptExportText(allTurns, speakerLabel, recordingInterruptions.value);
     try {
       await copyTextToClipboard(text);
       setCopied(true);
@@ -675,7 +676,7 @@ export function TranscriptPane() {
 
         <div ref={transcriptScrollRef} className="tr-body" id="tr-body" onScroll={handleTranscriptScroll}>
           {transcriptAvailable ? (
-            <TranscriptCards rows={rows} search={searchByTurn} activeMatchId={activeSearchMatchId}
+            <TranscriptCards rows={rows} interruptions={recordingInterruptions.value} search={searchByTurn} activeMatchId={activeSearchMatchId}
               finalized={finalized} canCorrectPassages={canCorrectPassages} correctionWaiting={refinementRunning}
               speakerLabel={rowSpeakerLabel} sourceLabel={sourceLabel}
               namingBlocked={(id) => namingBlocked(legendEntries.find(entry => entry.speakerId === id))}

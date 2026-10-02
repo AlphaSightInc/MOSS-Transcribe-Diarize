@@ -1,4 +1,4 @@
-// Browser preferences and the Account Meeting ID used for read-only reload reattachment.
+// Browser preferences and tab-scoped capture recovery.
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -24,8 +24,18 @@ export interface CaptureSources {
   microphone: boolean;
 }
 
+export interface CaptureRecord {
+  instanceId: string;
+  sources: CaptureSources;
+  microphoneDeviceId: string | null;
+  microphoneMuted: boolean;
+  echoCancellation: boolean;
+  shareKind: string | null;
+}
+
 export interface SessionReattachRecord {
   sessionId: string;
+  capture?: CaptureRecord;
 }
 
 export function browserStorage(): StorageLike {
@@ -114,7 +124,13 @@ export function loadSessionReattach(storage: StorageLike): SessionReattachRecord
     storage.removeItem(storageKeys.sessionReattach);
     return null;
   }
-  return record;
+  const capture = record.capture;
+  if (!capture || typeof capture.instanceId !== "string" || !capture.instanceId ||
+      typeof capture.sources?.system !== "boolean" || typeof capture.sources?.microphone !== "boolean" ||
+      (capture.sources.microphone ? typeof capture.microphoneDeviceId !== "string" || !capture.microphoneDeviceId : capture.microphoneDeviceId !== null && typeof capture.microphoneDeviceId !== "string") ||
+      typeof capture.microphoneMuted !== "boolean" || typeof capture.echoCancellation !== "boolean" ||
+      (capture.shareKind !== null && typeof capture.shareKind !== "string")) return { sessionId: record.sessionId };
+  return { sessionId: record.sessionId, capture };
 }
 
 export function saveSessionReattach(

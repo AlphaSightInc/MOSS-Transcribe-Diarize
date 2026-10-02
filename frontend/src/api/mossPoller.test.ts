@@ -6,7 +6,7 @@ import {
   type MossSessionPoller
 } from "./mossPoller";
 import { dispatchWsEvent } from "./ws";
-import { liveLabelPolicy, resetSessionState, transcript } from "../state/session";
+import { recordingInterruptions, liveLabelPolicy, resetSessionState, transcript } from "../state/session";
 
 describe("MOSS session poller", () => {
   beforeEach(() => {
@@ -15,6 +15,19 @@ describe("MOSS session poller", () => {
 
   afterEach(() => {
     resetSessionState();
+  });
+
+  it("publishes live interruption metadata separately from spoken transcript rows", async () => {
+    const poller = createMossSessionPoller({ sessionId: "m", dispatch: dispatchWsEvent,
+      fetch: vi.fn(async (url: RequestInfo | URL) => jsonResponse(String(url).includes("/events") ? { events: [] } : {
+        interruptions: [{ start_sample: 16000, end_sample: 32000 }], snapshot: {
+          session_id: "m", descriptor: { sample_rate: 16000 }, session: { status: "active", version: 1,
+            committed_samples: 0, identity_snapshot: { canonical_speakers: [] }, committed: [], provisional: null }
+        }
+      })) as typeof fetch });
+    await poller.poll();
+    expect(recordingInterruptions.value).toEqual([{ start: 1, end: 2 }]);
+    expect(transcript.value).toEqual([]);
   });
 
   it.each([true, false])("publishes durable needs_review=%s from the Live snapshot", async needsReview => {

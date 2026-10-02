@@ -1,3 +1,4 @@
+import { recordingInterruptionLine, type RecordingInterruption } from "./recordingInterruption.ts";
 import { compareTranscriptOrder } from "./transcriptOrder.ts";
 import type { SummaryDocument } from "./finalSummary";
 import type { TranscriptTurn } from "./mergeTranscript";
@@ -26,11 +27,10 @@ export function formatTranscriptClockTime(seconds: number): string {
 
 export function buildTranscriptExportText(
   turns: readonly TranscriptTurn[],
-  resolveLabel: (turn: TranscriptTurn) => string
+  resolveLabel: (turn: TranscriptTurn) => string,
+  interruptions: readonly RecordingInterruption[] = []
 ): string {
-  return buildExportRows(turns, resolveLabel)
-    .map((row) => `[${row.clockTime}] ${row.label}:\n${row.text}`)
-    .join("\n\n");
+  return exportTimeline(turns, resolveLabel, interruptions, "txt");
 }
 
 /** Files carry the transcript only: no provisional, review or pending-summary notices (Q6). */
@@ -39,20 +39,20 @@ export function serializeTranscriptExport(
   turns: readonly TranscriptTurn[],
   resolveLabel: (turn: TranscriptTurn) => string,
   identity: TranscriptExportIdentity,
-  summary?: SummaryDocument | null
+  summary?: SummaryDocument | null,
+  interruptions: readonly RecordingInterruption[] = []
 ): TranscriptExportFile {
   turns = [...turns].sort(compareTranscriptOrder);
-  const rows = buildExportRows(turns, resolveLabel);
   const filename = `transcript-${identity.sessionId}-${identity.exportedAt.toISOString()}.${format}`;
   if (format === "md") {
     return {
-      content: `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n")}`,
+      content: `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${exportTimeline(turns, resolveLabel, interruptions, "md")}`,
       filename,
       mediaType: "text/markdown;charset=utf-8"
     };
   }
   return {
-    content: buildTranscriptExportText(turns, resolveLabel),
+    content: buildTranscriptExportText(turns, resolveLabel, interruptions),
     filename,
     mediaType: "text/plain;charset=utf-8"
   };
@@ -77,10 +77,22 @@ function buildExportRows(
   resolveLabel: (turn: TranscriptTurn) => string
 ) {
   return [...turns].sort(compareTranscriptOrder).map((turn) => ({
+    start: turn.start,
     clockTime: formatTranscriptClockTime(turn.start),
     label: resolveExportLabel(turn, resolveLabel),
     text: turn.text.trim()
   })).filter((row) => row.text.length > 0);
+}
+
+function exportTimeline(turns: readonly TranscriptTurn[], resolveLabel: (turn: TranscriptTurn) => string,
+  interruptions: readonly RecordingInterruption[], format: TranscriptExportFormat): string {
+  const rows = buildExportRows(turns, resolveLabel).map(row => ({ start: row.start, priority: 1,
+    text: format === "md" ? `## [${row.clockTime}] ${row.label}\n\n${row.text}` : `[${row.clockTime}] ${row.label}:\n${row.text}` }));
+  rows.push(...interruptions.flatMap(gap => {
+    const text = recordingInterruptionLine(gap);
+    return text === null ? [] : [{ start: gap.start, priority: 0, text }];
+  }));
+  return rows.sort((a, b) => a.start - b.start || a.priority - b.priority).map(row => row.text).join("\n\n");
 }
 
 function resolveExportLabel(turn: TranscriptTurn, resolveLabel: (turn: TranscriptTurn) => string): string {

@@ -1,3 +1,4 @@
+import { recordingInterruptionLine, type RecordingInterruption } from "../lib/recordingInterruption";
 import { Fragment, type JSX } from "preact";
 import type { TranscriptTurn } from "../lib/mergeTranscript";
 import { isSettledTurn, type TranscriptRow } from "../lib/transcriptCards";
@@ -7,6 +8,7 @@ import { isBackendUnknownSpeakerId, speakerColorToken } from "../lib/speakerMap"
 
 interface Props {
   rows: readonly TranscriptRow[];
+  interruptions?: readonly RecordingInterruption[];
   search: ReadonlyMap<TranscriptTurn, TranscriptSearchTurn>;
   activeMatchId: number;
   finalized: boolean;
@@ -29,11 +31,16 @@ function searchParts(parts: readonly TranscriptSearchPart[], activeMatchId: numb
 }
 
 /** Reference rows: meta column (speaker, source, time) on the left, the speaker's text on the right. */
-export function TranscriptCards({ rows, search, activeMatchId, finalized, canCorrectPassages,
+export function TranscriptCards({ rows, interruptions = [], search, activeMatchId, finalized, canCorrectPassages,
   correctionWaiting = false, speakerLabel, sourceLabel, namingBlocked, onSpeakerClick,
   onPassageCorrection }: Props) {
+  const timeline = [...rows.map((row, index) => ({ start: row.start, priority: 1, row, index, gap: null as RecordingInterruption | null })),
+    ...interruptions.filter(gap => gap.end !== null).map(gap => ({ start: gap.start, priority: 0, row: null, index: -1, gap }))]
+    .sort((a, b) => a.start - b.start || a.priority - b.priority);
   return <div className="transcript-cards" data-transcript-cards="true">
-    {rows.map((row, index) => {
+    {timeline.map(({ row, index, gap }) => {
+      if (gap) return <p key={`interruption:${gap.start}`} className="recording-interruption" data-recording-interruption="true">{recordingInterruptionLine(gap)}</p>;
+      if (!row) return null;
       const head = row.fragments[0]!;
       const unknown = isBackendUnknownSpeakerId(row.speakerId);
       const activeTail = index === rows.length - 1 && row.fragments.at(-1)!.state === "provisional";

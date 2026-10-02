@@ -1,3 +1,4 @@
+import type { RecordingInterruption } from "./recordingInterruption";
 import type { TranscriptTurn } from "./mergeTranscript";
 import {
   isBackendUnknownSpeakerId, microphoneSpeakerLabel, sharedSpeakerNumber, UNATTRIBUTED_SPEAKER_LABEL
@@ -34,7 +35,7 @@ function turnKey(turn: TranscriptTurn): string {
 }
 
 /** A card keeps the first source key even when later revisions change its text. */
-export function projectTranscriptCards(turns: readonly TranscriptTurn[]): TranscriptCard[] {
+export function projectTranscriptCards(turns: readonly TranscriptTurn[], interruptions: readonly RecordingInterruption[] = []): TranscriptCard[] {
   const cards: TranscriptCard[] = [];
   for (const turn of turns) {
     const lane = turn.source_lane || "mixed";
@@ -42,6 +43,7 @@ export function projectTranscriptCards(turns: readonly TranscriptTurn[]): Transc
     let target: TranscriptCard | undefined;
     for (let offset = 1; offset <= Math.min(2, cards.length); offset += 1) {
       const candidate = cards[cards.length - offset];
+      if (candidate && interruptions.some(gap => gap.start >= candidate.start && gap.start <= turn.start)) continue;
       if (!candidate || candidate.lane !== lane || candidate.speakerId !== id) continue;
       const consecutiveConfirmed = offset === 1 && id !== "S00" && id !== "UNKNOWN" &&
         turn.state !== "provisional" && candidate.rows.at(-1)?.state !== "provisional";
@@ -81,10 +83,10 @@ export interface TranscriptRow {
 
 /** Cards, then guess rows; a guess for the speaker already on screen continues that block (G9). */
 export function projectTranscriptRows(
-  turns: readonly TranscriptTurn[], guessTurns: readonly TranscriptTurn[] = []
+  turns: readonly TranscriptTurn[], guessTurns: readonly TranscriptTurn[] = [], interruptions: readonly RecordingInterruption[] = []
 ): TranscriptRow[] {
   const rows = [
-    ...projectTranscriptCards(turns).map(card => ({ ...card, lane: card.rows[0]!.source_lane,
+    ...projectTranscriptCards(turns, interruptions).map(card => ({ ...card, lane: card.rows[0]!.source_lane,
       guess: false, fragments: card.rows })),
     ...guessTurns.map(turn => ({ key: `tentative:${turn.source_lane}:${turn.start}`, speakerId: speakerId(turn),
       lane: turn.source_lane, start: turn.start, end: turn.end, guess: true, fragments: [turn] }))

@@ -132,3 +132,24 @@ it.each(["md", "txt"] as const)(
     expect(file.content).not.toContain("S00");
   }
 );
+
+it("renders multiple interruptions in time, with hours, outside speaker rows in both exports", () => {
+  const turns = [makeTurn(0, "S01", "Before"), makeTurn(3700, "S01", "After")];
+  const gaps = [{ start: 60, end: 75 }, { start: 3660, end: 3690 }];
+  for (const format of ["txt", "md"] as const) {
+    const text = serializeTranscriptExport(format, turns, t => t.speaker,
+      { sessionId: "m", exportedAt: new Date(0) }, null, gaps).content;
+    expect(text).toContain("([00:01:00-00:01:15] Recording Interrupted)");
+    expect(text).toContain("([01:01:00-01:01:30] Recording Interrupted)");
+    expect(text.indexOf("Before")).toBeLessThan(text.indexOf("Recording Interrupted"));
+    expect(text.lastIndexOf("Recording Interrupted")).toBeLessThan(text.indexOf("After"));
+    expect(text).not.toContain("S01: Recording Interrupted");
+  }
+});
+
+
+it("does not invent the end of a pending interruption", () => {
+  const content = serializeTranscriptExport("txt", [], () => "", { sessionId: "m", exportedAt: new Date(0) },
+    null, [{ start: 3600, end: null }]).content;
+  expect(content).toBe("");
+});

@@ -123,3 +123,31 @@ built-in with permission hidden, and exact built-in only with it granted; the dr
 `MacBook Pro Microphone (Built-in)` both times. Unmeasured: a physical iPhone's Chrome label, and
 whether a track opened on the `default` alias follows later default changes (on macOS the lane
 always opens a concrete device, so the page does not depend on it).
+
+## P74 browser within-lease recovery (candidate, 2026-10-02)
+
+The originating tab now retains a capture record in `lt:session:reattach`: meeting/page id,
+actual source choices (including silent lanes), exact microphone device id, mute, echo setting
+and share kind. A record with only a meeting id remains a read-only observer. History readers
+never gain capture authority. Stop clears capture eligibility; Detach cancels pending recovery.
+
+On an active snapshot the candidate attempts automatic `/resume`, restores the stored exact
+microphone when permission is already granted, and adopts lane sequences, new epochs and the
+server capture clock. Every first resumed lane frame is discontinuous; both timestamp endpoints
+share the offset. Tab audio is tried once without waiting for its picker: meanwhile its lane
+sends silence. One “Share tab audio again” button restores it through ordinary lane replacement.
+An unavailable microphone is named and offers “Resume recording”; no other device is chosen.
+Every capture mutation carries the page header. A replaced page closes media and remains a
+viewer; its final and rolling automatic summary watchers retire. The resumed writer owns them.
+
+Separate server `interruptions` metadata appears in transcript, History and browser exports as
+`([HH:MM:SS-HH:MM:SS] Recording Interrupted)`, at its meeting-clock position. Grouping does
+not combine speech across that boundary; summary requests still contain only spoken text.
+
+**Unresolved binding-contract conflict:** automatic resume must refuse a heartbeat younger than
+3 s (`capture_page_alive` -> viewer with “Resume recording here”), which also refuses an ordinary
+immediate reload. Real Chrome reproduces this. Zero-click immediate reload cannot be certified
+until the lead resolves that conflict. Expiry stays 120 s; terminal meetings never reopen.
+This is a local candidate, not an integrated/shipped claim. Fake-device/scripted receipts and
+commands: `prototypes/gemini-live/long-meeting/resume-client/NOTES.md`; live status/evidence under
+`~/Documents/Codex/2026-09-28/moss-gemini/status/P74-RC-STATUS.md` and `evidence/P74/resume-client/`.
