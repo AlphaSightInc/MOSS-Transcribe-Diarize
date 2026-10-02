@@ -235,6 +235,14 @@ discard it; an empty preview clears it. Memory holds only the current rows' remo
 prefixes and observed ends, not meeting history. It applies the remembered cut after
 the original alignment, never aligning the shortened suffix: that would hide a fresh
 second occurrence of a phrase (six recorded English publications in the rejected arm).
+After a successful rolling update, a remembered cut is forgotten if that lane loses
+a visible base row starting before the cut's observed end. Earlier rolling rows remain
+visible, so normal rolling appends retain their cuts across later divergence. The next
+preview realigns against current solid text. This restores all 61 words hidden by the
+81-word degraded paragraph → 20-word rolling replacement; an empty replacement restores
+all 81. Other-lane and retained-base proofs survive. Stop clears cuts after tail drain;
+new meetings start empty. `prototypes/gemini-live/mic-speaker-echo/a5/NOTES.md` records
+the replacement/lifecycle controls and unchanged 2,749-call F1/A2 replay.
 Degraded bases use the same trim before committing preview words. Their clock is clipped
 at the fallback frontier, so a prior observed preview extent can carry the full prefix
 just committed, including a one-word reply. The c5b timeout replay commits "right" once

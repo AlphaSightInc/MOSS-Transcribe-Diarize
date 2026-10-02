@@ -6,6 +6,8 @@ and an interim often restates the final before it.
 """
 import hashlib
 
+import pytest
+
 from moss_transcribe_diarize.app.gemini_live_runtime import (
     GeminiBase, GeminiLiveRuntime, GeminiPreview, GeminiRolling, GeminiSegment, ScriptedGeminiEngine)
 from moss_transcribe_diarize.app.live_service_runtime import (
@@ -493,3 +495,62 @@ def test_remembered_cut_does_not_hide_a_later_repeated_chorus(tmp_path):
     shown = _preview(rt, raw, now_s=55)
     assert "fresh unrevised speech" in shown
     assert shown.endswith("then finish with a chorus now")
+
+
+@pytest.mark.parametrize("lane", ("system", "microphone"))
+@pytest.mark.parametrize("empty", (False, True))
+def test_rolling_replacement_forgets_cut_backed_by_removed_solid(tmp_path, lane, empty):
+    # R5-F1: fallback solid contains 81 words, rolling keeps only 20 (or none).
+    from moss_transcribe_diarize.app.gemini_live_runtime import _trim_committed_preview
+
+    rt = _runtime(tmp_path, lanes=True)
+    _commit(rt, "Earlier settled discussion before this long turn", through_s=15, lane=lane)
+    _advance_audio(rt, 61)
+    rt.publish_update("one", GeminiPreview(55 * R, (
+        GeminiSegment(15 * R, 55 * R, COMMITTED, source_lane=lane),)))
+    rt.publish_update("one", GeminiBase(21 * R, (
+        GeminiSegment(15 * R, 21 * R, COMMITTED, source_lane=lane),), degraded=True))
+    assert rt._sessions["one"].preview_cuts[0][2]
+    rt.publish_update("one", GeminiBase(30 * R, ()))
+    replacement = " ".join(COMMITTED.split()[:20])
+    rt.publish_update("one", GeminiRolling(15 * R, 30 * R,
+        () if empty else (GeminiSegment(15 * R, 30 * R, replacement, "speaker-0001", lane),),
+        revision_lanes=(lane,)))
+    raw = COMMITTED + " " + FRESH
+    preview = GeminiSegment(30 * R, 60 * R, raw, source_lane=lane)
+    expected = _trim_committed_preview((preview,), rt.snapshot("one").session.effective_transcript)
+    rt.publish_update("one", GeminiPreview(60 * R, (preview,)))
+    shown = rt.snapshot("one").session.provisional.segments[0]["text"]
+    assert shown == expected[0].text
+    assert len(shown.split()) == (81 if empty else 61) + len(FRESH.split())
+
+
+def test_stop_clears_remembered_preview_cut(tmp_path):
+    import asyncio
+
+    rt = _runtime(tmp_path)
+    _commit(rt, COMMITTED, through_s=40)
+    assert _preview(rt, COMMITTED + " " + FRESH, now_s=55) == FRESH
+    assert rt._sessions["one"].preview_cuts[0][2]
+    stopped = asyncio.run(rt.stop("one", 1))
+    assert stopped.session.provisional is None
+    assert rt._sessions["one"].preview_cuts == []
+    rt.create(session_id="two")
+    assert rt._sessions["two"].preview_cuts == []
+
+
+def test_other_lane_rolling_keeps_remembered_cut(tmp_path):
+    rt = _runtime(tmp_path, lanes=True)
+    _commit(rt, "earlier settled words", through_s=15)
+    rt.publish_update("one", GeminiPreview(55 * R, (
+        GeminiSegment(15 * R, 55 * R, "Right.", source_lane="microphone"),)))
+    rt.publish_update("one", GeminiBase(21 * R, (
+        GeminiSegment(15 * R, 21 * R, "Right.", source_lane="microphone"),), degraded=True))
+    rt.publish_update("one", GeminiBase(30 * R, ()))
+    rt.publish_update("one", GeminiRolling(15 * R, 30 * R, (
+        GeminiSegment(15 * R, 30 * R, "independent system discussion", "speaker-0001", "system"),),
+        revision_lanes=("system",)))
+    rt.publish_update("one", GeminiPreview(60 * R, (
+        GeminiSegment(30 * R, 60 * R, "Right. Can you elaborate please?", source_lane="microphone"),)))
+    # One word is below stateless evidence; only the retained same-lane proof hides it.
+    assert rt.snapshot("one").session.provisional.segments[0]["text"] == "Can you elaborate please?"

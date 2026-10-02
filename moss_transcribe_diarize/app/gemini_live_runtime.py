@@ -596,6 +596,14 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     ))
                     if not outcome.applied:
                         raise ValueError(f"rolling update refused: {outcome.refusal}")
+                    # A rolling replacement can remove the solid copy backing a cut.
+                    solid = session.snapshot().effective_transcript
+                    removed = [row for row in snapshot.effective_transcript
+                               if row.authority == "provisional" and row not in solid]
+                    state.preview_cuts[:] = [
+                        (lane, end, prefix) for lane, end, prefix in state.preview_cuts
+                        if not any(row.source_lane == lane and row.start_sample < end
+                                   for row in removed)]
                     kind = "text_revision_applied"
                     state.rolling_frontier = max(state.rolling_frontier, update.end_sample)
                     state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
@@ -1003,6 +1011,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         await self._absorb_orphan_speakers(state)
         await state.session.stop(1.0)
         with self._lock:
+            state.preview_cuts.clear()
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
