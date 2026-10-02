@@ -354,6 +354,7 @@ class _GeminiState:
     degraded_path_activations: int = 0
     window_lag_samples: list[int] = field(default_factory=list)
     preview_lag_samples: list[int] = field(default_factory=list)
+    preview_cuts: list[tuple[str | None, int, list[str]]] = field(default_factory=list)
     rolling_frontier: int = 0
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
@@ -539,7 +540,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     if update.end_sample < start:
                         return
                     segments = _trim_committed_preview(
-                        update.segments, session.snapshot().effective_transcript)
+                        update.segments, session.snapshot().effective_transcript, state.preview_cuts)
                     transcript = _unlabelled_transcript(segments, start)
                     spans = tuple(span for lane in dict.fromkeys(
                         row.source_lane or "system" for row in segments)
@@ -560,13 +561,16 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 elif isinstance(update, GeminiBase):
                     if update.degraded:
                         state.degraded_path_activations += 1
+                    segments = (_trim_committed_preview(
+                        update.segments, session.snapshot().effective_transcript,
+                        state.preview_cuts, degraded=True) if update.degraded else update.segments)
                     start = session.snapshot().committed_samples
                     span = session.freeze_until(update.through_sample, reason="gemini_base")
-                    transcript = _unlabelled_transcript(update.segments, start)
+                    transcript = _unlabelled_transcript(segments, start)
                     if transcript:
                         # The lag fallback's preview words keep their lane, so later previews
                         # trim against them and rolling replaces them per lane.
-                        lanes = tuple(row.source_lane for row in update.segments)
+                        lanes = tuple(row.source_lane for row in segments)
                         outcome = session.submit_unlabeled_canonical(
                             span_id=span.id, epoch=span.epoch, start_sample=start,
                             end_sample=update.through_sample, transcript=transcript,
@@ -1386,7 +1390,8 @@ def _unit_weight(unit: str) -> int:
 
 
 def _trim_committed_preview(
-    segments: Sequence[GeminiSegment], committed: Sequence[EffectiveTranscriptSegment]
+    segments: Sequence[GeminiSegment], committed: Sequence[EffectiveTranscriptSegment],
+    cuts: list[tuple[str | None, int, list[str]]] | None = None, *, degraded: bool = False,
 ) -> tuple[GeminiSegment, ...]:
     """Remove each W3 chunk's head that the reader already sees in the same capture lane.
 
@@ -1401,6 +1406,7 @@ def _trim_committed_preview(
     for segment, spans in zip(segments, spans_of):
         lane_units[segment.source_lane] = lane_units.get(segment.source_lane, 0) + len(spans)
     kept: list[tuple[GeminiSegment, list[str]]] = []
+    cuts_of: list[int] = []
     for segment, spans in zip(segments, spans_of):
         lane = segment.source_lane
         limit = max(60, lane_units[lane] * 5 // 4 + 8)
@@ -1414,9 +1420,31 @@ def _trim_committed_preview(
                 count += len(parts[-1])
         tail = [unit for part in reversed(parts) for unit in part][-limit:]
         cut = _repeated_head(tail, [unit for unit, _, _ in spans])
+        cuts_of.append(cut)
         text = (segment.text[spans[cut - 1][2]:].lstrip(" \t\r\n,.;:!?，。；：！？、") if cut else segment.text)
         if text:
             kept.append((replace(segment, text=text), [unit for unit, _, _ in spans[cut:]]))
+    if cuts is not None:
+        # Keep a witnessed cut only while its prefix and overlapping extent still agree.
+        # Do not align the shortened suffix: a genuine later chorus can match the old tail.
+        remembered, shown = [], []
+        for segment, spans, cut in zip(segments, spans_of, cuts_of):
+            units = [unit for unit, _, _ in spans]
+            prior = [(end, prefix) for lane, end, prefix in cuts
+                     if lane == segment.source_lane and segment.start_sample < end
+                     and (degraded or segment.end_sample >= end)
+                     and units[:len(prefix)] == prefix]
+            cut = max([cut] + [len(prefix) for _, prefix in prior])
+            text = (segment.text[spans[cut - 1][2]:].lstrip(" \t\r\n,.;:!?，。；：！？、")
+                    if cut else segment.text)
+            if text:
+                shown.append(replace(segment, text=text))
+            end = max([segment.end_sample] + [end for end, _ in prior])
+            # A degraded base clips the row clock; its full input is now solid, but
+            # only a previously observed preview extent supports carrying that cut.
+            remembered.append((segment.source_lane, end, units if degraded else units[:cut]))
+        cuts[:] = remembered
+        return tuple(shown)
     return tuple(row for row, _ in kept)
 
 
