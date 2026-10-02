@@ -116,6 +116,13 @@ def _already_beside(run, words, spans, starts) -> bool:
                for edge in (left[-len(units):], right[:len(units)]))
 
 
+def already_beside(run: Sequence, words: Sequence) -> bool:
+    """Apply the hole's bounded time-shift rule to one admitted source run."""
+    words = sorted(words, key=_span)
+    spans = [_span(w) for w in words]
+    return _already_beside([(w, 0) for w in run], words, spans, [a for a, _ in spans])
+
+
 def uncovered_runs(words: Sequence, witness: Sequence, *,
                    skip: Sequence[tuple[int, int]] = ()) -> list[tuple[list, int]]:
     """Runs of consecutive live words lying in one hole of the whole-recording words, with their uncovered samples.

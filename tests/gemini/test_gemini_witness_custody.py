@@ -222,3 +222,47 @@ def test_weak_competing_partition_still_blocks_merging_old_groups():
     new = [GeminiWord(w.text, 'merged', w.start_sample, w.end_sample) for w in old]
     updated, mapping, _ = source_partitions(old, old, new, 4*S)
     assert mapping['merged'] not in ('pA', 'pB') and updated == old
+
+
+def _finish_mixed_shift(*, cleanup_has_reply, rejected_neighbour):
+    mic, tab = _local_fixture(((11.4, 14.0), (14.6, 17.0)), echo=56)
+    anchor = _local_phrase(' '.join(['genuine']*26), 11.4, 14.0, 'A')
+    unrelated = (GeminiWord('remote', 'A', round(14.3*S), round(14.5*S)),
+                 GeminiWord('okay', 'A', round(14.8*S), round(14.9*S)))
+    reply = _local_phrase('Can you elaborate please?', 15, 15.8, 'B')
+    shifted = tuple(GeminiWord(w.text, w.speaker, w.start_sample+S, w.end_sample+S)
+                    for w in reply)
+    cleanup = anchor+(shifted if cleanup_has_reply else ())
+    engine, terminal, _ = engine_for(mic, tab, cleanup, lambda *args: {
+        'A': ((1., 0.), 2.9), 'B': ((-.6, .8), .8)})
+    usage = []
+    terminal.report_usage = lambda **row: usage.append(row)
+    try:
+        engine._publish_window(0, 15*S, mic[:30*S], anchor+(unrelated if rejected_neighbour else ()))
+        engine._publish_window(0, 30*S, mic, reply)
+        witnesses = [w for w in engine._witness_words if w.start_sample > 14.2*S]
+        assert [w.text for w in witnesses] == [w.text for w in
+                                               ((unrelated if rejected_neighbour else ())+reply)]
+        if rejected_neighbour:
+            assert len({w.source_partition for w in witnesses}) == 2
+        rows = asyncio.run(engine.finish(Tape(mic)))
+        saved = [w for w in terminal.last_words if w.start_sample > 14.2*S]
+        assert [w.text for w in saved] == [w.text for w in reply]
+        assert [(w.start_sample, w.end_sample) for w in saved] == [
+            (w.start_sample, w.end_sample) for w in (shifted if cleanup_has_reply else reply)]
+        assert 'Can you elaborate please? Can' not in ' '.join(r.text for r in rows)
+        assert sum(r.get('witness_restored_words', 0) for r in usage) == (0 if cleanup_has_reply else 4)
+    finally:
+        engine.close()
+
+
+def test_shifted_reply_with_rejected_source_is_saved_once():
+    _finish_mixed_shift(cleanup_has_reply=True, rejected_neighbour=True)
+
+
+def test_genuine_omission_with_rejected_source_is_restored_once():
+    _finish_mixed_shift(cleanup_has_reply=False, rejected_neighbour=True)
+
+
+def test_isolated_shifted_reply_stays_saved_once():
+    _finish_mixed_shift(cleanup_has_reply=True, rejected_neighbour=False)
