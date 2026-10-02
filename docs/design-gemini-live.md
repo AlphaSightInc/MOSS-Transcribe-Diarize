@@ -872,3 +872,101 @@ interiors, 125 s refusal, 472000/960000-sample peak retention and 30 s live
 catch-up. Final receipts: `RS-FIX1/targeted-final.txt`,
 `RS-FIX1/full-backend-final.txt`, and
 `resume/RS-product-20261002-152501/matrix.json` under P74 evidence.
+
+## History session deletion (P74-UI3)
+
+A session is the deletion unit; a saved voiceprint is independent account data. History offers a per-card trash
+button with inline Delete/Cancel confirmation and replaces manual Refresh with Delete All. Opening Sessions or
+expanding History refreshes automatically; Stop/import/history events still refresh. Delete All counts the whole
+workspace, including search-hidden sessions. Successful deletion clears an open transcript and summary selection;
+a failed request restores cards and displays the server reason.
+
+Account-owned `DELETE /api/meetings/{id}` returns 204 (missing/foreign 404); `DELETE /api/meetings` reports deleted
+count and kept sessions. Active capture, File/YouTube work and post-Stop transcript clean-up cannot be deleted (409).
+Within the store's write transaction, deletion removes canonical final/partial/staged MP3, mixed PCM and retained
+File/YouTube staging, detaches `voiceprint_samples.source_meeting_id`, then removes transcript, speakers, outcome,
+LLM artifacts, audio metadata and meeting rows. Saved vectors and voiceprint IDs are unchanged and still match.
+Filesystem cleanup failure retains database rows for retry; already removed files cannot be rolled back.
+
+Evidence: `prototypes/gemini-live/long-meeting/ui3/NOTES.md`, regression tests and the zero-provider real-Chrome run.
+
+## P75 E1: settled passage text edits (2026-10-02, candidate, not deployed)
+
+The durable transcript is the authority for History and on-demand server-summary input. The owner may
+`PUT /api/meetings/{meeting_id}/passages/{passage_id}/text` with `{"text":"new text"}` once automatic processing
+settles. The string is trimmed to 1–5000 characters; invalid text returns 400, unknown meeting/passage or other
+owner returns 404, active processing returns the existing 409 reason, running refinement returns
+`{"code":"refinement_running"}` with 409. Success uses the existing speaker-correction response shape:
+`meeting_id`, `segment_ids` (one ID), `speaker_id`, `label`, `transcript_version`, `needs_review`.
+The client reloads the meeting from that response; it is not a full transcript response.
+
+Only the selected passage's text changes. Its first stored text is retained once as `original_text`, `edited`
+is true, and the document version advances once. Speaker, start/end, other passages and audio remain unchanged.
+Production live (`phase2_live._transcript_document`) and file (`phase2_file._transcript_document`) serializers
+currently store passage timings, not word timings. Editing drops a passage's `words` field if present; old words
+must never accompany new text. Edited text bypasses legacy join-space removal, preserving intentional spaces.
+History/list/detail and `MeetingSummaries.start_server` read the same edited durable document; speaker assignment
+and rename rewrite that document without replacing the text. An existing summary is not automatically regenerated.
+
+Publication cannot overwrite an accepted edit: normal and terminal transcript writes require `status='active'`;
+refinement requires the durable running marker. The text-edit transaction checks both status and marker under
+the store's write lock. Thus refinement must settle before the edit; its later repeated publication is refused.
+The route also uses the existing live refinement guard. No new publication layer or database schema is needed.
+
+Prototype (`prototypes/gemini-live/long-meeting/p75-es/NOTES.md`) measured 3/3 late publisher methods refused and
+1/1 restart retained a simulated edit on base f9d13595; the same matrix through the product edit method gives
+3/3 and 1/1. `tests/phase2/test_passage_text_edit.py`: 25/25 failed on base, then 25/25 passed; existing correction
+and saved-reading tests also pass (59 total). Browser interaction and real provider behavior remain unmeasured by
+this server package; no provider calls are required or made.
+
+Full-suite gate exposed a pre-existing selector mismatch in `test_workspace_demo_geometry.py`: the base commit
+renamed the URL tab to YouTube, while two geometry cases still selected URL. Viewport0 also fails on unchanged
+f9d13595 (32.65s). Only the selector was updated to YouTube; both cases pass (4.80s), geometry assertions unchanged.
+Final full backend gate: **2,943 passed, 9 skipped, 2 xfailed, 37 subtests passed** (428.68s); command:
+`MOSS_TEST_REAL_SQLITE=1 PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-r5-f3.venv/bin/python -m pytest -q -p no:cacheprovider tests`.
+Receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/P75/ES/` (red, targeted green, full failed,
+unchanged-base geometry reproduction, geometry green, final full green, prototype and product replay logs).
+
+## P74-RM: resume plus production editing/deletion (local candidate)
+
+The integration combines P74 R1-R5 with production e1ebede5: title-case capture/resume
+actions, YouTube wording, History deletion, passage text editing and the two-block
+Speaker popup. An interruption remains a separate mixed-clock interval: it splits
+same-speaker grouping and renders as a noninteractive paragraph between passages.
+A gap also ends the display continuation flag, so the next section keeps a visible
+Speaker control even when the same voice continues. Preserving durable passage
+boundaries for editors and splitting at gaps are both
+grouping conditions. Copy, Markdown and text exports use the edited speech plus
+that separate interval; neither metadata nor the displayed line enters recognition
+or summary input.
+
+A detached meeting inside its 120 s resume lease is still active. Existing durable
+store rules therefore refuse text edits, per-card deletion and Delete All until
+Stop or lease expiry settles the meeting; no new lease/deletion policy is added.
+Stopped resumed meetings keep capture_interruptions/sample_rate through text and
+section-speaker corrections, History and exports, and delete through the normal
+meeting cleanup. Production unknown-speaker separation remains intact.
+
+Qualification: full frontend/backend gates plus the retained resume-integrated
+real-Chrome/real-server A-L matrix, including zero-original-frame late start,
+partial-worklet takeover and edit/reassign/export/delete after resume. Evidence and
+local commit custody: `~/Documents/Codex/2026-09-28/moss-gemini/status/P74-RM-STATUS.md`.
+Scripted recognition, fake media and local summary only; physical devices/native
+picker, real providers, host/network qualification and real-time 45-minute endurance
+remain unmeasured. Candidate source only; generated assets are rebuilt locally and
+excluded from commits.
+
+RM qualification found an inherited MP3 tail-padding boundary: live A/F archives
+decode 37/33 samples longer than the exact mixed clock. The unchanged product
+archive reproduces the same differences from exactly 437770/321422 synthetic PCM
+samples; three prior passing lengths decode exactly. Capture PCM completeness is
+checked independently during publication. The strict decoded-sample gate remains
+failed; no tolerance, codec or timeline rule was changed. Candidate qualification
+is BLOCKED on this archive gate; see RM status and archive-clock-probe receipts.
+
+Final source gates: frontend 641 tests/42 files, typecheck/build pass; full real-SQLite
+backend 2998 passed, 9 skipped, 2 xfailed, 37 subtests (440.98 s), with local
+fake-server binds constrained to the task's allowed port range. Final Chrome
+154.0.8037.98: ten A-L cases pass, E/F strict MP3 sample gates fail. The separate
+unmodified timeout-evidence suite passed 24/24 and the final full-suite rerun
+passed; initial timeout/failing-browser receipts remain retained.

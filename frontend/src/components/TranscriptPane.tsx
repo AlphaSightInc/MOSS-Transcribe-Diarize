@@ -2,7 +2,7 @@ import { type JSX } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import "../styles/transcript.css";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
-import { nameMeetingSpeaker, reassignMeetingPassages, VoiceprintEvidenceNotAdmittedError } from "../api/speakers";
+import { editMeetingPassageText, nameMeetingSpeaker, reassignMeetingPassages, VoiceprintEvidenceNotAdmittedError } from "../api/speakers";
 import {
   buildTranscriptExportText
 } from "../lib/transcriptExport";
@@ -107,16 +107,27 @@ export function TranscriptPane() {
   const [correctionName, setCorrectionName] = useState("");
   const [savingCorrection, setSavingCorrection] = useState(false);
   const [correctionError, setCorrectionError] = useState<string | null>(null);
-  const correctionDialogRef = useRef<HTMLDialogElement | null>(null);
   const correctionControlRef = useRef<HTMLButtonElement | null>(null);
   const correctionListRef = useRef<HTMLDivElement | null>(null);
   const correctionNameRef = useRef<HTMLInputElement | null>(null);
   const [correctionListOpen, setCorrectionListOpen] = useState(false);
   const [correctionActiveIndex, setCorrectionActiveIndex] = useState(0);
 
+  const [textEditor, setTextEditor] = useState<{ meetingId: string; passageId: string; original: string; text: string; trigger: HTMLElement | null } | null>(null);
+  const textEditorRef = useRef(textEditor);
+  textEditorRef.current = textEditor;
+  const textSaveRef = useRef<Promise<boolean> | null>(null);
+  const [savingText, setSavingText] = useState(false);
+  const [textError, setTextError] = useState<string | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textContainerRef = useRef<HTMLDivElement | null>(null);
+
   const fullTranscriptItems = transcript.value;
   const searchQuery = transcriptSearchQuery.value.trim();
-  const allTurns = groupSegmentsIntoTurns(fullTranscriptItems, { interruptions: recordingInterruptions.value });
+  const allTurns = groupSegmentsIntoTurns(fullTranscriptItems, {
+    interruptions: recordingInterruptions.value,
+    preservePassages: ["closed", "failed", "aborted"].includes(sessionStatus.value) && fullTranscriptItems.every(item => item.state === "final")
+  });
   const guessedSpeakerIds = [...new Set(provisionalSegments.value.flatMap(segment =>
     segment.tentative_speaker ? [segment.tentative_speaker] : []))];
   const automaticProcessingRunning =
@@ -180,38 +191,30 @@ export function TranscriptPane() {
   useLayoutEffect(() => {
     setCorrectionTarget(null);
     setCorrectionError(null);
+    setTextEditor(null);
+    setTextError(null);
   }, [activeSessionId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!namingTarget) return;
     const dialog = namingDialogRef.current;
     if (!dialog) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (typeof dialog.showModal === "function") dialog.showModal();
     else dialog.setAttribute("open", "");
-    namingInputRef.current?.focus();
-    namingInputRef.current?.select();
+    if (correctionTarget && canCorrectPassages) {
+      if (correctionListOpen) correctionNameRef.current?.focus();
+      else correctionControlRef.current?.focus();
+    } else {
+      namingInputRef.current?.focus();
+      namingInputRef.current?.select();
+    }
     return () => {
       if (dialog.open && typeof dialog.close === "function") dialog.close();
       else dialog.removeAttribute("open");
       previousFocus?.focus();
     };
   }, [namingTarget]);
-
-  useLayoutEffect(() => {
-    if (!correctionTarget) return;
-    const dialog = correctionDialogRef.current;
-    if (!dialog) return;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (typeof dialog.showModal === "function") dialog.showModal();
-    else dialog.setAttribute("open", "");
-    if (!correctionListOpen) correctionControlRef.current?.focus();
-    return () => {
-      if (dialog.open && typeof dialog.close === "function") dialog.close();
-      else dialog.removeAttribute("open");
-      previousFocus?.focus();
-    };
-  }, [correctionTarget]);
 
   useLayoutEffect(() => {
     if (!correctionTarget || !correctionListOpen) return;
@@ -230,7 +233,7 @@ export function TranscriptPane() {
       event.preventDefault();
       event.stopPropagation();
       if (correctionListOpen) closeCorrectionList();
-      else setCorrectionTarget(null);
+      else closeSpeakerPopup();
     } else if ((event.key === "ArrowDown" || event.key === "ArrowUp") &&
       (event.target as HTMLElement).closest(".passage-choice")) {
       event.preventDefault();
@@ -242,40 +245,63 @@ export function TranscriptPane() {
     }
   }
 
-  function openSpeakerName(entry: TranscriptLegendEntry | undefined): void {
-    if (namingBlocked(entry) !== null || !entry) return;
+  function closeSpeakerPopup(): void {
+    if (savingName || savingCorrection) return;
+    setNamingTarget(null);
+    setCorrectionTarget(null);
+    setCorrectionListOpen(false);
+  }
+
+  function openSpeakerName(entry: TranscriptLegendEntry | undefined, passageIds: string[] = []): void {
+    if (!entry || (namingBlocked(entry) !== null && !(canCorrectPassages && passageIds.length))) return;
     setNamingError(null);
     setVoiceprintNotice(null);
     setNamingTarget(entry);
     setSpeakerName(entry.visibleLabel);
     setSaveVoiceprint(true);
+    setCorrectionTarget({ meetingId: activeSessionId!, passageIds, speakerId: entry.speakerId });
+    setCorrectionMode("new");
+    setCorrectionSpeakerId("");
+    setCorrectionListOpen(canCorrectPassages && !legendEntries.some(other => other.speakerId !== entry.speakerId && !other.isUnidentified));
+    setCorrectionActiveIndex(0);
+    setCorrectionName("");
+    setCorrectionError(null);
   }
 
   async function saveSpeakerName(event: Event): Promise<void> {
     event.preventDefault();
-    if (!namingTarget || !activeSessionId || !canNameSpeakers || savingName) return;
+    if (!namingTarget || !activeSessionId || !canNameSpeakers || savingName || savingCorrection || namingTarget.isUnidentified || !speakerName.trim()) return;
     const meetingId = activeSessionId;
     const requestedName = speakerName.trim();
     setSavingName(true);
     setNamingError(null);
     try {
-      let result;
       let refused = false;
-      try {
-        result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, requestedName, undefined, saveVoiceprint);
-      } catch (error) {
-        if (!saveVoiceprint || !(error instanceof VoiceprintEvidenceNotAdmittedError) || sessionId.value !== meetingId) throw error;
-        refused = true;
-        result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, requestedName, undefined, false);
+      let unavailable = false;
+      const targets = [namingTarget, ...legendEntries.filter(entry =>
+        entry.visibleLabel === namingTarget.visibleLabel && entry.speakerId !== namingTarget.speakerId && !entry.isUnidentified)];
+      for (const target of targets) {
+        if (sessionId.value !== meetingId) return;
+        const enroll = saveVoiceprint && target.speakerId === namingTarget.speakerId;
+        let result;
+        try {
+          result = await nameMeetingSpeaker(meetingId, target.speakerId, requestedName, undefined, enroll);
+        } catch (error) {
+          if (!enroll || !(error instanceof VoiceprintEvidenceNotAdmittedError) || sessionId.value !== meetingId) throw error;
+          refused = true;
+          result = await nameMeetingSpeaker(meetingId, target.speakerId, requestedName, undefined, false);
+        }
+        if (sessionId.value !== meetingId) return;
+        unavailable ||= enroll && result.enrollment === "unavailable";
+        sessionTranscriptItems.value = sessionTranscriptItems.value.map(item =>
+          item.speaker_entity_id === result.speaker_id ? { ...item, display_name: result.label } : item);
+        // Each acknowledged change must be visible even if a later matching id fails.
+        document.dispatchEvent(new CustomEvent(SPEAKER_NAMED_EVENT, { detail: { meetingId } }));
+        requestMeetingHistoryRefresh();
       }
-      if (sessionId.value !== meetingId) return;
-      // The response acknowledges a durable display label, not a new identity.
-      sessionTranscriptItems.value = sessionTranscriptItems.value.map(item =>
-        item.speaker_entity_id === result.speaker_id ? { ...item, display_name: result.label } : item);
-      document.dispatchEvent(new CustomEvent(SPEAKER_NAMED_EVENT, { detail: { meetingId } }));
-      requestMeetingHistoryRefresh();
-      setVoiceprintNotice(refused || result.enrollment === "unavailable" ? VOICEPRINT_NOT_SAVED : null);
+      setVoiceprintNotice(refused || unavailable ? VOICEPRINT_NOT_SAVED : null);
       setNamingTarget(null);
+      setCorrectionTarget(null);
     } catch (error) {
       if (sessionId.value === meetingId) {
         setNamingError(error instanceof Error ? error.message : "Speaker naming failed.");
@@ -285,21 +311,9 @@ export function TranscriptPane() {
     }
   }
 
-  function openPassageCorrection(turn: TranscriptTurn): void {
-    if (!canCorrectPassages || turn.segment_ids.length === 0) return;
-    const existing = correctionSpeakers.find(entry => entry.speakerId !== turn.speaker_entity_id);
-    setCorrectionTarget({ meetingId: activeSessionId!, passageIds: [...turn.segment_ids], speakerId: turn.speaker_entity_id });
-    setCorrectionMode("new");
-    setCorrectionSpeakerId("");
-    setCorrectionListOpen(!existing);
-    setCorrectionActiveIndex(0);
-    setCorrectionName("");
-    setCorrectionError(null);
-  }
-
   async function savePassageCorrection(event: Event): Promise<void> {
     event.preventDefault();
-    if (!correctionTarget || !activeSessionId || savingCorrection || refinementRunning) return;
+    if (!correctionTarget || !activeSessionId || savingCorrection || savingName || !canCorrectPassages || !correctionTarget.passageIds.length) return;
     if (correctionMode === "existing" ? !correctionSpeakerId : !correctionName.trim()) return;
     const meetingId = correctionTarget.meetingId;
     if (activeSessionId !== meetingId) {
@@ -326,6 +340,7 @@ export function TranscriptPane() {
       sessionNeedsReview.value = result.needs_review;
       requestMeetingHistoryRefresh();
       setCorrectionTarget(null);
+      setNamingTarget(null);
     } catch (error) {
       if (sessionId.value === meetingId) {
         setCorrectionError(error instanceof Error ? error.message : "Passage correction failed.");
@@ -333,6 +348,111 @@ export function TranscriptPane() {
     } finally {
       setSavingCorrection(false);
     }
+  }
+
+  function closeTextEditor(): void {
+    const editor = textEditorRef.current;
+    if (textSaveRef.current) return;
+    textEditorRef.current = null;
+    setTextEditor(null);
+    setTextError(null);
+    editor?.trigger?.focus();
+  }
+
+  function saveTextEditor(): Promise<boolean> {
+    if (textSaveRef.current) return textSaveRef.current;
+    const editor = textEditorRef.current;
+    if (!editor) return Promise.resolve(true);
+    const text = editor.text.trim();
+    if (!text || text.length > 5000) return Promise.resolve(false);
+    if (text === editor.original) { closeTextEditor(); return Promise.resolve(true); }
+    setSavingText(true);
+    setTextError(null);
+    const pending = (async () => {
+      try {
+        const result = await editMeetingPassageText(editor.meetingId, editor.passageId, text);
+        if (sessionId.value !== editor.meetingId) return false;
+        sessionTranscriptItems.value = sessionTranscriptItems.value.map(item => item.segment_id === editor.passageId
+          ? { ...item, text, edited: true, original_text: item.original_text ?? item.text } : item);
+        sessionNeedsReview.value = result.needs_review;
+        requestMeetingHistoryRefresh();
+        textEditorRef.current = null;
+        setTextEditor(null);
+        editor.trigger?.focus();
+        return true;
+      } catch (error) {
+        if (sessionId.value === editor.meetingId) setTextError(error instanceof Error ? error.message : "Text edit failed.");
+        return false;
+      } finally {
+        textSaveRef.current = null;
+        setSavingText(false);
+      }
+    })();
+    textSaveRef.current = pending;
+    return pending;
+  }
+
+  async function openTextEditor(turn: TranscriptTurn, trigger: HTMLElement): Promise<void> {
+    if (!canCorrectPassages || turn.segment_ids.length !== 1) return;
+    const meetingId = activeSessionId!;
+    if (textEditorRef.current?.passageId === turn.segment_ids[0]) return;
+    if (textEditorRef.current && !(await saveTextEditor())) return;
+    if (sessionId.value !== meetingId) return;
+    const editor = { meetingId, passageId: turn.segment_ids[0], original: turn.text, text: turn.text, trigger };
+    textEditorRef.current = editor;
+    setTextEditor(editor);
+    setTextError(null);
+  }
+
+  useLayoutEffect(() => {
+    if (!textEditor) return;
+    const input = textAreaRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${input.scrollHeight}px`;
+  }, [textEditor?.text]);
+
+  useLayoutEffect(() => {
+    const input = textAreaRef.current;
+    if (!textEditor || !input) return;
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }, [textEditor?.passageId]);
+
+  useEffect(() => {
+    if (!textEditor) return;
+    const outside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!textContainerRef.current?.contains(target) && !target.closest?.("[data-edit-passage]")) void saveTextEditor();
+    };
+    document.addEventListener("mousedown", outside);
+    return () => document.removeEventListener("mousedown", outside);
+  }, [textEditor]);
+
+  function renderTextEditor(turn: TranscriptTurn): JSX.Element | null {
+    if (!textEditor || turn.segment_ids[0] !== textEditor.passageId) return null;
+    const empty = !textEditor.text.trim();
+    return <div className="text-editor" ref={textContainerRef} onBlurCapture={event => {
+      const next = event.relatedTarget as HTMLElement | null;
+      if (next && !event.currentTarget.contains(next) && !next.closest("[data-edit-passage]")) void saveTextEditor();
+    }}>
+      <textarea ref={textAreaRef} aria-label="Section text" value={textEditor.text} disabled={savingText} maxLength={5000}
+        onInput={event => {
+          const editor = { ...textEditor, text: event.currentTarget.value };
+          textEditorRef.current = editor;
+          setTextEditor(editor);
+        }} onKeyDown={event => {
+          if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeTextEditor(); }
+          else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); void saveTextEditor(); }
+        }} />
+      {empty ? <p className="hint">Text cannot be empty.</p> : null}
+      {textError ? <p role="alert">{textError}</p> : null}
+      <div className="text-editor-actions">
+        <button type="button" className="history-toolbar-btn is-primary" disabled={savingText || empty}
+          onClick={() => void saveTextEditor()}>{savingText ? "Saving…" : "Save"}</button>
+        <button type="button" className="history-toolbar-btn" disabled={savingText} onClick={closeTextEditor}>Cancel</button>
+      </div>
+    </div>;
   }
 
   useEffect(() => {
@@ -476,27 +596,19 @@ export function TranscriptPane() {
 
       {voiceprintNotice ? <p className="tr-notice" role="status">{voiceprintNotice}</p> : null}
       {namingTarget ? (
-        <dialog ref={namingDialogRef} className="history-dialog" aria-labelledby="speaker-name-title"
-          onCancel={() => setNamingTarget(null)}>
-          <form onSubmit={(event) => void saveSpeakerName(event)}>
-            <h3 id="speaker-name-title">Name speaker</h3>
-            <label htmlFor="speaker-name-input">Display name</label>
-            <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
-              disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
-            <label className="sp-voiceprint"><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /><span>Save voiceprint</span></label>
-            {namingError ? <p role="alert">{namingError}</p> : null}
-            <div className="history-dialog-actions">
-              <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={() => setNamingTarget(null)}>Cancel</button>
-              <button className="history-toolbar-btn" type="submit" disabled={savingName || !speakerName.trim()}>{savingName ? "Saving…" : "Save name"}</button>
-            </div>
-          </form>
-        </dialog>
-      ) : null}
-      {correctionTarget ? (
-        <dialog ref={correctionDialogRef} className="history-dialog passage-dialog" aria-labelledby="passage-speaker-title"
-          onKeyDown={correctionKeyDown} onCancel={event => { event.preventDefault(); setCorrectionTarget(null); }}>
-          <form onSubmit={(event) => void savePassageCorrection(event)}>
-            <h3 id="passage-speaker-title">Reassign passage</h3>
+        <dialog ref={namingDialogRef} className="history-dialog passage-dialog speaker-dialog" aria-labelledby="speaker-name-title"
+          onKeyDown={correctionKeyDown} onCancel={event => { event.preventDefault(); closeSpeakerPopup(); }}
+          onClick={event => { if (event.target === event.currentTarget) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeSpeakerPopup();
+          } }}>
+          <div className="speaker-dialog-title"><h3 id="speaker-name-title">Speaker</h3>
+            <button type="button" className="history-toolbar-btn" aria-label="Close Speaker" disabled={savingName || savingCorrection} onClick={closeSpeakerPopup}>×</button></div>
+          <form className="speaker-assignment-form" onSubmit={(event) => void savePassageCorrection(event)}>
+            <h4>This Section Only</h4>
+            {!canCorrectPassages ? <p className="hint">Available after the recording stops.</p> : null}
+            {canCorrectPassages && !correctionTarget?.passageIds.length ? <p className="hint">Choose a section’s speaker name to assign it.</p> : null}
+            <fieldset disabled={!canCorrectPassages || !correctionTarget?.passageIds.length || savingCorrection || savingName}>
             <div className="passage-choice" onBlur={event => {
               if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setCorrectionListOpen(false);
             }}>
@@ -510,7 +622,7 @@ export function TranscriptPane() {
                 }}>
                 <span>{correctionMode === "existing"
                   ? correctionSpeakers.find(entry => entry.speakerId === correctionSpeakerId)?.visibleLabel
-                  : correctionName.trim() || "New speaker"}</span>
+                  : correctionName.trim() || "New Speaker"}</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
               </button>
               {correctionListOpen ? (
@@ -532,9 +644,9 @@ export function TranscriptPane() {
                       <span>{entry.visibleLabel}</span>
                     </div>
                   ))}
-                  <div role="option" className="passage-choice-option passage-choice-new" aria-label="New speaker"
+                  <div role="option" className="passage-choice-option passage-choice-new" aria-label="New Speaker"
                     aria-selected={correctionMode === "new"} onClick={() => correctionNameRef.current?.focus()}>
-                    <input ref={correctionNameRef} aria-label="New speaker" placeholder="New speaker" value={correctionName}
+                    <input ref={correctionNameRef} aria-label="New Speaker" placeholder="New Speaker" value={correctionName}
                       disabled={savingCorrection} onFocus={() => {
                         setCorrectionMode("new"); setCorrectionActiveIndex(correctionSpeakers.length);
                       }} onInput={event => setCorrectionName(event.currentTarget.value)}
@@ -547,13 +659,26 @@ export function TranscriptPane() {
             </div>
             {correctionError ? <p role="alert">{correctionError}</p> : null}
             <div className="history-dialog-actions">
-              <button className="history-toolbar-btn" type="button" disabled={savingCorrection}
-                onClick={() => setCorrectionTarget(null)}>Cancel</button>
               <button className="history-toolbar-btn" type="submit" disabled={savingCorrection ||
                 (correctionMode === "existing" ? !correctionSpeakerId : !correctionName.trim())}>
-                {savingCorrection ? "Saving…" : "Save correction"}
+                {savingCorrection ? "Saving…" : "Assign This Section"}
               </button>
             </div>
+            </fieldset>
+          </form>
+          <form className="speaker-rename-form" onSubmit={(event) => void saveSpeakerName(event)}>
+            <h4>All Sections Named “{namingTarget.visibleLabel}”</h4>
+            <fieldset disabled={namingTarget.isUnidentified || savingName || savingCorrection}>
+            <label htmlFor="speaker-name-input">Display name</label>
+            <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
+              disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
+            <label className="sp-voiceprint"><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /><span>Save voiceprint</span></label>
+            {namingError ? <p role="alert">{namingError}</p> : null}
+            <div className="history-dialog-actions">
+              <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={closeSpeakerPopup}>Cancel</button>
+              <button className="history-toolbar-btn" type="submit" disabled={savingName || !speakerName.trim()}>{savingName ? "Saving…" : "Rename All"}</button>
+            </div>
+            </fieldset>
           </form>
         </dialog>
       ) : null}
@@ -679,9 +804,9 @@ export function TranscriptPane() {
             <TranscriptCards rows={rows} interruptions={recordingInterruptions.value} search={searchByTurn} activeMatchId={activeSearchMatchId}
               finalized={finalized} canCorrectPassages={canCorrectPassages} correctionWaiting={refinementRunning}
               speakerLabel={rowSpeakerLabel} sourceLabel={sourceLabel}
-              namingBlocked={(id) => namingBlocked(legendEntries.find(entry => entry.speakerId === id))}
-              onSpeakerClick={(id) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id))}
-              onPassageCorrection={openPassageCorrection} />
+              namingBlocked={(id) => canCorrectPassages ? null : namingBlocked(legendEntries.find(entry => entry.speakerId === id))}
+              onSpeakerClick={(id, ids) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id), ids)}
+              onTextEdit={(turn, trigger) => void openTextEditor(turn, trigger)} renderTextEditor={renderTextEditor} />
           ) : (
             <p className="empty-state transcript-empty-state">
               Transcript will appear here when a session starts.
@@ -702,9 +827,9 @@ function buildLegendEntries(
   const entries = new Map<string, TranscriptLegendEntry>();
 
   for (const item of items) {
-    // UNKNOWN is the transient legacy preview and has no legend entry. Saved S00
-    // remains visible as a disabled unidentified legend, but never a correction target.
-    if (item.speaker === "UNKNOWN") {
+    // Transient UNKNOWN previews have no legend entry. Persisted unknowns can be
+    // assigned from their section, but never named or offered as an existing speaker.
+    if (item.speaker === "UNKNOWN" && item.state === "provisional") {
       continue;
     }
 

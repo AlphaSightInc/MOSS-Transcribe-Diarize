@@ -28,7 +28,7 @@ describe("Account application shell", () => {
     sessionMode.value = "file";
     render(<App />, root);
     expect(root.querySelector(".session-title")?.textContent).toBe("Customer review");
-    expect(root.querySelector(".session-chip")?.textContent).toBe("File / URL");
+    expect(root.querySelector(".session-chip")?.textContent).toBe("File / YouTube");
   });
 
   it("renders one Account Live surface without a second authority or File job UI", () => {
@@ -42,7 +42,7 @@ describe("Account application shell", () => {
     expect(root.querySelector('.mode-tabs [aria-pressed="true"]')?.textContent).toBe("Live");
     expect([...root.querySelectorAll(".capture-sources label.check-row")].map(row =>
       [row.textContent, row.querySelector("input")?.checked])).toEqual([["System Sound Output", true], ["Microphone", true]]);
-    expect(root.querySelector<HTMLButtonElement>('.record-btn[data-action="start"]')?.textContent).toBe("Start recording");
+    expect(root.querySelector<HTMLButtonElement>('.record-btn[data-action="start"]')?.textContent).toBe("Start Transcribing");
     expect(root.querySelector('[aria-label="Listening with"]')).toBeNull();
     expect(root.querySelectorAll('[aria-label="Meeting views"] [role="tab"]')).toHaveLength(2);
     expect(root.querySelector('input[type="password"]')).toBeNull();
@@ -83,7 +83,7 @@ describe("Account application shell", () => {
     expect(pill()?.textContent).toBe("Processing");
   });
 
-  // r4 F3: the pill read "Standby" for 2–3 s after Start while the button already read "Stop recording".
+  // r4 F3: the pill read "Standby" for 2–3 s after Start while the button already read "Stop Recording".
   it("reads Starting… from the Start click until the meeting exists, then counts from its true start", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(100_000));

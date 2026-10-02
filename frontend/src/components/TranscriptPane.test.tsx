@@ -50,6 +50,7 @@ describe("TranscriptPane", () => {
     expect([...timeline.children].map(node => node.textContent)).toEqual([
       expect.stringContaining("Before"), gap.textContent, expect.stringContaining("After")]);
     expect(root.querySelectorAll(".utt-speaker")).toHaveLength(2);
+    expect(root.querySelectorAll('.utt[data-continuation="true"]')).toHaveLength(0);
   });
 
   it("has no title row: the card starts at the speaker legend (#9)", () => {
@@ -73,7 +74,7 @@ describe("TranscriptPane", () => {
       render(<TranscriptPane />, root);
     });
     const removed = ["Improving transcript", "Passage corrections wait", "Transcript improved", "Improvement unavailable"];
-    const reassign = () => root.querySelector<HTMLButtonElement>("[data-reassign-passage]");
+    const reassign = () => root.querySelector<HTMLButtonElement>("[data-edit-passage]");
     expect(reassign()?.disabled).toBe(true);
     expect(reassign()?.title).toBe("Wait until the transcript finishes improving");
     expect(root.querySelector<HTMLButtonElement>("button.utt-speaker")?.disabled).toBe(false);
@@ -185,10 +186,11 @@ describe("TranscriptPane", () => {
     expect(writeText).toHaveBeenCalledWith("[00:00:00] SPEAKER_07:\nHello");
   });
 
-  it("keeps duplicate names separate and saves the chosen canonical speaker only", async () => {
-    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      meeting_id: "meeting/one", speaker_id: "canonical/b", label: "Sam", enrollment: "enrolled"
-    })));
+  it("keeps duplicate identities separate and renames every matching display name", async () => {
+    const fetcher = vi.fn(async (url: string) => Response.json({
+      meeting_id: "meeting/one", speaker_id: url.includes("canonical%2Fb") ? "canonical/b" : "canonical/a",
+      label: "Sam", enrollment: url.includes("canonical%2Fb") ? "enrolled" : "not_requested"
+    }));
     vi.stubGlobal("fetch", fetcher);
     showSpeakers();
     expect(root.querySelectorAll(".utt")).toHaveLength(2);
@@ -200,7 +202,7 @@ describe("TranscriptPane", () => {
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
     await act(async () => {
-      root.querySelector("dialog form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      root.querySelector("dialog .speaker-rename-form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     });
     expect(fetcher).toHaveBeenCalledWith("/api/meetings/meeting%2Fone/speakers/canonical%2Fb/name", expect.objectContaining({
       method: "PUT", credentials: "same-origin", body: JSON.stringify({ label: "Sam" })
@@ -209,8 +211,8 @@ describe("TranscriptPane", () => {
     // An enrolled voiceprint is a success: no message.
     expect(root.querySelector(".tr-notice")).toBeNull();
     // Apply the acknowledged name immediately while preserving the other identity.
-    expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent)).toEqual(["Alex", "Sam"]);
-    expect([...root.querySelectorAll(".legend-chip-name")].map(node => node.textContent)).toEqual(["Alex", "Sam"]);
+    expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent)).toEqual(["Sam", "Sam"]);
+    expect([...root.querySelectorAll(".legend-chip-name")].map(node => node.textContent)).toEqual(["Sam", "Sam"]);
   });
 
   it("allows owned observers and terminal meetings but keeps provisional-only speakers read-only", () => {
@@ -429,15 +431,20 @@ describe("TranscriptPane", () => {
     expect(root.querySelector(".utt-text")?.textContent).toBe("Unattributed speech");
   });
 
+  function transcriptFixture() {
+    return { start: 0, end: 1, text: "Words", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "Alex", state: "confirmed" as const };
+  }
+
   it.each(["pending", "error"])("shows nothing for %s success and keeps the input on failure", async (outcome) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(outcome === "error"
       ? { detail: "Meeting Speaker not found." }
       : { meeting_id: "meeting/one", speaker_id: "canonical/a", label: "Alex", enrollment: "pending" }),
     { status: outcome === "error" ? 404 : 200 })));
     showSpeakers();
+    act(() => replaceTranscript([transcriptFixture()]));
     act(() => root.querySelector<HTMLButtonElement>(".legend-chip")!.click());
     await act(async () => {
-      root.querySelector("dialog form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      root.querySelector("dialog .speaker-rename-form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     });
     if (outcome === "error") {
       await vi.waitFor(() => expect(root.querySelector("[role='alert']")?.textContent).toBe("Meeting Speaker not found."));
@@ -459,9 +466,10 @@ describe("TranscriptPane", () => {
     });
     vi.stubGlobal("fetch", fetcher);
     showSpeakers();
+    act(() => replaceTranscript([transcriptFixture()]));
     act(() => root.querySelector<HTMLButtonElement>(".legend-chip")!.click());
     await act(async () => {
-      root.querySelector("dialog form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      root.querySelector("dialog .speaker-rename-form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     });
     await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
     expect([...root.querySelectorAll(".tr-notice")].map(node => [node.getAttribute("role"), node.textContent]))
@@ -477,7 +485,8 @@ describe("TranscriptPane", () => {
     expect(root.textContent).not.toContain("Identity settling");
     act(() => root.querySelector<HTMLButtonElement>(".legend-chip")!.click());
     const dialog = root.querySelector("dialog")!;
-    expect(dialog.querySelector(".hint")).toBeNull();
+    expect(dialog.querySelector(".speaker-rename-form .hint")).toBeNull();
+    expect(dialog.textContent).toContain("Available after the recording stops.");
     expect(dialog.textContent).not.toContain("Applies to this speaker");
     expect(dialog.querySelector("input[type='checkbox']")).not.toBeNull();
   });

@@ -734,7 +734,7 @@ export function ControlPanel() {
           <div className="seg mode-tabs" role="group" aria-label="Mode">
             {(["live", "file", "url"] as const).map(choice => <button key={choice} type="button"
               className={`seg-btn${mode === choice ? " is-active" : ""}`} aria-pressed={mode === choice}
-              disabled={modeLocked} onClick={() => { if (choice !== mode) setFileQueue([]); setMode(choice); }}>{choice === "url" ? "URL" : choice === "file" ? "File" : "Live"}</button>)}
+              disabled={modeLocked} onClick={() => { if (choice !== mode) setFileQueue([]); setMode(choice); }}>{choice === "url" ? "YouTube" : choice === "file" ? "File" : "Live"}</button>)}
           </div>
         </section>
 
@@ -745,19 +745,19 @@ export function ControlPanel() {
             data-capture-phase={phase}
             data-observer-mode={phase === "viewing" ? "read-only" : "none"}
           >
-            {phase === "active" ? <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}><StopIcon />Stop recording</button>
+            {phase === "active" ? <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}><StopIcon />Stop Recording</button>
               : phase === "stopping" ? <button type="button" className="record-btn" data-action="stop" disabled><StopIcon />Stopping…</button>
               : phase === "viewing" ? null
               : <button type="button" className="record-btn" data-action="start" disabled={starting || noSource}
                   title={noSource ? NO_SOURCE_TOOLTIP : undefined}
-                  onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start recording"}</button>}
+                  onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start Transcribing"}</button>}
 
             {phase === "viewing" && resumeHere ? <button type="button" className="record-btn"
-              onClick={() => { const saved = captureRecord.current; if (saved) void resumeCapture(saved, false); }}>Resume recording here</button> : null}
+              onClick={() => { const saved = captureRecord.current; if (saved) void resumeCapture(saved, false); }}>Resume Recording Here</button> : null}
             {phase === "active" && missingMicrophone ? <button type="button" className="record-btn"
-              onClick={() => void restoreMicrophone()}>Resume recording</button>
+              onClick={() => void restoreMicrophone()}>Resume Recording</button>
               : phase === "active" && missingSystem ? <button type="button" className="record-btn"
-                  onClick={() => void shareAgain()}>Share tab audio again</button> : null}
+                  onClick={() => void shareAgain()}>Share Tab Audio Again</button> : null}
 
             {statusLine ? <p className="capture-status" role="status">{statusLine}</p> : null}
 
@@ -805,7 +805,7 @@ export function ControlPanel() {
         <form key={mode} data-file-upload="form" className="controls-mode-form" onSubmit={event => { if (mode === "url" && !url.startsWith("https://")) event.preventDefault(); }}>
           <section className="control-section">
             <button type="submit" className="record-btn" data-action="start" disabled={!uploadReady}>
-              <PlayIcon />{mode === "file" ? "Start file transcription" : "Start URL transcription"}</button>
+              <PlayIcon />Start Transcribing</button>
           </section>
           <section className="control-section">
             {mode === "file" ? <><label className="label" htmlFor="meeting-files">Files</label>
@@ -814,9 +814,9 @@ export function ControlPanel() {
               <div className="btn-row"><button type="button" className="btn ghost" disabled={!fileQueue.length} onClick={() => { if (fileInputRef.current) fileInputRef.current.value = ""; setFileQueue([]); }}>Clear</button></div>
               {fileQueue.length ? <ul className="controls-file-queue">{fileQueue.map((name, index) => <li key={`${name}-${index}`}>{name}</li>)}</ul> : null}
               <input name="urls" value="" hidden readOnly /></> :
-              <><input name="file" type="file" multiple hidden /><label className="label" htmlFor="meeting-url">URL</label>
+              <><input name="file" type="file" multiple hidden /><label className="label" htmlFor="meeting-url">YouTube Link</label>
                 <div className="field field--input-prompt" data-state={urlWarning ? "warning" : undefined}>
-                  <input id="meeting-url" name="urls" type="url" value={url} placeholder="https://example.com/audio.mp3"
+                  <input id="meeting-url" name="urls" type="url" value={url} placeholder="https://www.youtube.com/watch?v=jNQXAC9IVRw"
                     onInput={event => setUrl(event.currentTarget.value)} />
                 </div>
                 {urlWarning ? <p className="hint" data-state="warning">Use an https:// link.</p> : null}</>}

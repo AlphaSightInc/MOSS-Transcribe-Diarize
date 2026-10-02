@@ -44,6 +44,7 @@ export function projectTranscriptCards(turns: readonly TranscriptTurn[], interru
     for (let offset = 1; offset <= Math.min(2, cards.length); offset += 1) {
       const candidate = cards[cards.length - offset];
       if (candidate && interruptions.some(gap => gap.start >= candidate.start && gap.start <= turn.start)) continue;
+      if (isBackendUnknownSpeakerId(id)) continue;
       if (!candidate || candidate.lane !== lane || candidate.speakerId !== id) continue;
       const consecutiveConfirmed = offset === 1 && id !== "S00" && id !== "UNKNOWN" &&
         turn.state !== "provisional" && candidate.rows.at(-1)?.state !== "provisional";
@@ -93,9 +94,10 @@ export function projectTranscriptRows(
   ];
   return rows.map(({ key, speakerId: id, lane, start, end, guess, fragments }, index) => {
     const previous = rows[index - 1];
-    // Unattributed speech is never "the same person" as the row above it.
+    // Unattributed speech and an interruption never continue the row above them.
     const continuation = !!previous && !isBackendUnknownSpeakerId(id) &&
-      previous.speakerId === id && previous.lane === lane;
+      previous.speakerId === id && previous.lane === lane &&
+      !interruptions.some(gap => gap.start >= previous.start && gap.start <= start);
     return { key, speakerId: id, lane, start, end, guess, continuation, fragments };
   });
 }

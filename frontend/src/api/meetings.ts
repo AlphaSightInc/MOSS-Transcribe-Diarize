@@ -13,6 +13,8 @@ export interface MeetingSegment {
   speaker: string;
   speaker_entity_id?: string;
   text: string;
+  edited?: boolean;
+  original_text?: string;
 }
 
 export interface MeetingAudio {
@@ -60,6 +62,21 @@ export async function openMeeting(
   fetcher: typeof fetch = fetch
 ): Promise<Meeting> {
   return parseMeeting(await requestJson(fetcher, `/api/meetings/${encodeURIComponent(meetingId)}`));
+}
+
+export async function deleteMeeting(meetingId: string): Promise<void> {
+  await requestJson(fetch, `/api/meetings/${encodeURIComponent(meetingId)}`, { method: "DELETE" });
+}
+
+export async function deleteAllMeetings(): Promise<{
+  deleted: number; kept: { meeting_id: string; reason: string }[];
+}> {
+  const payload = await requestJson(fetch, "/api/meetings", { method: "DELETE" });
+  if (!isRecord(payload) || typeof payload.deleted !== "number" || !Array.isArray(payload.kept) ||
+      !payload.kept.every(item => isRecord(item) && typeof item.meeting_id === "string" && typeof item.reason === "string")) {
+    throw new Error("Session deletion response is invalid.");
+  }
+  return payload as { deleted: number; kept: { meeting_id: string; reason: string }[] };
 }
 
 export async function renameMeeting(
@@ -160,7 +177,9 @@ function parseTranscript(value: unknown): Meeting["transcript"] {
         end: segment.end,
         speaker: segment.speaker,
         ...(typeof segment.speaker_entity_id === "string" ? { speaker_entity_id: segment.speaker_entity_id } : {}),
-        text: segment.text
+        text: segment.text,
+        ...(segment.edited === true ? { edited: true } : {}),
+        ...(typeof segment.original_text === "string" ? { original_text: segment.original_text } : {})
       };
     })
   };

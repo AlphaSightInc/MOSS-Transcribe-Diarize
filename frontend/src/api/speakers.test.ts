@@ -1,5 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import { nameMeetingSpeaker, reassignMeetingPassages } from "./speakers";
+import { editMeetingPassageText, nameMeetingSpeaker, reassignMeetingPassages } from "./speakers";
+
+it("text edit sends an encoded owner-bound passage request and accepts correction shape", async () => {
+  const payload = {meeting_id:"m/one",segment_ids:["p/one"],speaker_id:"a",label:"Alex",transcript_version:2,needs_review:false};
+  const fetcher = vi.fn().mockResolvedValue(Response.json(payload));
+  expect(await editMeetingPassageText("m/one","p/one","Changed",fetcher)).toEqual(payload);
+  expect(fetcher).toHaveBeenCalledWith("/api/meetings/m%2Fone/passages/p%2Fone/text",expect.objectContaining({method:"PUT",credentials:"same-origin",body:JSON.stringify({text:"Changed"})}));
+});
+
+it("text edit retains the server's settled refusal", async () => {
+  await expect(editMeetingPassageText("m","p","Changed",vi.fn().mockResolvedValue(Response.json({detail:"Wait for automatic processing to settle"},{status:409}))))
+    .rejects.toThrow("Wait for automatic processing to settle");
+});
+
+it("text edit explains a running refinement refusal", async () => {
+  await expect(editMeetingPassageText("m","p","Changed",vi.fn().mockResolvedValue(Response.json({code:"refinement_running"},{status:409}))))
+    .rejects.toThrow("Wait until the transcript finishes improving.");
+});
 
 describe("speaker naming API", () => {
   it.each(["pending", "enrolled"])("accepts owner-bound %s results", async enrollment => {

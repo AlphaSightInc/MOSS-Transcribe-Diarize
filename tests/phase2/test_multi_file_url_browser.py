@@ -45,20 +45,20 @@ def execute_submission_script(workspace_html: str) -> dict[str, object]:
                 {'name': 'one.wav', 'mimeType': 'audio/wav', 'buffer': b'one'},
                 {'name': 'two.wav', 'mimeType': 'audio/wav', 'buffer': b'two'},
             ])
-            page.get_by_role('button', name='Start file transcription', exact=True).click()
+            page.get_by_role('button', name='Start Transcribing', exact=True).click()
             results = page.locator('[data-file-upload="results"]')
             expect(results.locator('li')).to_have_count(2)
             # Q6: rows keep only a failure with its reason and the "Open meeting" action.
             expect(results.get_by_role('button', name='Open meeting for one.wav')).to_have_count(1)
             expect(results.locator('li').nth(1)).to_contain_text('Not confirmed — check History before retrying.')
             file_status = page.locator('[data-file-upload="status"]').inner_text()
-            page.get_by_role('button', name='URL', exact=True).click()
+            page.get_by_role('button', name='YouTube', exact=True).click()
             url = page.locator('input[name="urls"]')
             url.fill('https://media.test/http-failure')
-            page.get_by_role('button', name='Start URL transcription', exact=True).click()
+            page.get_by_role('button', name='Start Transcribing', exact=True).click()
             expect(page.locator('[data-file-upload="results"]')).to_contain_text('Not accepted: Unsupported media URL')
             url.fill('https://media.test/good')
-            page.get_by_role('button', name='Start URL transcription', exact=True).click()
+            page.get_by_role('button', name='Start Transcribing', exact=True).click()
             expect(page.get_by_role('button', name='Open meeting for https://media.test/good')).to_have_count(1)
             expect(page.locator('[data-file-upload="results"]')).not_to_contain_text('Not accepted')
             return {'calls': calls, 'created': page.evaluate('window.created'),
@@ -110,7 +110,7 @@ def test_file_and_url_start_is_separated_from_mode_like_live():
                 page.route('**/*', route)
                 page.goto('http://layout.test')
                 page.locator('[data-history-boot="ready"]').wait_for()
-                for mode in ('Live', 'File', 'URL'):
+                for mode in ('Live', 'File', 'YouTube'):
                     page.get_by_role('button', name=mode, exact=True).click()
                     gaps[(width, mode)] = page.evaluate(
                         "() => document.querySelector('.record-btn').getBoundingClientRect().top"
@@ -120,4 +120,4 @@ def test_file_and_url_start_is_separated_from_mode_like_live():
             browser.close()
     for width in (1440, 400):
         assert gaps[(width, 'Live')] >= 48, gaps
-        assert gaps[(width, 'File')] == gaps[(width, 'URL')] == gaps[(width, 'Live')], gaps
+        assert gaps[(width, 'File')] == gaps[(width, 'YouTube')] == gaps[(width, 'Live')], gaps

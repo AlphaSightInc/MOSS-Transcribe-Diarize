@@ -692,3 +692,60 @@ button.utt-speaker:disabled {
   background: transparent;
   font-size: 13px;
 }
+
+.text-editor {
+  width: 100%;
+}
+
+.text-editor textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 3em;
+  resize: vertical;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px;
+}
+
+.text-editor-actions,
+.speaker-dialog-title {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.text-editor-actions .is-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.utt-edited {
+  margin-left: 6px;
+  font-size: 10px;
+  opacity: .7;
+}
+
+.speaker-dialog-title {
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0;
+}
+
+.speaker-dialog fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.speaker-rename-form {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 8px;
+}

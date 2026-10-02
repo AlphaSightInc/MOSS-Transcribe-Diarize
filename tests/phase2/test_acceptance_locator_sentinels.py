@@ -65,11 +65,11 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             page.get_by_role('tab', name='Transcript', exact=True).click()
             expect(page.get_by_label('Summary', exact=True)).to_be_hidden()
             page.get_by_role('region', name='Meeting history', exact=True).get_by_role('tab', name='Voiceprints', exact=True).click()
-            # Round 3: the meeting search and its Refresh belong to the Sessions tab only.
-            assert page.get_by_role('button', name='Refresh', exact=True).count() == 1
+            # Sessions controls stay out of the Voiceprints tab.
+            assert page.get_by_role('button', name='Delete All', exact=True).count() == 0
             history = page.get_by_role('region', name='Meeting history', exact=True)
             history.get_by_role('tab', name='Sessions', exact=True).click()
-            history.locator('.history-panel-actions').get_by_role('button', name='Refresh', exact=True).click()
+            expect(history.locator('.history-panel-actions').get_by_role('button', name='Delete All', exact=True)).to_be_enabled()
 
             phone = browser.new_page(viewport={'width': 400, 'height': 900})
             phone.route('**/*', route)
@@ -87,10 +87,15 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
                 return [before, after];
             }""")
             assert text_widths[0] == text_widths[1]
-            phone.get_by_role('button', name='Reassign passage', exact=True).click()
-            expect(phone.locator('#passage-speaker-title')).to_be_visible()
+            phone.get_by_role('button', name='Edit text', exact=True).click()
+            expect(phone.get_by_label('Section text', exact=True)).to_be_visible()
             assert phone.locator('#tr-body').evaluate('(el) => el.scrollWidth <= el.clientWidth')
-            phone.get_by_role('dialog', name='Reassign passage').get_by_role('button', name='Cancel').click()
+            phone.locator('.text-editor').get_by_role('button', name='Cancel', exact=True).click()
+            phone.locator('.utt-speaker').first.click()
+            popup = phone.get_by_role('dialog', name='Speaker', exact=True)
+            expect(popup.get_by_role('heading', name='This Section Only', exact=True)).to_be_visible()
+            expect(popup.get_by_role('button', name='Rename All', exact=True)).to_be_visible()
+            popup.get_by_label('Close Speaker', exact=True).click()
             phone.get_by_role('tab', name='Summary', exact=True).click()
             expect(phone.get_by_label('Summary', exact=True)).to_be_visible()
             assert phone.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
@@ -189,7 +194,7 @@ def test_summary_entry_does_not_cover_upload_or_navigation(width, height):
                     0, min(summary['y'] + summary['height'], other['y'] + other['height']) - max(summary['y'], other['y']))
 
             page.get_by_role('button', name='File', exact=True).click()
-            upload = page.get_by_role('button', name='Start file transcription').bounding_box()
+            upload = page.get_by_role('button', name='Start Transcribing').bounding_box()
             nav = page.get_by_role('navigation', name='Workspace').bounding_box()
             assert overlap(upload) == 0
             assert overlap(nav) == 0

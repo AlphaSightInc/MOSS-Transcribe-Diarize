@@ -16,6 +16,27 @@ export interface PassageSpeakerResult {
 
 export type PassageSpeakerTarget = { speaker_id: string } | { label: string };
 
+export async function editMeetingPassageText(
+  meetingId: string, passageId: string, text: string, fetcher: typeof fetch = fetch
+): Promise<PassageSpeakerResult> {
+  const response = await fetcher(
+    `/api/meetings/${encodeURIComponent(meetingId)}/passages/${encodeURIComponent(passageId)}/text`,
+    { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }) }
+  );
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(typeof payload?.detail === "string" ? payload.detail
+    : payload?.code === "refinement_running" ? "Wait until the transcript finishes improving."
+    : `Text edit failed (${response.status}).`);
+  if (payload?.meeting_id !== meetingId || !Array.isArray(payload?.segment_ids) ||
+      payload.segment_ids.length !== 1 || payload.segment_ids[0] !== passageId ||
+      typeof payload?.speaker_id !== "string" || typeof payload?.label !== "string" ||
+      typeof payload?.transcript_version !== "number" || typeof payload?.needs_review !== "boolean") {
+    throw new Error("Text edit response is invalid.");
+  }
+  return payload;
+}
+
 const VOICEPRINT_EVIDENCE_NOT_ADMITTED = "voiceprint_evidence_not_admitted";
 const VOICEPRINT_REFUSAL_COPY = "Save voiceprint needs at least 2 seconds of finished, clear speech from this speaker.";
 

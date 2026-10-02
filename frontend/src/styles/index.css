@@ -3434,3 +3434,35 @@ textarea:focus {
 
 .settings-body label.settings-checkbox { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .settings-body .settings-checkbox input[type="checkbox"] { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }
+
+/* Session deletion remains reachable by keyboard and on touch screens. */
+.history-card { position: relative; }
+.history-card-hitbox { padding-right: 38px; }
+.history-delete-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  padding: 8px;
+  display: grid;
+  place-items: center;
+  opacity: 0.45; /* always present on the card; full strength on hover or focus */
+}
+.history-card:hover .history-delete-icon,
+.history-card:focus-within .history-delete-icon { opacity: 1; }
+.history-card:hover .history-delete-icon:disabled,
+.history-card:focus-within .history-delete-icon:disabled { opacity: 0.5; }
+@media (hover: none), (max-width: 640px) {
+  .history-delete-icon { opacity: 1; }
+  .history-delete-icon:disabled { opacity: 0.5; }
+}
+.history-delete-confirm {
+  padding: 12px;
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 12px;
+}
+.history-delete-confirm p { margin: 0 0 12px; font-size: 13px; line-height: 1.5; }
+.history-action-btn.is-delete-primary { color: white; background: var(--danger); border-color: var(--danger); }
+.history-action-btn.is-delete-primary:hover:not(:disabled) { color: white; background: var(--danger); }

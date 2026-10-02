@@ -17,6 +17,15 @@ function turn(start: number, end: number, lane: "system" | "microphone",
 }
 
 describe("Q5 transcript cards", () => {
+  it("starts a visible speaker block after an interruption, even for the same speaker", () => {
+    const rows = projectTranscriptRows([
+      turn(0, 1, "system", "speaker-a", "before"),
+      turn(4, 5, "system", "speaker-a", "after")
+    ], [], [{ start: 1, end: 4 }]);
+    expect(rows).toHaveLength(2);
+    expect(rows.map(row => row.continuation)).toEqual([false, false]);
+  });
+
   it("merges one short interleaved lane row and preserves every source target", () => {
     const source = [turn(0, 1, "system", "speaker-a", "first"),
       turn(1, 2, "microphone", "speaker-b", "interjection"),

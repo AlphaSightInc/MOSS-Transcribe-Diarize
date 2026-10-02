@@ -114,7 +114,9 @@ margins, regression test list). The implementer lifts the measured rule; any dev
 
 **WP-E — merge `gemini/r5-m`** (M1, M2; already implemented: frontend 551 / backend 2713 pass with rebuilt bundle).
 
-**WP-W — rule W** (docs/plan-r5-label-purity.md §12–§13)
+**WP-W — rule W** (docs/plan-r5-label-purity.md §12–§14) — **DROPPED 2026-10-01: Stage 3 verdict UNMEASURED** (the
+provider did not reproduce the failure on any of three fixtures; W equalled the shipped rule word for word; $0.29
+spent). Production keeps the shipped stitch rule; step S4 is skipped. The text below is kept for the record.
 - Stage 3 first (user-approved, cap $0.30, evaluator pane 6.4 at "READY v2", gates frozen in §13). Independent of
   WP-A…E: it scores shipped rule A vs frozen W on the same raw provider words of system-lane fixtures; the raw
   responses are saved, so re-scoring after integration costs $0.
@@ -241,3 +243,16 @@ say which rule acted; fix and repeat.
 ## 11. Spend so far in this phase
 
 Diagnosis $0.26, prototypes $0.06 + $0.24 + $0.17 = **$0.73 of the $1.00 phase cap**. Stage 3: $0 of $0.30.
+
+## 13. Decisions and scope added after launch (2026-10-01 evening)
+
+- **D15 = O1 (user): grey text is cut by the clock.** Grey shows only what arrived after the lane's confirmed point;
+  older grey words disappear at confirmation even when the solid text lacks them (they are never saved either way).
+  Fresh speech may never be hidden. Built as R5B-A4 (`briefs/R5B-A4.md`); the text-only attempts A2/A3 are recorded in
+  `prototypes/gemini-live/mic-speaker-echo/{a2,a3}/NOTES.md`.
+- Added during the round: Reassign-passage dialog as one dropdown (user request); restored runs keep their live
+  speaker and microphone restore evidence is grouped by source partition (reviews 3–5); a phrase clean-up already has
+  beside a hole is not restored (stress audit); remembered preview cut dropped when its solid support is replaced.
+- **Standing instruction (user):** when the lead can confirm the build is ready, host ONLY the fixed build on one port
+  (pilot :18600; candidate :18620 stopped) and update `ga0-rog-laptop` to the same build.
+- Accepted boundary: an empty clean-up answer for a lane keeps the live rows as committed (pre-existing fallback).

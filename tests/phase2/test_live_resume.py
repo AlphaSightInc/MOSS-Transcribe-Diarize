@@ -188,6 +188,62 @@ def test_stop_accepted_first_and_expired_never_reopen(live):
     assert bench.wait_meeting(client, sid, 'completed')['status'] == 'completed'
 
 
+@pytest.mark.parametrize('takeover', [False, True], ids=['detached-inside-lease', 'resumed-writer'])
+def test_text_edit_and_delete_refused_inside_resume_lease(live, takeover):
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    prefix(live)
+    client.portal.call(st.phase2_live.sync_and_flush, sid)
+    clock.now += 5 * bench.NS
+    if takeover:
+        assert resume(client, base).status_code == 200
+    before = client.get(f'/api/meetings/{sid}').json()
+    passage = before['transcript']['segments'][0]['id']
+    assert before['status'] == 'active'
+    lease = st.live_helper_failures.snapshot(sid)
+    assert client.put(f'/api/meetings/{sid}/passages/{passage}/text',
+                      json={'text': 'must not replace live speech'}).status_code == 409
+    assert client.delete(f'/api/meetings/{sid}').status_code == 409
+    assert client.delete('/api/meetings').json() == {
+        'deleted': 0, 'kept': [{'meeting_id': sid, 'reason': 'Stop recording first.'}]}
+    assert client.get(f'/api/meetings/{sid}').json() == before
+    assert st.live_helper_failures.snapshot(sid) == lease
+
+
+def test_resumed_gap_survives_text_and_speaker_edit_then_deletes_cleanly(live):
+    client, st, cookies, engines, clock, timer, sid, base, old = live
+    prefix(live)
+    clock.now += 5 * bench.NS
+    state = resume(client, base).json()
+    new = {'X-Moss-Capture-Instance': 'new'}
+    for lane in ('system', 'microphone'):
+        cursor = state['lanes'][lane]
+        accepted = client.post(base + '/frames', headers=new,
+            json=bench.frame(lane, cursor['next_sequence'], 9, cursor['resume_device_epoch'], True))
+        assert accepted.status_code == 200, accepted.text
+    assert client.post(base + '/stop', json={'deadline': 20}, headers=new).status_code == 200
+    before = bench.wait_meeting(client, sid, 'completed')
+    gaps = before['transcript']['capture_interruptions']
+    segments = before['transcript']['segments']
+    passage = segments[-1]['id']
+    assert client.put(f'/api/meetings/{sid}/passages/{passage}/text',
+                      json={'text': 'corrected after interruption'}).status_code == 200
+    assert client.put(f'/api/meetings/{sid}/passages/speaker',
+                      json={'segment_ids': [passage], 'label': 'Blair'}).status_code == 200
+    after = client.get(f'/api/meetings/{sid}').json()
+    assert after['transcript']['capture_interruptions'] == gaps
+    assert after['transcript']['sample_rate'] == bench.RATE
+    assert after['transcript']['segments'][:-1] == segments[:-1]
+    selected = after['transcript']['segments'][-1]
+    assert (selected['text'], selected['edited'], selected['speaker']) == ('corrected after interruption', True, 'Blair')
+    assert client.get('/api/meetings').json()['meetings'][0]['transcript'] == after['transcript']
+    archives = list(st.resume_evidence_root.glob('meetings/**/audio.mp3'))
+    assert len(archives) == 1
+    assert client.delete(f'/api/meetings/{sid}').status_code == 204
+    assert client.get(f'/api/meetings/{sid}').status_code == 404
+    assert client.get('/api/meetings').json() == {'meetings': []}
+    assert not archives[0].exists()
+
+
 @pytest.mark.parametrize('live', [True], indirect=True)
 def test_gap_metadata_survives_refinement_and_summary(live):
     client, st, cookies, engines, clock, timer, sid, base, old = live

@@ -169,7 +169,9 @@ def test_saved_spaced_chinese_shows_and_exports_without_join_spaces_in_the_brows
             page.locator('[data-open-meeting="old"]').click()
             page.locator("article.utt").first.wait_for()
             shown = page.locator("article.utt .utt-text").all_inner_texts()
-            assert shown == [first, "Yeah. Sounds good to me, right? 오늘 회의를 시작하겠습니다.", last]
+            # P75: each durable passage is independently editable within its speaker card.
+            assert shown == READ
+            assert page.get_by_role("button", name="Edit text", exact=True).count() == len(READ)
             assert page.locator(".history-card-subtitle").inner_text().startswith("大家好，今天我们主要讨论")
             for value, heading in (("txt", "[00:00:00] Speaker 1:\n"), ("md", "## [00:00:00] Speaker 1\n\n")):
                 page.locator("#meeting-export-format").select_option(value)

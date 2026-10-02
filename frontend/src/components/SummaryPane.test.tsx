@@ -398,7 +398,7 @@ async function renameInTranscript(speakerId: string, name: string) {
     const input = root.querySelector<HTMLInputElement>("#speaker-name-input")!;
     input.value = name; input.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  await act(async () => { root.querySelector("dialog form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+  await act(async () => { root.querySelector("dialog .speaker-rename-form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
 }
 
