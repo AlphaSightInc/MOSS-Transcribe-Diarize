@@ -227,6 +227,17 @@ without a previously witnessed cut can still repeat. Local-tail and time-proport
 cuts remain unqualified for preserving fresh speech. See
 `prototypes/gemini-live/mic-speaker-echo/a2/NOTES.md` for gates and replay limits.
 
+The T4 frontier-snapshot proposal is measured-rejected: a preview published before
+the solid-time frontier proves which audio the preview heard, not that the rolling
+transcript includes every word. On injected recorded-text omissions, hiding its
+unchanged prefix removes 22 words, 11 words or 169 Mandarin characters from grey
+while they are absent from solid; a boundary-word injection hides one additional
+word. Both lanes reproduce the loss through the production publication path.
+Original-stream replay adds no fresh loss by the later-solid metric, but that does
+not override the known-omission falsifier. No snapshot trim ships; A2 remains the
+partial repair. `prototypes/gemini-live/mic-speaker-echo/a3/NOTES.md` records the
+audit, rewrites, limits and raw-publication capture contract for a future real run.
+
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
 name/enroll route and Voiceprint bank. Compatible encoder identity and vector
