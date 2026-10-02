@@ -9,6 +9,8 @@ export interface TranscriptItem {
   start: number;
   end: number;
   text: string;
+  edited?: boolean;
+  original_text?: string;
   speaker: string;
   speaker_entity_id: string;
   display_name: string;

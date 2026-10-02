@@ -1316,6 +1316,86 @@ class Phase2Store:
                 ),
             )
 
+    async def _edit_passage_text(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+        passage_id: str,
+        text: str,
+    ) -> PassageSpeakerResult:
+        if not isinstance(text, str) or not 1 <= len(text.strip()) <= 5000:
+            raise ValueError("Text must contain 1 to 5000 characters.")
+        normalized = text.strip()
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                SELECT m.status, t.document_json, t.version, mo.failure_code, mo.notice
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id
+                    AND a.enabled = 1 AND a.authority_generation = ?
+                LEFT JOIN meeting_transcripts t
+                    ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+                LEFT JOIN meeting_outcomes mo
+                    ON mo.account_id = m.account_id AND mo.meeting_id = m.meeting_id
+                WHERE m.account_id = ? AND m.meeting_id = ?
+                """,
+                (authority_generation, account_id, meeting_id),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+            if row is None:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+            status = str(row["status"])
+            if status == "active":
+                raise MeetingNotSettled(
+                    "Wait for automatic processing to settle before correcting speakers."
+                )
+            # Refinement may replace the document only while this durable marker exists.
+            # Check it under the same write lock as the edit, including after restart.
+            if row["notice"] == REFINEMENT_RUNNING_MARKER:
+                raise MeetingNotSettled(REFINEMENT_RUNNING_MARKER)
+            if row["document_json"] is None:
+                raise PassageNotFound("Meeting transcript has no passages.")
+            document = json.loads(row["document_json"])
+            segments = document.get("segments")
+            if not isinstance(segments, list):
+                raise PassageNotFound("Meeting transcript has no passages.")
+            selected = [segment for segment in segments
+                        if isinstance(segment, dict) and segment.get("id") == passage_id]
+            if not selected:
+                raise PassageNotFound("Selected passage was not found.")
+            if len(selected) != 1:
+                raise ValueError("Meeting transcript passage identity is ambiguous.")
+            segment = selected[0]
+            segment.setdefault("original_text", segment.get("text", ""))
+            segment["text"] = normalized
+            segment["edited"] = True
+            segment.pop("words", None)
+            await self._connection.execute(
+                """UPDATE meeting_transcripts
+                   SET document_json = ?, version = version + 1, updated_at_ms = ?
+                   WHERE account_id = ? AND meeting_id = ?""",
+                (json.dumps(document, ensure_ascii=False, separators=(",", ":")),
+                 now, account_id, meeting_id),
+            )
+            await self._connection.execute(
+                """UPDATE meetings SET updated_at_ms = ?
+                   WHERE account_id = ? AND meeting_id = ?""",
+                (now, account_id, meeting_id),
+            )
+            return PassageSpeakerResult(
+                meeting_id=meeting_id,
+                segment_ids=(passage_id,),
+                speaker_id=_segment_speaker_id(segment) or "S00",
+                label=str(segment.get("speaker") or "Speaker TBD"),
+                transcript_version=int(row["version"]) + 1,
+                needs_review=_meeting_needs_review(
+                    status, document, row["failure_code"], _public_notice(row["notice"])
+                ),
+            )
+
     async def _commit_transcript(
         self,
         account_id: str,
@@ -1796,6 +1876,15 @@ class MeetingHandle:
             segment_ids,
             speaker_id=speaker_id,
             label=label,
+        )
+
+    async def edit_passage_text(self, passage_id: str, text: str) -> PassageSpeakerResult:
+        return await self._store._edit_passage_text(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+            passage_id,
+            text,
         )
 
     async def commit_transcript(
@@ -2733,6 +2822,30 @@ def create_phase2_app(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return result.to_dict()
 
+    @app.put("/api/meetings/{meeting_id}/passages/{passage_id}/text")
+    async def edit_meeting_passage_text(meeting_id: str, passage_id: str, request: Request):
+        account = await require_account(request)
+        handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
+        if handle is None:
+            raise HTTPException(status_code=404, detail="Meeting not found.")
+        if phase2_live is not None and phase2_live.refinement_running(meeting_id):
+            return JSONResponse({"code": "refinement_running"}, status_code=409)
+        try:
+            payload = await request.json()
+            text = payload.get("text") if isinstance(payload, dict) else None
+            result = await handle.edit_passage_text(passage_id, text)
+        except MeetingNotSettled as exc:
+            if str(exc) == REFINEMENT_RUNNING_MARKER:
+                return JSONResponse({"code": "refinement_running"}, status_code=409)
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except PassageNotFound as exc:
+            raise HTTPException(status_code=404, detail=str(exc.args[0])) from exc
+        except AccountRevoked as exc:
+            raise HTTPException(status_code=404, detail="Meeting not found.") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return result.to_dict()
+
     @app.get("/api/voiceprints")
     async def list_voiceprints(request: Request):
         account = await require_account(request)
@@ -2856,13 +2969,15 @@ def readable_transcript(document: dict[str, object] | None) -> dict[str, object]
 
     Meetings saved before `join_text` hold "大 家 好" (r4 F1). Those join spaces are dropped
     on the way out; the stored row, which renames and passage corrections rewrite by segment
-    id and speaker id, keeps its text byte for byte.
+    id and speaker id, keeps its text byte for byte. User-edited text is read exactly as saved.
     """
     segments = None if document is None else document.get("segments")
     if not isinstance(segments, list):
         return document
 
     def read(segment: object) -> object:
+        if isinstance(segment, dict) and segment.get("edited") is True:
+            return segment
         text = segment.get("text") if isinstance(segment, dict) else None
         if not isinstance(text, str) or (clean := without_join_spaces(text)) == text:
             return segment

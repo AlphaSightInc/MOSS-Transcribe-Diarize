@@ -34,6 +34,7 @@ export interface TranscriptTurn {
   settled?: boolean;
   text: string;
   segment_ids: string[];
+  edited?: boolean;
   target_segment_keys: string[];
   segments: TranscriptTurnSegment[];
   provisional_stale: boolean;
@@ -159,6 +160,7 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
   options: {
     preserveResolvedWhitespace?: boolean;
     skipOverlapTrimming?: boolean;
+    preservePassages?: boolean;
     resolveText?: (segment: T) => string;
   } = {}
 ): TranscriptTurn[] {
@@ -190,17 +192,18 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       last !== null &&
       normalizeTurnDisplayName(last.display_name) === normalizeTurnDisplayName(segment.display_name);
 
-    if (last !== null && sameEntity && sameTranscriptLane && sameDisplayName) {
+    if (last !== null && sameEntity && sameTranscriptLane && sameDisplayName && !options.preservePassages) {
       last.end = Math.max(last.end, segment.end);
       last.state = segment.state;
       if (preserveResolvedWhitespace) {
         last.text = joinPreservedTurnText(last.text, resolvedText);
       } else {
-        last.text = skipOverlapTrimming
+        last.text = skipOverlapTrimming || last.edited || segment.edited
           ? joinTurnText(last.text, resolvedText)
           : mergeTurnText(last.text, resolvedText);
       }
       last.provisional_stale ||= segment.provisional_stale === true;
+      last.edited ||= segment.edited === true;
       const segmentId = trimString(segment.segment_id);
       if (segmentId) {
         last.segment_ids.push(segmentId);
@@ -226,6 +229,7 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       state: segment.state,
       settled: segment.settled,
       text: resolvedText,
+      edited: segment.edited === true,
       segment_ids: segmentIds,
       target_segment_keys: [buildTranscriptTargetKey(segment)],
       segments: [{ start: segment.start, end: segment.end, text: resolvedText }],
@@ -246,6 +250,8 @@ function stripDecorations(item: TranscriptLike): TranscriptItem {
     start: item.start,
     end: item.end,
     text: item.text,
+    edited: item.edited === true,
+    original_text: item.original_text,
     speaker: item.speaker,
     speaker_entity_id: item.speaker_entity_id,
     display_name: item.display_name,
@@ -278,6 +284,8 @@ function normalizeTranscriptItem(rawItem: TranscriptItem): TranscriptItem | null
     start,
     end,
     text,
+    edited: rawItem.edited === true,
+    original_text: rawItem.original_text,
     speaker,
     speaker_entity_id: speakerEntityId,
     display_name: displayName,

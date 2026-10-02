@@ -87,10 +87,15 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
                 return [before, after];
             }""")
             assert text_widths[0] == text_widths[1]
-            phone.get_by_role('button', name='Reassign passage', exact=True).click()
-            expect(phone.locator('#passage-speaker-title')).to_be_visible()
+            phone.get_by_role('button', name='Edit text', exact=True).click()
+            expect(phone.get_by_label('Section text', exact=True)).to_be_visible()
             assert phone.locator('#tr-body').evaluate('(el) => el.scrollWidth <= el.clientWidth')
-            phone.get_by_role('dialog', name='Reassign passage').get_by_role('button', name='Cancel').click()
+            phone.locator('.text-editor').get_by_role('button', name='Cancel', exact=True).click()
+            phone.locator('.utt-speaker').first.click()
+            popup = phone.get_by_role('dialog', name='Speaker', exact=True)
+            expect(popup.get_by_role('heading', name='This Section Only', exact=True)).to_be_visible()
+            expect(popup.get_by_role('button', name='Rename All', exact=True)).to_be_visible()
+            popup.get_by_label('Close Speaker', exact=True).click()
             phone.get_by_role('tab', name='Summary', exact=True).click()
             expect(phone.get_by_label('Summary', exact=True)).to_be_visible()
             assert phone.evaluate('document.documentElement.scrollWidth <= window.innerWidth')

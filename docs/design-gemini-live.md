@@ -756,3 +756,40 @@ LLM artifacts, audio metadata and meeting rows. Saved vectors and voiceprint IDs
 Filesystem cleanup failure retains database rows for retry; already removed files cannot be rolled back.
 
 Evidence: `prototypes/gemini-live/long-meeting/ui3/NOTES.md`, regression tests and the zero-provider real-Chrome run.
+
+## P75 E1: settled passage text edits (2026-10-02, candidate, not deployed)
+
+The durable transcript is the authority for History and on-demand server-summary input. The owner may
+`PUT /api/meetings/{meeting_id}/passages/{passage_id}/text` with `{"text":"new text"}` once automatic processing
+settles. The string is trimmed to 1–5000 characters; invalid text returns 400, unknown meeting/passage or other
+owner returns 404, active processing returns the existing 409 reason, running refinement returns
+`{"code":"refinement_running"}` with 409. Success uses the existing speaker-correction response shape:
+`meeting_id`, `segment_ids` (one ID), `speaker_id`, `label`, `transcript_version`, `needs_review`.
+The client reloads the meeting from that response; it is not a full transcript response.
+
+Only the selected passage's text changes. Its first stored text is retained once as `original_text`, `edited`
+is true, and the document version advances once. Speaker, start/end, other passages and audio remain unchanged.
+Production live (`phase2_live._transcript_document`) and file (`phase2_file._transcript_document`) serializers
+currently store passage timings, not word timings. Editing drops a passage's `words` field if present; old words
+must never accompany new text. Edited text bypasses legacy join-space removal, preserving intentional spaces.
+History/list/detail and `MeetingSummaries.start_server` read the same edited durable document; speaker assignment
+and rename rewrite that document without replacing the text. An existing summary is not automatically regenerated.
+
+Publication cannot overwrite an accepted edit: normal and terminal transcript writes require `status='active'`;
+refinement requires the durable running marker. The text-edit transaction checks both status and marker under
+the store's write lock. Thus refinement must settle before the edit; its later repeated publication is refused.
+The route also uses the existing live refinement guard. No new publication layer or database schema is needed.
+
+Prototype (`prototypes/gemini-live/long-meeting/p75-es/NOTES.md`) measured 3/3 late publisher methods refused and
+1/1 restart retained a simulated edit on base f9d13595; the same matrix through the product edit method gives
+3/3 and 1/1. `tests/phase2/test_passage_text_edit.py`: 25/25 failed on base, then 25/25 passed; existing correction
+and saved-reading tests also pass (59 total). Browser interaction and real provider behavior remain unmeasured by
+this server package; no provider calls are required or made.
+
+Full-suite gate exposed a pre-existing selector mismatch in `test_workspace_demo_geometry.py`: the base commit
+renamed the URL tab to YouTube, while two geometry cases still selected URL. Viewport0 also fails on unchanged
+f9d13595 (32.65s). Only the selector was updated to YouTube; both cases pass (4.80s), geometry assertions unchanged.
+Final full backend gate: **2,943 passed, 9 skipped, 2 xfailed, 37 subtests passed** (428.68s); command:
+`MOSS_TEST_REAL_SQLITE=1 PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-r5-f3.venv/bin/python -m pytest -q -p no:cacheprovider tests`.
+Receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/P75/ES/` (red, targeted green, full failed,
+unchanged-base geometry reproduction, geometry green, final full green, prototype and product replay logs).

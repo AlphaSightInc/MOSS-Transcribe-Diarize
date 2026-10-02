@@ -88,7 +88,7 @@ def test_a_renamed_speaker_reads_under_the_new_name_in_summary_and_markdown_with
                 page.locator(".utt-speaker", has_text=current).first.click()
                 page.locator("#speaker-name-input").fill(name)
                 page.locator("dialog .sp-voiceprint input").uncheck()
-                page.get_by_role("button", name="Save name", exact=True).click()
+                page.get_by_role("button", name="Rename All", exact=True).click()
                 expect(page.locator("dialog")).to_have_count(0)
                 page.get_by_role("tab", name="Summary", exact=True).click()
 

@@ -561,6 +561,8 @@ function transcriptItems(meeting: Meeting): TranscriptItem[] {
     start: segment.start,
     end: segment.end,
     text: segment.text,
+    edited: segment.edited,
+    original_text: segment.original_text,
     speaker: segment.speaker_entity_id ?? segment.speaker,
     speaker_entity_id: segment.speaker_entity_id ?? segment.speaker,
     display_name: segment.speaker,

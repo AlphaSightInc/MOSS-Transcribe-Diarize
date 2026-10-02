@@ -16,8 +16,9 @@ interface Props {
   sourceLabel: (lane: string | undefined) => string | null;
   /** Why this speaker cannot be named now, or null when it can. */
   namingBlocked: (speakerId: string) => string | null;
-  onSpeakerClick: (id: string) => void;
-  onPassageCorrection: (turn: TranscriptTurn) => void;
+  onSpeakerClick: (id: string, passageIds: string[]) => void;
+  onTextEdit: (turn: TranscriptTurn, trigger: HTMLElement) => void;
+  renderTextEditor: (turn: TranscriptTurn) => JSX.Element | null;
 }
 
 function searchParts(parts: readonly TranscriptSearchPart[], activeMatchId: number): JSX.Element[] {
@@ -31,7 +32,7 @@ function searchParts(parts: readonly TranscriptSearchPart[], activeMatchId: numb
 /** Reference rows: meta column (speaker, source, time) on the left, the speaker's text on the right. */
 export function TranscriptCards({ rows, search, activeMatchId, finalized, canCorrectPassages,
   correctionWaiting = false, speakerLabel, sourceLabel, namingBlocked, onSpeakerClick,
-  onPassageCorrection }: Props) {
+  onTextEdit, renderTextEditor }: Props) {
   return <div className="transcript-cards" data-transcript-cards="true">
     {rows.map((row, index) => {
       const head = row.fragments[0]!;
@@ -65,13 +66,14 @@ export function TranscriptCards({ rows, search, activeMatchId, finalized, canCor
                 {guessedName ? <span className="sr-only"> (guess)</span> : null}
               </span>
             : <button type="button" className={`utt-speaker${unknown ? " is-unidentified" : ""}`}
-                data-speaker-id={row.speakerId} aria-label={`Name speaker ${labelText}`}
+                data-speaker-id={row.speakerId} aria-label={`Speaker ${labelText}`}
+                data-section-speaker={row.fragments.flatMap(turn => turn.segment_ids).join(",")}
                 disabled={blocked !== null} title={blocked ?? undefined}
-                onClick={() => onSpeakerClick(row.speakerId)}>
+                onClick={() => onSpeakerClick(row.speakerId, row.fragments.flatMap(turn => turn.segment_ids))}>
                 <span className="utt-speaker-label">{label}</span>
               </button>}
           {source ? <div className="utt-source">{source}</div> : null}
-          <div className="utt-time">{formatTranscriptClockTime(row.start)}</div>
+          <div className="utt-time">{formatTranscriptClockTime(row.start)}{row.fragments.some(turn => turn.edited) ? <span className="utt-edited">Edited</span> : null}</div>
         </div>
         <div className="transcript-card-fragments">
           {row.fragments.map((turn, fragmentIndex) => {
@@ -79,21 +81,22 @@ export function TranscriptCards({ rows, search, activeMatchId, finalized, canCor
             const text = found ? searchParts(found.textParts, activeMatchId) : turn.text;
             const textStatus = isSettledTurn(turn, finalized) ? "settled" :
               turn.state === "confirmed" ? "confirmed" : "unsettled";
+            const editor = renderTextEditor(turn);
             return <div key={`${row.key}:${turn.target_segment_keys[0] || fragmentIndex}`}
                 className="utt-content" data-text-status={textStatus}>
-              <p className="utt-text">
+              {editor ?? <p className="utt-text">
                 {turn.state === "provisional"
                   ? <><span className={`prov${turn.provisional_stale ? " is-stale" : ""}`}>{text}</span>
                       {activeTail && fragmentIndex === row.fragments.length - 1
                         ? <span className="live-caret" aria-hidden="true" /> : null}</>
                   : text}
-              </p>
+              </p>}
               {!row.guess && (canCorrectPassages || correctionWaiting) && turn.segment_ids.length > 0 ? (
-                <button type="button" className="utt-reassign" aria-label="Reassign passage"
-                  title={correctionWaiting ? "Wait until the transcript finishes improving" : "Reassign passage"}
+                <button type="button" className="utt-reassign" aria-label="Edit text"
+                  title={correctionWaiting ? "Wait until the transcript finishes improving" : "Edit text"}
                   disabled={correctionWaiting}
-                  data-reassign-passage={turn.segment_ids.join(",")}
-                  onClick={() => onPassageCorrection(turn)}>
+                  data-edit-passage={turn.segment_ids.join(",")}
+                  onClick={event => onTextEdit(turn, event.currentTarget)}>
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4" /></svg>
                 </button>
               ) : null}
