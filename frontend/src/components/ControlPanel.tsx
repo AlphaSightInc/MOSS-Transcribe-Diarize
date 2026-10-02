@@ -96,6 +96,7 @@ export function ControlPanel() {
   // stopped since (K3). It yields to any line that asks for action.
   const [sourceNote, setSourceNote] = useState("");
   const [starting, setStarting] = useState(false);
+  const resumeDeadline = useRef(Date.now() + 8000);
   const captureRecord = useRef<SessionReattachRecord | null>(null);
   const summaryWatcher = useRef<(() => void) | null>(null);
   const [resumeHere, setResumeHere] = useState(false);
@@ -452,8 +453,8 @@ export function ControlPanel() {
       try { display = client.requestDisplayMedia(); } catch { /* silent lane remains */ }
       display?.catch(() => undefined);
     }
-    try {
-      let microphone: string | null = null;
+    let microphone: string | null = null;
+    const mediaReady = (async () => {
       let permitted = true;
       if (automatic && settings.sources.microphone && navigator.permissions?.query) {
         permitted = (await navigator.permissions.query({ name: "microphone" as PermissionName })).state === "granted";
@@ -464,7 +465,23 @@ export function ControlPanel() {
       if (!microphone) await client.attachSilentLane("microphone");
       await client.attachSilentLane("system");
       client.setMicrophoneMuted(settings.microphoneMuted);
-      await client.resumeSession(saved.sessionId, automatic ? settings.instanceId : null, automatic);
+    })();
+    // Media opens in parallel with the ownership handshake; no frames leave before adoption.
+    mediaReady.catch(() => undefined);
+    try {
+      for (;;) {
+        if (clientRef.current !== client) return;
+        try {
+          await client.resumeSession(saved.sessionId, automatic ? settings.instanceId : null, automatic, mediaReady);
+          break;
+        } catch (error) {
+          const failure = error as { code?: string; retryAfterMs?: number };
+          const remaining = resumeDeadline.current - Date.now();
+          if (!automatic || failure.code !== "capture_page_alive" || remaining <= 0) throw error;
+          setMessage("Waiting for the previous recording page to disconnect…");
+          await new Promise(resolve => setTimeout(resolve, Math.min(500, failure.retryAfterMs ?? 500, remaining)));
+        }
+      }
       if (clientRef.current !== client) { await client.close(); return; }
       captureRecord.current = saved;
       persistCapture({ instanceId: client.captureInstanceId });
@@ -488,7 +505,6 @@ export function ControlPanel() {
         persistCapture({ shareKind: client.captureShareKind });
       }).catch(() => undefined);
     } catch (error) {
-      if (display) void display.then(stream => stream.getTracks().forEach(track => track.stop())).catch(() => undefined);
       await client.close().catch(() => undefined);
       if (clientRef.current !== client) return;
       clientRef.current = null;
@@ -500,6 +516,9 @@ export function ControlPanel() {
       } else {
         transition("viewing"); setResumeHere(true); setMessage(`Could not resume recording: ${errorMessage(error)}`);
       }
+    } finally {
+      if (clientRef.current !== client && display)
+        void display.then(stream => stream.getTracks().forEach(track => track.stop())).catch(() => undefined);
     }
   };
 

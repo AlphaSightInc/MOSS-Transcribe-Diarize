@@ -2007,3 +2007,43 @@ it("replays the same resume handshake after a lost response before sending audio
   expect(requests[0][1]?.headers).toEqual(requests[1][1]?.headers);
   expect(client.session).toEqual({ id: "same" });
 });
+
+ it.each([false, true])("preserves retry_after_ms from resume refusal (nested=%s)", async nested => {
+  const { client } = activeFrameClient(); client.session = null;
+  client.lanes.set("system", testLaneState());
+  const detail = { code: "capture_page_alive", retry_after_ms: 1750 };
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(nested ? { detail } : detail), { status: 409 })));
+  await expect((client as unknown as CaptureClient).resumeSession("same", "old", true)).rejects.toMatchObject({
+    code: "capture_page_alive", retryAfterMs: 1750 });
+});
+
+it("requests resume before media is ready, then adopts the elapsed server clock without early frames", async () => {
+  const { client } = activeFrameClient(); client.session = null;
+  client.context = null; client.lanes.clear();
+  let ready!: () => void;
+  const mediaReady = new Promise<void>(resolve => { ready = resolve; });
+  let now = 1000;
+  const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+  const fetcher = vi.fn(async (url: string, _request?: RequestInit) => new Response(JSON.stringify(url.endsWith("/resume") ? {
+    descriptor: { sample_rate: 4, frame_samples: 2 }, capture_now_ns: 90_000_000_000,
+    heartbeat_next_sequence: 9, heartbeat_next_monotonic_ns: 10,
+    lanes: { microphone: { next_sequence: 4, resume_device_epoch: 2 }, system: { next_sequence: 4, resume_device_epoch: 2 } }
+  } : {})));
+  vi.stubGlobal("fetch", fetcher);
+  try {
+    const pending = (client as unknown as CaptureClient).resumeSession("same", "old", true, mediaReady);
+    void pending.catch(() => undefined);
+    await vi.waitFor(() => expect(clock).toHaveBeenCalled());
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(client.session).toBeNull();
+    now = 1250;
+    client.context = Object.assign(new EventTarget(), { sampleRate: 4, currentTime: 2, close: vi.fn() }) as unknown as AudioContext;
+    client.lanes.set("microphone", testLaneState()); client.lanes.set("system", testLaneState());
+    ready(); await pending;
+    client.onWorkletFrame("microphone", workletFrame(8));
+    await vi.waitFor(() => expect(fetcher.mock.calls.some(([url]) => url.endsWith("/frames"))).toBe(true));
+    const frame = JSON.parse(fetcher.mock.calls.find(([url]) => url.endsWith("/frames"))![1]!.body as string);
+    expect(frame.capture_timestamp_ns).toBe(90_250_000_000);
+    expect(frame.capture_end_timestamp_ns).toBe(90_750_000_000);
+  } finally { clock.mockRestore(); }
+});

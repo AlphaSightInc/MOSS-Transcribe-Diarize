@@ -20,9 +20,9 @@ describe("MOSS session poller", () => {
   it("publishes live interruption metadata separately from spoken transcript rows", async () => {
     const poller = createMossSessionPoller({ sessionId: "m", dispatch: dispatchWsEvent,
       fetch: vi.fn(async (url: RequestInfo | URL) => jsonResponse(String(url).includes("/events") ? { events: [] } : {
-        interruptions: [{ start_sample: 16000, end_sample: 32000 }], snapshot: {
+        snapshot: {
           session_id: "m", descriptor: { sample_rate: 16000 }, session: { status: "active", version: 1,
-            committed_samples: 0, identity_snapshot: { canonical_speakers: [] }, committed: [], provisional: null }
+            committed_samples: 0, sample_rate: 32000, capture_interruptions: [{ start_sample: 32000, end_sample: 64000 }], identity_snapshot: { canonical_speakers: [] }, committed: [], provisional: null }
         }
       })) as typeof fetch });
     await poller.poll();

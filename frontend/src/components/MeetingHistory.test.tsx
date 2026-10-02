@@ -64,7 +64,7 @@ describe("MeetingHistory", () => {
 
   it("shows interruption lines in History and preserves them when opening the saved transcript", async () => {
     const saved = meeting();
-    const wire = { ...saved, transcript: { ...saved.transcript, interruptions: [{ start_sample: 57_600_000, end_sample: 58_080_000 }] } };
+    const wire = { ...saved, transcript: { ...saved.transcript, sample_rate: 16000, capture_interruptions: [{ start_sample: 57_600_000, end_sample: 58_080_000 }] } };
     vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [wire] } : wire)));
     await act(async () => render(<MeetingHistory />, root));
     await vi.waitFor(() => expect(root.querySelector('[data-recording-interruption]')?.textContent)

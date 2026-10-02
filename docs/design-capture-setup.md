@@ -140,14 +140,18 @@ An unavailable microphone is named and offers “Resume recording”; no other d
 Every capture mutation carries the page header. A replaced page closes media and remains a
 viewer; its final and rolling automatic summary watchers retire. The resumed writer owns them.
 
-Separate server `interruptions` metadata appears in transcript, History and browser exports as
+Separate server `capture_interruptions` metadata (with adjacent `sample_rate`, in the live
+snapshot session and saved transcript document) appears in transcript, History and browser exports as
 `([HH:MM:SS-HH:MM:SS] Recording Interrupted)`, at its meeting-clock position. Grouping does
 not combine speech across that boundary; summary requests still contain only spoken text.
 
-**Unresolved binding-contract conflict:** automatic resume must refuse a heartbeat younger than
-3 s (`capture_page_alive` -> viewer with “Resume recording here”), which also refuses an ordinary
-immediate reload. Real Chrome reproduces this. Zero-click immediate reload cannot be certified
-until the lead resolves that conflict. Expiry stays 120 s; terminal meetings never reopen.
+Lead rulings R1/R2: a fresh heartbeat refusal (`capture_page_alive`) is a wait, with
+`retry_after_ms`. The page retries automatically about every 500 ms for up to 8 s after
+load while media opens in parallel. Immediate reload needs no takeover click; only a writer
+still heartbeating after that window yields a viewer with “Resume recording here”. Ownership
+adoption waits for media readiness and includes local time elapsed since the server response.
+Only completed interruptions are listed; their end is the first resumed mixed-clock audio.
+Expiry stays 120 s; terminal meetings never reopen.
 This is a local candidate, not an integrated/shipped claim. Fake-device/scripted receipts and
 commands: `prototypes/gemini-live/long-meeting/resume-client/NOTES.md`; live status/evidence under
 `~/Documents/Codex/2026-09-28/moss-gemini/status/P74-RC-STATUS.md` and `evidence/P74/resume-client/`.

@@ -446,14 +446,15 @@ export async function stopCaptureSession(
 }
 
 export class CaptureResponseError extends Error {
-  constructor(readonly code: string | null, message: string) { super(message); }
+  constructor(readonly code: string | null, message: string, readonly retryAfterMs?: number) { super(message); }
 }
 
 async function captureResponseError(response: Response, route: string): Promise<CaptureResponseError> {
   const payload = await response.json().catch(() => null);
   const detail = payload?.detail ?? payload;
   return new CaptureResponseError(payload?.code ?? detail?.code ?? payload?.failure?.code ?? null,
-    typeof detail === "string" ? detail : `${route} failed: HTTP ${response.status}`);
+    typeof detail === "string" ? detail : `${route} failed: HTTP ${response.status}`,
+    payload?.retry_after_ms ?? detail?.retry_after_ms);
 }
 
 export async function abortCaptureSession(session: CaptureSession, reason: string): Promise<void> {
@@ -702,9 +703,8 @@ export class CaptureClient {
   }
 
   /** Adopt server cursors before any frame or heartbeat is allowed to leave. */
-  async resumeSession(id: string, expectedInstanceId: string | null, automatic: boolean): Promise<CaptureSession> {
+  async resumeSession(id: string, expectedInstanceId: string | null, automatic: boolean, mediaReady?: Promise<void>): Promise<CaptureSession> {
     if (this.replaced) throw new Error("capture replaced; view meeting");
-    if (!this.lanes.has("microphone") || !this.lanes.has("system")) throw new Error("both capture lanes must be attached before resume");
     const path = `/api/live/sessions/${encodeURIComponent(id)}/resume`;
     const request: RequestInit = {
       method: "POST", cache: "no-store", credentials: "same-origin", headers: this.requestHeaders(true),
@@ -713,17 +713,21 @@ export class CaptureClient {
     let response: Response;
     try { response = await this.fetchRequest(path, request); }
     catch (error) {
-      if (!this.context || !(error instanceof TypeError || (error instanceof DOMException && error.name === "TimeoutError"))) throw error;
+      if (!(error instanceof TypeError || (error instanceof DOMException && error.name === "TimeoutError"))) throw error;
       // The measured lost-response protocol repeats the same old->new pair, never a new writer.
       response = await this.fetchRequest(path, request);
     }
     if (!response.ok) throw await captureResponseError(response, "session resume");
+    const receivedAt = performance.now();
     const state = await response.json();
+    await mediaReady;
+    if (!this.context || !this.lanes.has("microphone") || !this.lanes.has("system"))
+      throw new Error("both capture lanes must be attached before resume");
     const descriptor = await this.requireDescriptor();
     if (state.descriptor.sample_rate !== descriptor.sampleRate || state.descriptor.frame_samples !== descriptor.frameSamples)
       throw new Error("resume descriptor differs from preflight descriptor");
     // Receipt anchors the new context; all subsequent start AND end times share this offset.
-    this.captureOffsetNs = state.capture_now_ns - Math.round(this.context!.currentTime * 1e9);
+    this.captureOffsetNs = state.capture_now_ns + Math.round((performance.now() - receivedAt) * 1e6) - Math.round(this.context.currentTime * 1e9);
     this.heartbeatSequence = state.heartbeat_next_sequence;
     this.heartbeatMonotonicNs = state.heartbeat_next_monotonic_ns - 1;
     for (const [lane, value] of this.lanes) {

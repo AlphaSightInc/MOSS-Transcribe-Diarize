@@ -139,7 +139,7 @@ function parseTranscript(value: unknown): Meeting["transcript"] {
     throw new Error("Meeting transcript is invalid.");
   }
   return {
-    ...(value.interruptions === undefined ? {} : { interruptions: parseRecordingInterruptions(value.interruptions) }),
+    ...(value.capture_interruptions === undefined ? {} : { interruptions: parseRecordingInterruptions(value.capture_interruptions, value.sample_rate as number) }),
     segments: value.segments.map((segment) => {
       if (
         !isRecord(segment) ||

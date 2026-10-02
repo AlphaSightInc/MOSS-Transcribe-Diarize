@@ -102,7 +102,7 @@ vi.mock("../capture/captureClient", async importOriginal => ({
     setMicrophoneMuted = mocks.setMicrophoneMuted;
     captureInstanceId = "new-page";
     captureShareKind = "browser";
-    resumeSession = mocks.resumeSession;
+    resumeSession = async (...args: unknown[]) => { const session = await mocks.resumeSession(...args); await args[3]; return session; };
     createSession = mocks.createSession;
     close = mocks.captureClose;
     stop = mocks.captureStop;
@@ -164,7 +164,7 @@ describe("ControlPanel reattach", () => {
   it("automatically resumes stored microphone and mute on mount without a click", async () => {
     seedResume();
     await act(async () => render(<ControlPanel />, root));
-    await vi.waitFor(() => expect(mocks.resumeSession).toHaveBeenCalledWith("session-42", "old-page", true));
+    await vi.waitFor(() => expect(mocks.resumeSession).toHaveBeenCalledWith("session-42", "old-page", true, expect.any(Promise)));
     expect(mocks.startMicrophone).toHaveBeenCalledWith("stored-exact-mic", false);
     expect(mocks.setMicrophoneMuted).toHaveBeenCalledWith(true);
     expect(captureMeetingId.value).toBe("session-42");
@@ -193,18 +193,64 @@ describe("ControlPanel reattach", () => {
     expect(root.textContent).toContain("Resume recording");
   });
 
-  it("living capture page remains viewer with explicit takeover and Detach", async () => {
-    seedResume();
-    mocks.resumeSession.mockRejectedValue(Object.assign(new Error("alive"), { code: "capture_page_alive" }));
-    await act(async () => render(<ControlPanel />, root));
-    await vi.waitFor(() => expect(root.textContent).toContain("Resume recording here"));
-    expect(captureMeetingId.value).toBeNull();
-    expect(root.textContent).toContain("Detach");
-    expect(mocks.captureClose).toHaveBeenCalled();
-    mocks.resumeSession.mockResolvedValue({ id: "session-42" });
-    await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Resume recording here")!.click());
-    await vi.waitFor(() => expect(mocks.resumeSession).toHaveBeenLastCalledWith("session-42", null, false));
-    expect(captureMeetingId.value).toBe("session-42");
+  it("waits and retries automatically while media acquisition runs in parallel", async () => {
+    vi.useFakeTimers();
+    try {
+      seedResume();
+      let opened!: (id: string) => void;
+      mocks.startMicrophone.mockReturnValue(new Promise<string>(resolve => { opened = resolve; }));
+      mocks.resumeSession.mockRejectedValueOnce(Object.assign(new Error("alive"), { code: "capture_page_alive", retryAfterMs: 1200 }))
+        .mockResolvedValue({ id: "session-42" });
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(mocks.resumeSession).toHaveBeenCalledOnce();
+      expect(root.textContent).not.toContain("Resume recording here");
+      opened("stored-exact-mic");
+      await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+      expect(mocks.resumeSession).toHaveBeenCalledTimes(2);
+      expect(captureMeetingId.value).toBe("session-42");
+      expect(mocks.createSession).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("living capture page waits eight seconds then remains viewer with explicit takeover and Detach", async () => {
+    vi.useFakeTimers();
+    try {
+      seedResume();
+      mocks.resumeSession.mockRejectedValue(Object.assign(new Error("alive"), { code: "capture_page_alive", retryAfterMs: 3000 }));
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { await vi.advanceTimersByTimeAsync(7999); });
+      expect(root.textContent).not.toContain("Resume recording here");
+      await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+      expect(root.textContent).toContain("Resume recording here");
+      expect(mocks.resumeSession).toHaveBeenCalledTimes(17);
+      expect(captureMeetingId.value).toBeNull();
+      expect(root.textContent).toContain("Detach");
+      expect(mocks.captureClose).toHaveBeenCalled();
+      mocks.resumeSession.mockResolvedValue({ id: "session-42" });
+      await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Resume recording here")!.click());
+      expect(mocks.resumeSession.mock.calls.at(-1)?.slice(0, 3)).toEqual(["session-42", null, false]);
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(captureMeetingId.value).toBe("session-42");
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("Detach cancels a pending automatic retry", async () => {
+    vi.useFakeTimers();
+    try {
+      seedResume(true);
+      const stop = vi.fn();
+      mocks.requestDisplayMedia.mockResolvedValue({ getTracks: () => [{ stop }], getAudioTracks: () => [{}] });
+      mocks.resumeSession.mockRejectedValue(Object.assign(new Error("alive"), { code: "capture_page_alive", retryAfterMs: 3000 }));
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(root.textContent).toContain("Waiting for the previous recording page");
+      await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Detach")!.click());
+      await act(async () => { await vi.advanceTimersByTimeAsync(8000); });
+      expect(mocks.resumeSession).toHaveBeenCalledOnce();
+      expect(stop).toHaveBeenCalled();
+      expect(root.textContent).not.toContain("Resume recording here");
+    } finally { vi.useRealTimers(); }
   });
 
   it("expired resume takes today's stopped path", async () => {

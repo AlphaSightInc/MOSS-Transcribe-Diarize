@@ -676,7 +676,7 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
     status: lifecycle(session.status),
     version: requiredNonNegativeNumber(session.version, "snapshot version"),
     sampleRate: requiredPositiveNumber(descriptor.sample_rate, "snapshot sample_rate"),
-    interruptions: parseRecordingInterruptions(response.interruptions, requiredPositiveNumber(descriptor.sample_rate, "snapshot sample_rate")),
+    interruptions: parseRecordingInterruptions(session.capture_interruptions, session.capture_interruptions === undefined ? 16000 : requiredPositiveNumber(session.sample_rate, "capture sample_rate")),
     committedSamples: requiredNonNegativeNumber(session.committed_samples, "committed samples"),
     failureReason: optionalString(session.failure_reason),
     terminalFailureReason: parseTerminalFailureReason(snapshot.terminal_failure),
